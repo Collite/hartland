@@ -111,6 +111,35 @@ test('T6.6 — conformed-dimension sharing: Product/Calendar/Customer are each r
   }
 });
 
+test('T6.8 — FULL-MODEL completeness: every dimension attribute has a physical binding', () => {
+  // The gap this closes: T6.3 only checks that cubelet GRAIN KEYS + MEASURES bind. A
+  // descriptive/analytic dimension attribute (storeName, dcName, promoName, reasonDesc,
+  // productName, Customer.state, Customer.birthYear) has no lint rule forcing it to bind —
+  // so the model can "load clean" with those dangling. This asserts each one is physically
+  // reachable: a KEY via a cubelet grain binding; a non-key via a BOUND map to its domain
+  // (a calc map, or a table-backed map that has an md2db_map).
+  const boundMapNames = new Set(allDefsOfKind('md2dbMap').map(({ def }) => def.mapRef.split('.').pop()));
+  const boundToDomains = new Set(); // domain qnames reachable via a bound map (calc or md2db_map)
+  for (const { def } of allDefsOfKind('mdMap')) {
+    if (def.calc != null || boundMapNames.has(def.name)) for (const d of def.to ?? []) boundToDomains.add(d);
+  }
+  const boundGrainKeys = new Set(); // "Dimension.attr" bound as a grain key in some cubelet
+  for (const { def } of allDefsOfKind('md2dbCubelet')) for (const k of Object.keys(def.attributes ?? {})) boundGrainKeys.add(k);
+
+  const unbound = [];
+  for (const { def: dim } of allDefsOfKind('dimension')) {
+    for (const attr of dim.attributes ?? []) {
+      const qual = `${dim.name}.${attr.name}`;
+      if (attr.isKey) {
+        if (!boundGrainKeys.has(qual)) unbound.push(`${qual} (key: no cubelet grain binding)`);
+      } else if (!boundToDomains.has(attr.domainRef)) {
+        unbound.push(`${qual} (domain ${attr.domainRef}: no bound map)`);
+      }
+    }
+  }
+  assert.deepEqual(unbound, [], `dimension attributes with no physical binding: ${unbound.join('; ')}`);
+});
+
 test('T6.7 — no profit/margin/cost measure or domain anywhere in md', () => {
   const BANNED = ['profit', 'margin', 'cost'];
   const offenders = [];

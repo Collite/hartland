@@ -53,6 +53,21 @@ second hierarchy sharing the day leaf"). The MD "dot-path" drill notation
 sugar (`docs/features/md/dot-path-sugar.md`: "brainstorm output... Not yet a contract") — the
 mocked test suite checks hierarchy-level resolution through the real resolver instead.
 
+**Full dimension binding (review follow-up, 2026-07-18):** every md dimension attribute now
+has a physical binding, not just the grain keys + measures the wide cubelets carry. There is
+no `md2db_dimension` construct, so each descriptive/analytic attribute is reached the same way
+the Product hierarchy is: a table-backed `def map` (key→attribute) + an `md2db_map` to the dim
+table (`store_to_name`, `dc_to_name`, `promo_to_name`, `reason_to_desc`, `item_to_name`, plus
+`customer_to_birthyear`). `Customer.state` is the customer's HOME state, reached via a two-hop
+`CustomerCode → AddressCode (c_current_addr_sk) → State (customer_address.ca_state)` chain
+because an `md2db_map` targets a single table; it is deliberately distinct from query #11
+(`revenue_by_customer_state`), which slices by the sale-time BILLING address and stays raw SQL.
+`Customer.ageBand` (which had "physical source TBD" and no source — TPC-DS stores no age band)
+became `Customer.birthYear` bound to `c_birth_year`; age is derived at query time (`:year -
+birth_year`, #12). `md2db.test.mjs` **T6.8** now enforces this completeness (every attribute is
+a bound grain key or has a bound map), so a future unbound attribute fails the suite rather than
+loading silently clean — the lint has no rule for descriptive-attribute binding.
+
 **md2db (Stage 2.4 finding):** `md/table-map-no-binding` is `scope: 'document'`
 (`packages/lint/src/rules/md.ts`) — it only looks for an `md2db_map` in the SAME file as
 the `def map`. All 4 Product table-maps ARE bound in `model/binding/md2db.ttrm`, just in a

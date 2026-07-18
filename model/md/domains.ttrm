@@ -31,8 +31,12 @@ def domain CategoryCode     { type: string }
 
 // -- Customer / geography --
 def domain CustomerCode { type: string }
+def domain AddressCode  { type: string }   // customer's current-address FK (c_current_addr_sk) —
+                                           // the intermediate join hop CustomerCode -> AddressCode -> State
 def domain State        { type: string }
-def domain AgeBand      { type: string }   // bucket label; physical source TBD in 2.4
+def domain BirthYear    { type: int }      // c_birth_year; buyer AGE is derived at query time
+                                           // (:year - birth_year, query #12) — TPC-DS stores no age
+                                           // band, so birth year is the honest physical source
 
 // -- Store --
 def domain StoreCode { type: string }

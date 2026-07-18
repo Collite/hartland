@@ -50,6 +50,9 @@ def map manuf_to_brand   { from: md.ManufacturerCode, to: md.BrandCode,        c
 def map brand_to_class   { from: md.BrandCode,        to: md.ClassCode,        cardinality: { from: "N", to: "1" } }
 def map class_to_category { from: md.ClassCode,       to: md.CategoryCode,     cardinality: { from: "N", to: "1" } }
 
+// Product's descriptive label (not a drill level) — the item's display name, bound in md2db.ttrm.
+def map item_to_name     { from: md.ItemCode,         to: md.ProductName,      cardinality: { from: "N", to: "1" } }
+
 def hierarchy productDrill {
     dimension: md.Product,
     levels: [

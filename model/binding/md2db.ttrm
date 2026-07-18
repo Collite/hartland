@@ -151,3 +151,20 @@ def md2db_map item_to_manuf_map     { map: md.item_to_manuf,     target: db.dbo.
 def md2db_map manuf_to_brand_map    { map: md.manuf_to_brand,    target: db.dbo.item, columns: { ManufacturerCode: i_manufact, BrandCode: i_brand } }
 def md2db_map brand_to_class_map    { map: md.brand_to_class,    target: db.dbo.item, columns: { BrandCode: i_brand, ClassCode: i_class } }
 def md2db_map class_to_category_map { map: md.class_to_category, target: db.dbo.item, columns: { ClassCode: i_class, CategoryCode: i_category } }
+
+// ===== Descriptive-attribute lookup maps — one per dimension's display/analytic attribute.
+// Each keys on the dimension's grain sk (the same sk the wide cubelets bind above) and reads
+// the label/value column off the dimension table. No md2db_dimension construct exists, so
+// this is how a non-key dimension attribute gets a physical source. =====
+def md2db_map item_to_name_map      { map: md.item_to_name,      target: db.dbo.item,      columns: { ItemCode: i_item_sk, ProductName: i_product_name } }
+def md2db_map store_to_name_map     { map: md.store_to_name,     target: db.dbo.store,     columns: { StoreCode: s_store_sk, StoreName: s_store_name } }
+def md2db_map dc_to_name_map        { map: md.dc_to_name,        target: db.dbo.warehouse, columns: { DcCode: w_warehouse_sk, DcName: w_warehouse_name } }
+def md2db_map promo_to_name_map     { map: md.promo_to_name,     target: db.dbo.promotion, columns: { PromoCode: p_promo_sk, PromoName: p_promo_name } }
+def md2db_map reason_to_desc_map    { map: md.reason_to_desc,    target: db.dbo.reason,    columns: { ReasonCode: r_reason_sk, ReasonDesc: r_reason_desc } }
+
+// ===== Customer descriptive/geographic — birthYear off customer; state via the two-hop
+// CustomerCode -> AddressCode (customer.c_current_addr_sk) -> State (customer_address.ca_state),
+// each hop a single-table md2db_map (see dimensions.ttrm for why the chain). =====
+def md2db_map customer_to_birthyear_map { map: md.customer_to_birthyear, target: db.dbo.customer,         columns: { CustomerCode: c_customer_sk, BirthYear: c_birth_year } }
+def md2db_map customer_to_addr_map      { map: md.customer_to_addr,      target: db.dbo.customer,         columns: { CustomerCode: c_customer_sk, AddressCode: c_current_addr_sk } }
+def md2db_map addr_to_state_map         { map: md.addr_to_state,         target: db.dbo.customer_address, columns: { AddressCode: ca_address_sk, State: ca_state } }
