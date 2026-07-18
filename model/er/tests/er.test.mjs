@@ -4,9 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadHartlandProject } from '../../tests/project-harness.mjs';
-
-const ACCEPTED_CODES = new Set(['ttr/package-prefix-divergence', 'ttr/area-redundant-member']);
+import { loadHartlandProject, ACCEPTED_RESIDUAL_CODES } from '../../tests/project-harness.mjs';
 
 // D-5 roster (05-d-ttrm-spec.md) — exactly 19, no D-5-Out entity (time_dim, web_site,
 // web_page, catalog_page, ship_mode, dbgen_version).
@@ -56,7 +54,7 @@ test('T6.3 — no unresolved references anywhere in the project (er/relations/bi
   const offenders = [];
   for (const [file, codes] of project.diagnosticsByFile) {
     for (const code of codes) {
-      if (!ACCEPTED_CODES.has(code)) offenders.push(`${file}: ${code}`);
+      if (!ACCEPTED_RESIDUAL_CODES.has(code)) offenders.push(`${file}: ${code}`);
     }
   }
   assert.deepEqual(offenders, [], `unexpected diagnostics: ${offenders.join('; ')}`);

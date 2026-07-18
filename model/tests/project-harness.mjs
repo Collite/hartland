@@ -13,6 +13,21 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const hartlandRoot = path.resolve(here, '../..');
+
+// Diagnostics every stage's project-wide sweep should treat as expected, not a failure —
+// centralized here so a later stage adding a new accepted residual doesn't silently break
+// an earlier stage's test (each entry says which stage introduced it and why).
+export const ACCEPTED_RESIDUAL_CODES = new Set([
+  // Stage 2.2: the BM-9 kind-directory tree + one flat `package hartland` (no imports
+  // needed anywhere) — see modeler.toml's [packages] comment. Non-suppressible by design,
+  // doesn't block resolution (verified: zero ttr/unresolved-reference project-wide).
+  'ttr/package-prefix-divergence',
+  // Stage 2.2: def area hartland's explicit `entities:` is redundant with its recursive
+  // `packages:` closure — intentional, for readability (info-level).
+  'ttr/area-redundant-member',
+  // Stage 2.3: Product's 4 table-backed maps have no md2db_map yet — that's Stage 2.4.
+  'md/table-map-no-binding',
+]);
 const tatrmanPackages = path.resolve(hartlandRoot, '../tatrman/packages');
 
 const { parseString } = await import(path.join(tatrmanPackages, 'parser/dist/index.js'));

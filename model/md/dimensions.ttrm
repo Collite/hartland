@@ -1,0 +1,52 @@
+package hartland
+
+model md
+
+// Customer, Store, Distribution Centre, Promotion, Return Reason (Stage 2.3 T2/T3) —
+// single-level conformed dimensions, no hierarchy needed (task note: "single-level dims
+// need no hierarchy"). Customer.state binds (Stage 2.4) through the customer_address
+// entity/table via the fact's own addr_sk — a billing-address-at-sale-time join, not
+// customer.c_current_addr_sk — matching how the facts are already wired in
+// model/er/relations.ttrm (a map-mediated attribute, per 15-md-model.md's
+// `Building.code: { via: ..., from: {...} }` pattern), not a direct db column.
+
+def dimension Customer {
+    key: customerCode,
+    attributes: [
+        def attribute customerCode { domain: md.CustomerCode, isKey: true },
+        def attribute state        { domain: md.State },
+        def attribute ageBand      { domain: md.AgeBand }
+    ]
+}
+
+def dimension Store {
+    key: storeCode,
+    attributes: [
+        def attribute storeCode { domain: md.StoreCode, isKey: true },
+        def attribute storeName { domain: md.StoreName }
+    ]
+}
+
+def dimension DistributionCentre {
+    key: dcCode,
+    attributes: [
+        def attribute dcCode { domain: md.DcCode, isKey: true },
+        def attribute dcName { domain: md.DcName }
+    ]
+}
+
+def dimension Promotion {
+    key: promoCode,
+    attributes: [
+        def attribute promoCode { domain: md.PromoCode, isKey: true },
+        def attribute promoName { domain: md.PromoName }
+    ]
+}
+
+def dimension ReturnReason {
+    key: reasonCode,
+    attributes: [
+        def attribute reasonCode { domain: md.ReasonCode, isKey: true },
+        def attribute reasonDesc { domain: md.ReasonDesc }
+    ]
+}

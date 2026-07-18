@@ -38,4 +38,17 @@ remains on every file — `ttr/package-prefix-divergence` — documented in `mod
 **Also:** `date` is a reserved grammar keyword — don't use it as a bare attribute name
 (hit this on `date_dim`/`inventory`; used `cal_date`/`as_of_date` instead). Entity-level
 `aliases:` is deprecated (`ttr/lexicon-legacy-aliases`) — declare a lexicon `term` instead
-(Stage 2.5).
+(Stage 2.5). New accepted-residual diagnostic codes go in
+`model/tests/project-harness.mjs`'s `ACCEPTED_RESIDUAL_CODES` (shared across every stage's
+test file, not copy-pasted per file).
+
+**MD calendar (Stage 2.3 finding):** the v1 calc-map catalog (`docs/features/md/map-
+catalog.md`) ships `yearOfDate` as an EXTRACTION straight from `Day`, not a `Quarter->Year`
+ROLL-UP (no such entry ships in v1 — only `quarterOfMonth` does). So `model/md/calendar.ttrm`
+declares **three** hierarchies sharing the `day` leaf (`calendarMonthly`: day→month→quarter,
+`calendarYearly`: day→year, `calendarWeekly`: day→week) rather than one Day→Month→Quarter→Year
+chain — the pattern `docs/manual/en/15-md-model.md`'s own hierarchy section sanctions ("a
+second hierarchy sharing the day leaf"). The MD "dot-path" drill notation
+(`product.electronics.<class>`) named in the Stage 2.3 task list is unimplemented design-stage
+sugar (`docs/features/md/dot-path-sugar.md`: "brainstorm output... Not yet a contract") — the
+mocked test suite checks hierarchy-level resolution through the real resolver instead.
