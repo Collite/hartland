@@ -52,3 +52,11 @@ second hierarchy sharing the day leaf"). The MD "dot-path" drill notation
 (`product.electronics.<class>`) named in the Stage 2.3 task list is unimplemented design-stage
 sugar (`docs/features/md/dot-path-sugar.md`: "brainstorm output... Not yet a contract") — the
 mocked test suite checks hierarchy-level resolution through the real resolver instead.
+
+**md2db (Stage 2.4 finding):** `md/table-map-no-binding` is `scope: 'document'`
+(`packages/lint/src/rules/md.ts`) — it only looks for an `md2db_map` in the SAME file as
+the `def map`. All 4 Product table-maps ARE bound in `model/binding/md2db.ttrm`, just in a
+different file than `model/md/product.ttrm` where the maps are declared — the rule's own
+docstring says "Phase 3 refines cross-file", so this stays an accepted residual
+(`project-harness.mjs`) even though the binding is complete; real completeness is checked
+directly against the AST in `model/binding/tests/md2db.test.mjs`, not via this diagnostic.

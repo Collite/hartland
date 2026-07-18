@@ -25,6 +25,13 @@ export const ACCEPTED_RESIDUAL_CODES = new Set([
   // Stage 2.2: def area hartland's explicit `entities:` is redundant with its recursive
   // `packages:` closure — intentional, for readability (info-level).
   'ttr/area-redundant-member',
+  // Stage 2.3/2.4: `md/table-map-no-binding` is `scope: 'document'` (packages/lint/src/
+  // rules/md.ts) — it only looks for an `md2db_map` in the SAME file as the `def map`.
+  // Stage 2.4 DOES bind all 4 Product table-maps (model/binding/md2db.ttrm), just in a
+  // different file than model/md/product.ttrm — a known cross-file linter limitation
+  // (the rule's own docstring: "Phase 3 refines cross-file"), not an actual binding gap.
+  // Real completeness is checked directly in md.test.mjs T6.1 against the AST, not via
+  // this diagnostic.
   // Stage 2.3: Product's 4 table-backed maps have no md2db_map yet — that's Stage 2.4.
   'md/table-map-no-binding',
 ]);
