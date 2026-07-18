@@ -1,0 +1,53 @@
+us_state,kraj,kraj_code,obec,psc_prefix
+AK,Hlavní město Praha,PH,Praha,100
+AL,Středočeský kraj,SC,Kladno,272
+AR,Jihočeský kraj,JC,České Budějovice,370
+AZ,Plzeňský kraj,PL,Plzeň,301
+CA,Karlovarský kraj,KV,Karlovy Vary,360
+CO,Ústecký kraj,UL,Ústí nad Labem,400
+CT,Liberecký kraj,LI,Liberec,460
+DC,Královéhradecký kraj,HK,Hradec Králové,500
+DE,Pardubický kraj,PA,Pardubice,530
+FL,Vysočina,VY,Jihlava,586
+GA,Jihomoravský kraj,JM,Brno,602
+HI,Olomoucký kraj,OL,Olomouc,779
+IA,Zlínský kraj,ZL,Zlín,760
+ID,Moravskoslezský kraj,MS,Ostrava,702
+IL,Hlavní město Praha,PH,Praha,100
+IN,Středočeský kraj,SC,Kladno,272
+KS,Jihočeský kraj,JC,České Budějovice,370
+KY,Plzeňský kraj,PL,Plzeň,301
+LA,Karlovarský kraj,KV,Karlovy Vary,360
+MA,Ústecký kraj,UL,Ústí nad Labem,400
+MD,Liberecký kraj,LI,Liberec,460
+ME,Královéhradecký kraj,HK,Hradec Králové,500
+MI,Pardubický kraj,PA,Pardubice,530
+MN,Vysočina,VY,Jihlava,586
+MO,Jihomoravský kraj,JM,Brno,602
+MS,Olomoucký kraj,OL,Olomouc,779
+MT,Zlínský kraj,ZL,Zlín,760
+NC,Moravskoslezský kraj,MS,Ostrava,702
+ND,Hlavní město Praha,PH,Praha,100
+NE,Středočeský kraj,SC,Kladno,272
+NH,Jihočeský kraj,JC,České Budějovice,370
+NJ,Plzeňský kraj,PL,Plzeň,301
+NM,Karlovarský kraj,KV,Karlovy Vary,360
+NV,Ústecký kraj,UL,Ústí nad Labem,400
+NY,Liberecký kraj,LI,Liberec,460
+OH,Královéhradecký kraj,HK,Hradec Králové,500
+OK,Pardubický kraj,PA,Pardubice,530
+OR,Vysočina,VY,Jihlava,586
+PA,Jihomoravský kraj,JM,Brno,602
+RI,Olomoucký kraj,OL,Olomouc,779
+SC,Zlínský kraj,ZL,Zlín,760
+SD,Moravskoslezský kraj,MS,Ostrava,702
+TN,Hlavní město Praha,PH,Praha,100
+TX,Středočeský kraj,SC,Kladno,272
+UT,Jihočeský kraj,JC,České Budějovice,370
+VA,Plzeňský kraj,PL,Plzeň,301
+VT,Karlovarský kraj,KV,Karlovy Vary,360
+WA,Ústecký kraj,UL,Ústí nad Labem,400
+WI,Liberecký kraj,LI,Liberec,460
+WV,Královéhradecký kraj,HK,Hradec Králové,500
+WY,Pardubický kraj,PA,Pardubice,530
+(null),Neurčeno,XX,Neurčeno,000
