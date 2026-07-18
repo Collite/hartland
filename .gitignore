@@ -4,6 +4,12 @@ node_modules/
 .modeler/
 *.log
 
+# Python (data/ generators and their test suites)
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
 # data build scratch (dumps live in SeaweedFS tpcds-staging/hartland/{us,cz}/, not in git)
 data/**/*.dump
 data/**/*.sql.gz

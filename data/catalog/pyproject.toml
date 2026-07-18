@@ -1,0 +1,20 @@
+[project]
+name = "hartland-catalog"
+version = "0.1.0"
+description = "Deterministic bilingual per-item catalog generator for the Hartland demo (Stage 1.1)"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

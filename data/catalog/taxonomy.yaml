@@ -1,0 +1,987 @@
+# Hartland demo — curated product taxonomy (BM-4, Stage 1.1 T1).
+# 10 TPC-DS categories -> classes -> brands -> manufacturers -> product lines, en+cs.
+# Category/class keys are the exact live i_category/i_class strings (category assignment invariant).
+# 1-3 hero brands per category (hero: true) per Q-BM-2b -- fictional, on-screen-credible.
+categories:
+  Books:
+    cs: Knihy
+    classes:
+    - key: arts
+      en: Arts
+      cs: Umění
+      brands: &id001
+      - en: Bellwood
+        cs: Bellwood
+        hero: true
+        manufact:
+          en: Bellwood Publishing
+          cs: Bellwood Nakladatelství
+      - en: Fernglade
+        cs: Fernglade
+        hero: false
+        manufact:
+          en: Fernglade Books
+          cs: Fernglade Knihy
+      product_lines:
+      - en: Art Book
+        cs: Umělecká kniha
+    - key: business
+      en: Business
+      cs: Byznys
+      brands: *id001
+      product_lines:
+      - en: Business Guide
+        cs: Byznys příručka
+    - key: computers
+      en: Computers
+      cs: Počítače
+      brands: *id001
+      product_lines:
+      - en: Tech Manual
+        cs: Technická příručka
+    - key: cooking
+      en: Cooking
+      cs: Vaření
+      brands: *id001
+      product_lines:
+      - en: Cookbook
+        cs: Kuchařka
+    - key: entertainments
+      en: Entertainment
+      cs: Zábava
+      brands: *id001
+      product_lines:
+      - en: Entertainment Guide
+        cs: Zábavní kniha
+    - key: fiction
+      en: Fiction
+      cs: Beletrie
+      brands: *id001
+      product_lines:
+      - en: Novel
+        cs: Román
+    - key: history
+      en: History
+      cs: Historie
+      brands: *id001
+      product_lines:
+      - en: History Book
+        cs: Historická kniha
+    - key: home repair
+      en: Home Repair
+      cs: Domácí opravy
+      brands: *id001
+      product_lines:
+      - en: Repair Manual
+        cs: Opravárenská příručka
+    - key: mystery
+      en: Mystery
+      cs: Detektivky
+      brands: *id001
+      product_lines:
+      - en: Mystery Novel
+        cs: Detektivka
+    - key: parenting
+      en: Parenting
+      cs: Rodičovství
+      brands: *id001
+      product_lines:
+      - en: Parenting Guide
+        cs: Rodičovská příručka
+    - key: reference
+      en: Reference
+      cs: Reference
+      brands: *id001
+      product_lines:
+      - en: Reference Guide
+        cs: Referenční příručka
+    - key: romance
+      en: Romance
+      cs: Romány
+      brands: *id001
+      product_lines:
+      - en: Romance Novel
+        cs: Milostný román
+    - key: science
+      en: Science
+      cs: Věda
+      brands: *id001
+      product_lines:
+      - en: Science Book
+        cs: Vědecká kniha
+    - key: self-help
+      en: Self-Help
+      cs: Svépomoc
+      brands: *id001
+      product_lines:
+      - en: Self-Help Guide
+        cs: Kniha svépomoci
+    - key: sports
+      en: Sports
+      cs: Sport
+      brands: *id001
+      product_lines:
+      - en: Sports Almanac
+        cs: Sportovní almanach
+    - key: travel
+      en: Travel
+      cs: Cestování
+      brands: *id001
+      product_lines:
+      - en: Travel Guide
+        cs: Cestovní průvodce
+    containers:
+    - en: Paperback
+      cs: Brožovaná vazba
+    - en: Hardcover
+      cs: Vázaná kniha
+    sizes:
+    - en: pocket
+      cs: kapesní
+    - en: standard
+      cs: standardní
+    - en: large-print
+      cs: velký tisk
+  Children:
+    cs: Dětské
+    classes:
+    - key: infants
+      en: Infants
+      cs: Kojenecké
+      brands: &id002
+      - en: Bramblewick
+        cs: Bramblewick
+        hero: true
+        manufact:
+          en: Bramblewick Kids
+          cs: Bramblewick Kids s.r.o.
+      - en: Pippet
+        cs: Pippet
+        hero: false
+        manufact:
+          en: Pippet Textiles
+          cs: Pippet Textil
+      product_lines:
+      - en: Onesie
+        cs: Body
+    - key: newborn
+      en: Newborn
+      cs: Novorozenecké
+      brands: *id002
+      product_lines:
+      - en: Layette Set
+        cs: Kojenecká souprava
+    - key: school-uniforms
+      en: School Uniforms
+      cs: Školní uniformy
+      brands: *id002
+      product_lines:
+      - en: Uniform Set
+        cs: Sada uniformy
+    - key: toddlers
+      en: Toddlers
+      cs: Batolecí
+      brands: *id002
+      product_lines:
+      - en: Playsuit
+        cs: Overal
+    containers:
+    - en: Poly Bag
+      cs: Fólie
+    - en: Gift Box
+      cs: Dárková krabice
+    sizes:
+    - en: newborn
+      cs: novorozenecká
+    - en: infant
+      cs: kojenecká
+    - en: toddler
+      cs: batolecí
+  Electronics:
+    cs: Elektronika
+    classes:
+    - key: audio
+      en: Audio
+      cs: Audio
+      brands: &id003
+      - en: Voltaic
+        cs: Voltaic
+        hero: true
+        manufact:
+          en: Voltaic Corp
+          cs: Voltaic s.r.o.
+      - en: Kentaur
+        cs: Kentaur
+        hero: false
+        manufact:
+          en: Kentaur Electronics
+          cs: Kentaur Elektronika
+      product_lines:
+      - en: Headphones
+        cs: Sluchátka
+      - en: Speaker
+        cs: Reproduktor
+    - key: automotive
+      en: Automotive
+      cs: Autoelektronika
+      brands: *id003
+      product_lines:
+      - en: Car Charger
+        cs: Autonabíječka
+    - key: camcorders
+      en: Camcorders
+      cs: Kamery
+      brands: *id003
+      product_lines:
+      - en: Camcorder
+        cs: Kamera
+    - key: cameras
+      en: Cameras
+      cs: Fotoaparáty
+      brands: *id003
+      product_lines:
+      - en: Camera
+        cs: Fotoaparát
+    - key: disk drives
+      en: Disk Drives
+      cs: Pevné disky
+      brands: *id003
+      product_lines:
+      - en: Hard Drive
+        cs: Pevný disk
+    - key: dvd/vcr players
+      en: DVD/VCR Players
+      cs: DVD/VHS přehrávače
+      brands: *id003
+      product_lines:
+      - en: DVD Player
+        cs: DVD přehrávač
+    - key: karoke
+      en: Karaoke
+      cs: Karaoke
+      brands: *id003
+      product_lines:
+      - en: Karaoke Machine
+        cs: Karaoke systém
+    - key: memory
+      en: Memory
+      cs: Paměti
+      brands: *id003
+      product_lines:
+      - en: Memory Card
+        cs: Paměťová karta
+    - key: monitors
+      en: Monitors
+      cs: Monitory
+      brands: *id003
+      product_lines:
+      - en: Monitor
+        cs: Monitor
+    - key: musical
+      en: Musical
+      cs: Hudební nástroje
+      brands: *id003
+      product_lines:
+      - en: Keyboard
+        cs: Klávesy
+    - key: personal
+      en: Personal Electronics
+      cs: Osobní elektronika
+      brands: *id003
+      product_lines:
+      - en: MP3 Player
+        cs: MP3 přehrávač
+    - key: portable
+      en: Portable Electronics
+      cs: Přenosná elektronika
+      brands: *id003
+      product_lines:
+      - en: Portable Radio
+        cs: Přenosné rádio
+    - key: scanners
+      en: Scanners
+      cs: Skenery
+      brands: *id003
+      product_lines:
+      - en: Scanner
+        cs: Skener
+    - key: stereo
+      en: Stereo
+      cs: Stereo systémy
+      brands: *id003
+      product_lines:
+      - en: Stereo System
+        cs: Stereo souprava
+    - key: televisions
+      en: Televisions
+      cs: Televize
+      brands: *id003
+      product_lines:
+      - en: Television
+        cs: Televizor
+    - key: wireless
+      en: Wireless
+      cs: Bezdrátová elektronika
+      brands: *id003
+      product_lines:
+      - en: Wireless Router
+        cs: Bezdrátový router
+    containers:
+    - en: Box
+      cs: Krabice
+    - en: Case
+      cs: Pouzdro
+    - en: Blister Pack
+      cs: Blistr
+    sizes:
+    - en: compact
+      cs: kompaktní
+    - en: standard
+      cs: standardní
+    - en: pro
+      cs: profesionální
+  Home:
+    cs: Domácnost
+    classes:
+    - key: accent
+      en: Accent
+      cs: Doplňky
+      brands: &id004
+      - en: Marrowgate
+        cs: Marrowgate
+        hero: true
+        manufact:
+          en: Marrowgate Home
+          cs: Marrowgate Domov
+      - en: Thistlecroft
+        cs: Thistlecroft
+        hero: false
+        manufact:
+          en: Thistlecroft Living
+          cs: Thistlecroft Bydlení
+      product_lines:
+      - en: Accent Piece
+        cs: Dekorační doplněk
+    - key: bathroom
+      en: Bathroom
+      cs: Koupelna
+      brands: *id004
+      product_lines:
+      - en: Bath Set
+        cs: Koupelnová sada
+    - key: bedding
+      en: Bedding
+      cs: Ložní prádlo
+      brands: *id004
+      product_lines:
+      - en: Bedding Set
+        cs: Souprava povlečení
+    - key: blinds/shades
+      en: Blinds/Shades
+      cs: Žaluzie/stínidla
+      brands: *id004
+      product_lines:
+      - en: Roller Blind
+        cs: Roleta
+    - key: curtains/drapes
+      en: Curtains/Drapes
+      cs: Závěsy
+      brands: *id004
+      product_lines:
+      - en: Curtain Panel
+        cs: Závěsový panel
+    - key: decor
+      en: Decor
+      cs: Dekorace
+      brands: *id004
+      product_lines:
+      - en: Decor Piece
+        cs: Dekorace
+    - key: flatware
+      en: Flatware
+      cs: Příbory
+      brands: *id004
+      product_lines:
+      - en: Flatware Set
+        cs: Sada příborů
+    - key: furniture
+      en: Furniture
+      cs: Nábytek
+      brands: *id004
+      product_lines:
+      - en: Furniture Piece
+        cs: Kus nábytku
+    - key: glassware
+      en: Glassware
+      cs: Sklo
+      brands: *id004
+      product_lines:
+      - en: Glassware Set
+        cs: Sada skla
+    - key: kids
+      en: Kids
+      cs: Dětský pokoj
+      brands: *id004
+      product_lines:
+      - en: Kids Decor
+        cs: Dětská dekorace
+    - key: lighting
+      en: Lighting
+      cs: Osvětlení
+      brands: *id004
+      product_lines:
+      - en: Lamp
+        cs: Lampa
+    - key: mattresses
+      en: Mattresses
+      cs: Matrace
+      brands: *id004
+      product_lines:
+      - en: Mattress
+        cs: Matrace
+    - key: paint
+      en: Paint
+      cs: Barvy
+      brands: *id004
+      product_lines:
+      - en: Paint Can
+        cs: Plechovka barvy
+    - key: rugs
+      en: Rugs
+      cs: Koberce
+      brands: *id004
+      product_lines:
+      - en: Rug
+        cs: Koberec
+    - key: tables
+      en: Tables
+      cs: Stoly
+      brands: *id004
+      product_lines:
+      - en: Table
+        cs: Stůl
+    - key: wallpaper
+      en: Wallpaper
+      cs: Tapety
+      brands: *id004
+      product_lines:
+      - en: Wallpaper Roll
+        cs: Role tapety
+    containers:
+    - en: Box
+      cs: Krabice
+    - en: Roll
+      cs: Role
+    - en: Set
+      cs: Sada
+    sizes:
+    - en: small
+      cs: malé
+    - en: medium
+      cs: střední
+    - en: large
+      cs: velké
+  Jewelry:
+    cs: Šperky
+    classes:
+    - key: birdal
+      en: Bridal
+      cs: Svatební
+      brands: &id005
+      - en: Auravelle
+        cs: Auravelle
+        hero: true
+        manufact:
+          en: Auravelle Jewelers
+          cs: Auravelle Klenotnictví
+      - en: Sablewynn
+        cs: Sablewynn
+        hero: false
+        manufact:
+          en: Sablewynn & Co.
+          cs: Sablewynn & spol.
+      product_lines:
+      - en: Bridal Set
+        cs: Svatební sada
+    - key: bracelets
+      en: Bracelets
+      cs: Náramky
+      brands: *id005
+      product_lines:
+      - en: Bracelet
+        cs: Náramek
+    - key: consignment
+      en: Consignment
+      cs: Komisní
+      brands: *id005
+      product_lines:
+      - en: Consignment Piece
+        cs: Komisní kus
+    - key: costume
+      en: Costume
+      cs: Bižuterie
+      brands: *id005
+      product_lines:
+      - en: Costume Piece
+        cs: Bižuterie
+    - key: custom
+      en: Custom
+      cs: Zakázkové
+      brands: *id005
+      product_lines:
+      - en: Custom Piece
+        cs: Zakázkový šperk
+    - key: diamonds
+      en: Diamonds
+      cs: Diamanty
+      brands: *id005
+      product_lines:
+      - en: Diamond Piece
+        cs: Diamantový šperk
+    - key: earings
+      en: Earrings
+      cs: Náušnice
+      brands: *id005
+      product_lines:
+      - en: Earrings
+        cs: Náušnice
+    - key: estate
+      en: Estate
+      cs: Starožitné
+      brands: *id005
+      product_lines:
+      - en: Estate Piece
+        cs: Starožitný šperk
+    - key: gold
+      en: Gold
+      cs: Zlaté
+      brands: *id005
+      product_lines:
+      - en: Gold Piece
+        cs: Zlatý šperk
+    - key: jewelry boxes
+      en: Jewelry Boxes
+      cs: Šperkovnice
+      brands: *id005
+      product_lines:
+      - en: Jewelry Box
+        cs: Šperkovnice
+    - key: loose stones
+      en: Loose Stones
+      cs: Volné kameny
+      brands: *id005
+      product_lines:
+      - en: Loose Stone
+        cs: Volný kámen
+    - key: mens watch
+      en: Men's Watch
+      cs: Pánské hodinky
+      brands: *id005
+      product_lines:
+      - en: Watch
+        cs: Hodinky
+    - key: pendants
+      en: Pendants
+      cs: Přívěsky
+      brands: *id005
+      product_lines:
+      - en: Pendant
+        cs: Přívěsek
+    - key: rings
+      en: Rings
+      cs: Prsteny
+      brands: *id005
+      product_lines:
+      - en: Ring
+        cs: Prsten
+    - key: semi-precious
+      en: Semi-Precious
+      cs: Polodrahokamy
+      brands: *id005
+      product_lines:
+      - en: Semi-Precious Piece
+        cs: Šperk s polodrahokamem
+    - key: womens watch
+      en: Women's Watch
+      cs: Dámské hodinky
+      brands: *id005
+      product_lines:
+      - en: Watch
+        cs: Hodinky
+    containers:
+    - en: Jewelry Box
+      cs: Šperkovnice
+    - en: Velvet Pouch
+      cs: Sametový sáček
+    sizes:
+    - en: petite
+      cs: malá
+    - en: standard
+      cs: standardní
+    - en: statement
+      cs: výrazná
+  Men:
+    cs: Pánské
+    classes:
+    - key: accessories
+      en: Accessories
+      cs: Doplňky
+      brands: &id006
+      - en: Ironclad
+        cs: Ironclad
+        hero: true
+        manufact:
+          en: Ironclad Apparel
+          cs: Ironclad Oděvy
+      - en: Rowantree
+        cs: Rowantree
+        hero: false
+        manufact:
+          en: Rowantree Menswear
+          cs: Rowantree Pánská móda
+      product_lines:
+      - en: Belt
+        cs: Opasek
+    - key: pants
+      en: Pants
+      cs: Kalhoty
+      brands: *id006
+      product_lines:
+      - en: Pants
+        cs: Kalhoty
+    - key: shirts
+      en: Shirts
+      cs: Košile
+      brands: *id006
+      product_lines:
+      - en: Shirt
+        cs: Košile
+    - key: sports-apparel
+      en: Sports Apparel
+      cs: Sportovní oblečení
+      brands: *id006
+      product_lines:
+      - en: Track Jacket
+        cs: Sportovní bunda
+    containers:
+    - en: Poly Bag
+      cs: Fólie
+    - en: Garment Box
+      cs: Krabice na oděv
+    sizes:
+    - en: S
+      cs: S
+    - en: M
+      cs: M
+    - en: L
+      cs: L
+    - en: XL
+      cs: XL
+  Music:
+    cs: Hudba
+    classes:
+    - key: classical
+      en: Classical
+      cs: Klasická hudba
+      brands: &id007
+      - en: Lonewave
+        cs: Lonewave
+        hero: true
+        manufact:
+          en: Lonewave Records
+          cs: Lonewave Records
+      - en: Cinderpath
+        cs: Cinderpath
+        hero: false
+        manufact:
+          en: Cinderpath Music
+          cs: Cinderpath Music
+      product_lines:
+      - en: Classical Album
+        cs: Klasické album
+    - key: country
+      en: Country
+      cs: Country hudba
+      brands: *id007
+      product_lines:
+      - en: Country Album
+        cs: Country album
+    - key: pop
+      en: Pop
+      cs: Pop hudba
+      brands: *id007
+      product_lines:
+      - en: Pop Album
+        cs: Pop album
+    - key: rock
+      en: Rock
+      cs: Rocková hudba
+      brands: *id007
+      product_lines:
+      - en: Rock Album
+        cs: Rockové album
+    containers:
+    - en: Jewel Case
+      cs: Obal na CD
+    - en: Digipak
+      cs: Digipack
+    sizes:
+    - en: single
+      cs: singl
+    - en: standard
+      cs: standardní
+    - en: deluxe
+      cs: deluxe
+  Shoes:
+    cs: Obuv
+    classes:
+    - key: athletic
+      en: Athletic
+      cs: Sportovní obuv
+      brands: &id008
+      - en: Stridewell
+        cs: Stridewell
+        hero: true
+        manufact:
+          en: Stridewell Footwear
+          cs: Stridewell Obuv
+      - en: Farrow
+        cs: Farrow
+        hero: false
+        manufact:
+          en: Farrow Shoe Co.
+          cs: Farrow Obuvnictví
+      product_lines:
+      - en: Running Shoe
+        cs: Běžecká bota
+    - key: kids
+      en: Kids
+      cs: Dětská obuv
+      brands: *id008
+      product_lines:
+      - en: Kids Shoe
+        cs: Dětská bota
+    - key: mens
+      en: Men's
+      cs: Pánská obuv
+      brands: *id008
+      product_lines:
+      - en: Men's Shoe
+        cs: Pánská bota
+    - key: womens
+      en: Women's
+      cs: Dámská obuv
+      brands: *id008
+      product_lines:
+      - en: Women's Shoe
+        cs: Dámská bota
+    containers:
+    - en: Shoe Box
+      cs: Krabice na boty
+    - en: Dust Bag
+      cs: Prachový sáček
+    sizes:
+    - en: small
+      cs: malé
+    - en: medium
+      cs: střední
+    - en: large
+      cs: velké
+  Sports:
+    cs: Sport
+    classes:
+    - key: archery
+      en: Archery
+      cs: Lukostřelba
+      brands: &id009
+      - en: Summitline
+        cs: Summitline
+        hero: true
+        manufact:
+          en: Summitline Gear
+          cs: Summitline Vybavení
+      - en: Redridge
+        cs: Redridge
+        hero: false
+        manufact:
+          en: Redridge Sporting Goods
+          cs: Redridge Sportovní potřeby
+      product_lines:
+      - en: Bow
+        cs: Luk
+    - key: athletic shoes
+      en: Athletic Shoes
+      cs: Sportovní obuv
+      brands: *id009
+      product_lines:
+      - en: Athletic Shoe
+        cs: Sportovní bota
+    - key: baseball
+      en: Baseball
+      cs: Baseball
+      brands: *id009
+      product_lines:
+      - en: Baseball Glove
+        cs: Baseballová rukavice
+    - key: basketball
+      en: Basketball
+      cs: Basketbal
+      brands: *id009
+      product_lines:
+      - en: Basketball
+        cs: Basketbalový míč
+    - key: camping
+      en: Camping
+      cs: Kempování
+      brands: *id009
+      product_lines:
+      - en: Tent
+        cs: Stan
+    - key: fishing
+      en: Fishing
+      cs: Rybaření
+      brands: *id009
+      product_lines:
+      - en: Fishing Rod
+        cs: Rybářský prut
+    - key: fitness
+      en: Fitness
+      cs: Fitness
+      brands: *id009
+      product_lines:
+      - en: Yoga Mat
+        cs: Podložka na jógu
+    - key: football
+      en: Football
+      cs: Fotbal
+      brands: *id009
+      product_lines:
+      - en: Football
+        cs: Fotbalový míč
+    - key: golf
+      en: Golf
+      cs: Golf
+      brands: *id009
+      product_lines:
+      - en: Golf Club
+        cs: Golfová hůl
+    - key: guns
+      en: Guns
+      cs: Zbraně
+      brands: *id009
+      product_lines:
+      - en: Air Rifle
+        cs: Vzduchovka
+    - key: hockey
+      en: Hockey
+      cs: Hokej
+      brands: *id009
+      product_lines:
+      - en: Hockey Stick
+        cs: Hokejka
+    - key: optics
+      en: Optics
+      cs: Optika
+      brands: *id009
+      product_lines:
+      - en: Binoculars
+        cs: Dalekohled
+    - key: outdoor
+      en: Outdoor
+      cs: Outdoor vybavení
+      brands: *id009
+      product_lines:
+      - en: Backpack
+        cs: Batoh
+    - key: pools
+      en: Pools
+      cs: Bazény
+      brands: *id009
+      product_lines:
+      - en: Pool Float
+        cs: Nafukovací lehátko
+    - key: sailing
+      en: Sailing
+      cs: Plachtění
+      brands: *id009
+      product_lines:
+      - en: Sailing Gear
+        cs: Plachtařské vybavení
+    - key: tennis
+      en: Tennis
+      cs: Tenis
+      brands: *id009
+      product_lines:
+      - en: Tennis Racket
+        cs: Tenisová raketa
+    containers:
+    - en: Box
+      cs: Krabice
+    - en: Bag
+      cs: Taška
+    - en: Case
+      cs: Pouzdro
+    sizes:
+    - en: small
+      cs: malé
+    - en: medium
+      cs: střední
+    - en: large
+      cs: velké
+  Women:
+    cs: Dámské
+    classes:
+    - key: dresses
+      en: Dresses
+      cs: Šaty
+      brands: &id010
+      - en: Willowmere
+        cs: Willowmere
+        hero: true
+        manufact:
+          en: Willowmere Fashion
+          cs: Willowmere Móda
+      - en: Ashgrove
+        cs: Ashgrove
+        hero: false
+        manufact:
+          en: Ashgrove Studio
+          cs: Ashgrove Studio
+      product_lines:
+      - en: Dress
+        cs: Šaty
+    - key: fragrances
+      en: Fragrances
+      cs: Parfémy
+      brands: *id010
+      product_lines:
+      - en: Fragrance
+        cs: Parfém
+    - key: maternity
+      en: Maternity
+      cs: Těhotenské
+      brands: *id010
+      product_lines:
+      - en: Maternity Wear
+        cs: Těhotenské oblečení
+    - key: swimwear
+      en: Swimwear
+      cs: Plavky
+      brands: *id010
+      product_lines:
+      - en: Swimsuit
+        cs: Plavky
+    containers:
+    - en: Garment Box
+      cs: Krabice na oděv
+    - en: Poly Bag
+      cs: Fólie
+    sizes:
+    - en: XS
+      cs: XS
+    - en: S
+      cs: S
+    - en: M
+      cs: M
+    - en: L
+      cs: L
