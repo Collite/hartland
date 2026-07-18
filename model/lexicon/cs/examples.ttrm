@@ -1,0 +1,20 @@
+package hartland
+
+model lexicon locale cs
+
+// Czech twins of en/examples.ttrm — same `for:` targets, Czech question text.
+
+def example ex_marketplace_yoy_cs {
+    for: md.cubelet.marketplaceSales
+    text: "Jak se vyvíjely tržby z tržiště v roce 2025?"
+}
+
+def example ex_stockout_cs {
+    for: md.cubelet.inventory
+    text: "Které položky nebyly skladem v Brno DC v říjnu 2025?"
+}
+
+def example ex_returns_by_reason_cs {
+    for: md.cubelet.catalogReturns
+    text: "Jaká je naše míra vrácení podle kanálu?"
+}

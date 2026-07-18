@@ -1,0 +1,24 @@
+package hartland
+
+model lexicon locale cs
+
+// D-6 channel vocabulary, Czech forms — the SAME `for:` targets as en/channels.ttrm (the
+// "one model, two locales" invariant Stage 2.5 T5/T6 check).
+
+def term marketplace_channel_cs {
+    description: "tržiště synonyma"
+    for: er.entity.catalog_sales
+    forms: ["tržiště", "třetí strana", "3P"]
+}
+
+def term web_channel_cs {
+    description: "web synonyma"
+    for: er.entity.web_sales
+    forms: ["web", "online", "e-shop"]
+}
+
+def term store_channel_cs {
+    description: "prodejny synonyma"
+    for: er.entity.store_sales
+    forms: ["prodejny", "kamenné prodejny", "obchody"]
+}

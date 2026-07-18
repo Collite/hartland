@@ -1,0 +1,22 @@
+package hartland
+
+model lexicon locale en
+
+// A handful of example seeds that exercise resolution now (T1) — the full example_question
+// rosters for both Shems land in Stage 2.6; these overlap deliberately with the D-5 spec's
+// rehearsed beats (05-d-ttrm-spec.md's golem-hartland example_questions).
+
+def example ex_marketplace_yoy {
+    for: md.cubelet.marketplaceSales
+    text: "How did Marketplace revenue develop in 2025?"
+}
+
+def example ex_stockout {
+    for: md.cubelet.inventory
+    text: "Which items were out of stock at Memphis DC in October 2025?"
+}
+
+def example ex_returns_by_reason {
+    for: md.cubelet.catalogReturns
+    text: "What is our return rate by channel?"
+}

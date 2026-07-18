@@ -14,6 +14,10 @@ model md
 // enforces at the row level — live-DB verification of the rollup's actual consistency is
 // a Phase 3 H3 concern, not a Stage 2.3 blocker (mocked/structural only here).
 
+// categoryCode's physical value (i_category) is the SAME stable English string on both
+// hartland_us and hartland_cz (Phase 1 catalog generator kept the category code
+// locale-invariant; only class/brand/product_name are localized text) — so it's the code
+// valueLabels keys on, per data/catalog/value-labels.json "category" group (Stage 2.5 T3).
 def dimension Product {
     key: itemCode,
     attributes: [
@@ -22,7 +26,21 @@ def dimension Product {
         def attribute classCode        { domain: md.ClassCode },
         def attribute brandCode        { domain: md.BrandCode },
         def attribute manufacturerCode { domain: md.ManufacturerCode },
-        def attribute categoryCode     { domain: md.CategoryCode }
+        def attribute categoryCode {
+            domain: md.CategoryCode,
+            valueLabels: {
+                "Books": { en: "Books", cs: "Knihy" },
+                "Children": { en: "Children", cs: "Dětské" },
+                "Electronics": { en: "Electronics", cs: "Elektronika" },
+                "Home": { en: "Home", cs: "Domácnost" },
+                "Jewelry": { en: "Jewelry", cs: "Šperky" },
+                "Men": { en: "Men", cs: "Pánské" },
+                "Music": { en: "Music", cs: "Hudba" },
+                "Shoes": { en: "Shoes", cs: "Obuv" },
+                "Sports": { en: "Sports", cs: "Sport" },
+                "Women": { en: "Women", cs: "Dámské" }
+            }
+        }
     ],
     hierarchies: [productDrill]
 }

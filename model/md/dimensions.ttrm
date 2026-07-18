@@ -27,10 +27,23 @@ def dimension Store {
     ]
 }
 
+// dcCode's physical value is the warehouse_sk (see md2db.ttrm: DistributionCentre.dcCode
+// binds to *_warehouse_sk) — valueLabels keyed on the sk, per Phase 1's
+// data/catalog/value-labels.json "dc" group (Stage 2.5 T3).
 def dimension DistributionCentre {
     key: dcCode,
     attributes: [
-        def attribute dcCode { domain: md.DcCode, isKey: true },
+        def attribute dcCode {
+            domain: md.DcCode,
+            isKey: true,
+            valueLabels: {
+                "5": { en: "Memphis DC", cs: "Brno DC" },
+                "1": { en: "Columbus DC", cs: "Praha DC" },
+                "2": { en: "Dallas DC", cs: "Ostrava DC" },
+                "3": { en: "Reno DC", cs: "Plzeň DC" },
+                "4": { en: "Allentown DC", cs: "Hradec Králové DC" }
+            }
+        },
         def attribute dcName { domain: md.DcName }
     ]
 }
@@ -43,10 +56,54 @@ def dimension Promotion {
     ]
 }
 
+// reasonCode's physical value is r_reason_sk (see md2db.ttrm) — valueLabels keyed on the
+// sk, all 35 (data/catalog/value-labels.json "reason" group). sk 3 is the isolated
+// "Nedorazilo včas" / "Did not get it on time" late-delivery signal (S3/S-9).
 def dimension ReturnReason {
     key: reasonCode,
     attributes: [
-        def attribute reasonCode { domain: md.ReasonCode, isKey: true },
+        def attribute reasonCode {
+            domain: md.ReasonCode,
+            isKey: true,
+            valueLabels: {
+                "1": { en: "Package was damaged", cs: "Balík byl poškozen" },
+                "2": { en: "Stopped working", cs: "Přestalo fungovat" },
+                "3": { en: "Did not get it on time", cs: "Nedorazilo včas" },
+                "4": { en: "Not the product that was ordred", cs: "Nebyl to objednaný produkt" },
+                "5": { en: "Parts missing", cs: "Chybí díly" },
+                "6": { en: "Does not work with a product that I have", cs: "Nefunguje s produktem, který mám" },
+                "7": { en: "Gift exchange", cs: "Výměna dárku" },
+                "8": { en: "Did not like the color", cs: "Nelíbila se mi barva" },
+                "9": { en: "Did not like the model", cs: "Nelíbil se mi model" },
+                "10": { en: "Did not like the make", cs: "Nelíbila se mi značka" },
+                "11": { en: "Did not like the warranty", cs: "Nelíbila se mi záruka" },
+                "12": { en: "No service location in my area", cs: "V mém okolí není servis" },
+                "13": { en: "Found a better price in a store", cs: "Našel/našla jsem lepší cenu v obchodě" },
+                "14": { en: "Found a better extended warranty in a store", cs: "Lepší prodloužená záruka v obchodě" },
+                "15": { en: "Not working any more", cs: "Přestalo fungovat úplně" },
+                "16": { en: "Did not fit", cs: "Nesedělo to" },
+                "17": { en: "Wrong size", cs: "Špatná velikost" },
+                "18": { en: "Lost my job", cs: "Přišel/přišla jsem o práci" },
+                "19": { en: "unauthoized purchase", cs: "Neautorizovaný nákup" },
+                "20": { en: "duplicate purchase", cs: "Duplicitní nákup" },
+                "21": { en: "its is a boy", cs: "Je to kluk" },
+                "22": { en: "it is a girl", cs: "Je to holka" },
+                "23": { en: "Changed my mind", cs: "Změnil/a jsem názor" },
+                "24": { en: "Found a better price", cs: "Našel/našla jsem lepší cenu" },
+                "25": { en: "Not as pictured", cs: "Neodpovídá popisu" },
+                "26": { en: "Unwanted gift", cs: "Nechtěný dárek" },
+                "27": { en: "Ordered by mistake", cs: "Objednáno omylem" },
+                "28": { en: "No longer needed", cs: "Již nepotřebuji" },
+                "29": { en: "Incompatible with my device", cs: "Nekompatibilní se zařízením" },
+                "30": { en: "Quality not as expected", cs: "Kvalita neodpovídá" },
+                "31": { en: "Duplicate order", cs: "Duplicitní objednávka" },
+                "32": { en: "Missing accessory", cs: "Chybějící příslušenství" },
+                "33": { en: "Damaged packaging", cs: "Poškozený obal" },
+                "34": { en: "Other reason", cs: "Jiný důvod" },
+                "35": { en: "Manufacturer claim", cs: "Reklamace u výrobce" }
+
+            }
+        },
         def attribute reasonDesc { domain: md.ReasonDesc }
     ]
 }

@@ -1,0 +1,35 @@
+package hartland
+
+model lexicon locale en
+
+// D-6 synonym families over the md measures/dimensions (Stage 2.3/2.4 carriers).
+
+def term revenue_term {
+    description: "revenue synonyms"
+    for: md.measure.revenue
+    forms: ["revenue", "sales", "turnover"]
+}
+
+def term return_term {
+    description: "return-rate synonyms"
+    for: md.measure.returnAmount
+    forms: ["returns", "refunds", "RMA", "return rate"]
+}
+
+def term stockout_term {
+    description: "stockout synonyms"
+    for: md.measure.onHandQty
+    forms: ["out of stock", "zero on hand", "stockout", "availability"]
+}
+
+def term product_term {
+    description: "product/SKU synonyms"
+    for: md.dimension.Product
+    forms: ["product", "SKU", "article", "item"]
+}
+
+def term dc_term {
+    description: "distribution center synonyms"
+    for: md.dimension.DistributionCentre
+    forms: ["warehouse", "fulfillment center", "distribution center", "DC"]
+}

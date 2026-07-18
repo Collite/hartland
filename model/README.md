@@ -60,3 +60,16 @@ different file than `model/md/product.ttrm` where the maps are declared — the 
 docstring says "Phase 3 refines cross-file", so this stays an accepted residual
 (`project-harness.mjs`) even though the binding is complete; real completeness is checked
 directly against the AST in `model/binding/tests/md2db.test.mjs`, not via this diagnostic.
+
+**Lexicon (Stage 2.5 finding):** the task list's suggested `model/lexicon/value-labels.ttrm`
+standalone file doesn't match how `valueLabels` actually works — it's a **property on an
+existing `def attribute`** (er or md, both share `attributeProperty` in the grammar), not a
+lexicon-schema construct with a `for:` target. `valueLabels` are attached directly on
+`Product.categoryCode` (`model/md/product.ttrm`), `ReturnReason.reasonCode`, and
+`DistributionCentre.dcCode` (`model/md/dimensions.ttrm`) instead — keyed on whatever the
+physical value actually is (`categoryCode`: the stable English category string, same in
+both worlds; `reasonCode`/`dcCode`: the `*_sk` integer, since `r_reason_desc` is already
+localized per-connection and isn't a stable cross-world key). `desugarLexicon`/`foldId`
+(`@tatrman/semantics`) are real, exported APIs — used directly in
+`model/lexicon/tests/lexicon.test.mjs` for en/cs twin-parity and diacritic-fold checks
+rather than reimplementing that logic.

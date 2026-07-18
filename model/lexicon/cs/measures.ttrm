@@ -1,0 +1,36 @@
+package hartland
+
+model lexicon locale cs
+
+// D-6 synonym families, Czech forms — the SAME `for:` targets as en/measures.ttrm.
+// Diacritics correct per resolution contract §7 (Czech diacritics are contract-observable).
+
+def term revenue_term_cs {
+    description: "tržba synonyma"
+    for: md.measure.revenue
+    forms: ["tržba", "tržby", "obrat", "utržit"]
+}
+
+def term return_term_cs {
+    description: "reklamace synonyma"
+    for: md.measure.returnAmount
+    forms: ["reklamace", "vrácení", "vratky", "míra vrácení"]
+}
+
+def term stockout_term_cs {
+    description: "vyprodáno synonyma"
+    for: md.measure.onHandQty
+    forms: ["vyprodáno", "není skladem", "nulový stav", "dostupnost"]
+}
+
+def term product_term_cs {
+    description: "produkt synonyma"
+    for: md.dimension.Product
+    forms: ["produkt", "zboží", "artikl", "položka"]
+}
+
+def term dc_term_cs {
+    description: "sklad synonyma"
+    for: md.dimension.DistributionCentre
+    forms: ["sklad", "distribuční centrum", "DC"]
+}
