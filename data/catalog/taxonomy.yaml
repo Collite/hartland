@@ -132,9 +132,9 @@ categories:
         cs: Cestovní průvodce
     containers:
     - en: Paperback
-      cs: Brožovaná vazba
+      cs: Brožovaná
     - en: Hardcover
-      cs: Vázaná kniha
+      cs: Vázaná
     sizes:
     - en: pocket
       cs: kapesní
@@ -189,7 +189,7 @@ categories:
     - en: Poly Bag
       cs: Fólie
     - en: Gift Box
-      cs: Dárková krabice
+      cs: Krabice
     sizes:
     - en: newborn
       cs: novorozenecká
@@ -331,7 +331,7 @@ categories:
       cs: Krabice
     - en: Case
       cs: Pouzdro
-    - en: Blister Pack
+    - en: Blister
       cs: Blistr
     sizes:
     - en: compact
@@ -609,10 +609,10 @@ categories:
       - en: Watch
         cs: Hodinky
     containers:
-    - en: Jewelry Box
-      cs: Šperkovnice
-    - en: Velvet Pouch
-      cs: Sametový sáček
+    - en: Jewel Box
+      cs: Krabička
+    - en: Pouch
+      cs: Sáček
     sizes:
     - en: petite
       cs: malá
@@ -666,8 +666,8 @@ categories:
     containers:
     - en: Poly Bag
       cs: Fólie
-    - en: Garment Box
-      cs: Krabice na oděv
+    - en: Garment
+      cs: Krabice
     sizes:
     - en: S
       cs: S
@@ -777,9 +777,9 @@ categories:
         cs: Dámská bota
     containers:
     - en: Shoe Box
-      cs: Krabice na boty
+      cs: Krabice
     - en: Dust Bag
-      cs: Prachový sáček
+      cs: Sáček
     sizes:
     - en: small
       cs: malé
@@ -972,8 +972,8 @@ categories:
       - en: Swimsuit
         cs: Plavky
     containers:
-    - en: Garment Box
-      cs: Krabice na oděv
+    - en: Garment
+      cs: Krabice
     - en: Poly Bag
       cs: Fólie
     sizes:

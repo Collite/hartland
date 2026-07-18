@@ -27,6 +27,15 @@ import yaml
 GENERATOR_VERSION = "1.0.0"
 BASE36_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+# TPC-DS `item` column widths (character(n) — exceeding these fails the UPDATE server-side).
+COLUMN_WIDTHS = {
+    "i_brand": 50,
+    "i_manufact": 50,
+    "i_size": 20,
+    "i_container": 10,
+    "i_product_name": 50,
+}
+
 
 # --------------------------------------------------------------------------- hashing
 
@@ -198,6 +207,20 @@ def build_row(item_row: ItemRow, tax: Taxonomy, locale: str) -> tuple[CatalogPat
 
     i_brand_id = 1000 + (_digest(brand_key, "brand_id") % 9000)
     i_manufact_id = 100 + (_digest(brand["manufact"]["en"], "manufact_id") % 900)
+
+    for field, value in (
+        ("i_brand", brand_name),
+        ("i_manufact", manufact_name),
+        ("i_size", size_name),
+        ("i_container", container_name),
+        ("i_product_name", product_name),
+    ):
+        limit = COLUMN_WIDTHS[field]
+        if len(value) > limit:
+            raise ValueError(
+                f"taxonomy value too long for item.{field} character({limit}): "
+                f"{value!r} ({len(value)} chars) — sk={sk} locale={locale} category={node.category_key} class={node.key}"
+            )
 
     patch = CatalogPatch(
         i_item_sk=sk,
