@@ -12,3 +12,26 @@ Phase 1):
 
 All scripts idempotent + hash-keyed (deterministic). Item keys + category assignments are
 invariants (the seeds key on warehouse×week, not item).
+
+## Disaster-recovery / rebuild recipe (Stage 1.6 T5)
+
+Every world is rebuildable from `tpc-ds-1g` + the committed scripts, each step idempotent or
+snapshot-guarded:
+
+1. `pg_dump tpc-ds-1g` → restore into a fresh DB (US: adopt the standing `hartland`→`hartland_us`
+   rename per Stage 1.2 T1; CZ: `createdb hartland_cz` + restore).
+2. `redate/run-redate.sh <ctx> 23 <db>` (guarded — refuses a second run).
+3. CZ only: `localize-cz/00-widen-money-columns.sql` → `01-geography.sql` → `02-czk-fx.sql`
+   (guarded via `_localize_meta`) → `03-reasons.sql`.
+4. `catalog/us.sql` / `catalog/cz.sql` (idempotent, PK-keyed).
+5. `seed/naming-us.sql` (US only) + `seed/reason-placeholders-fix.sql` (both, `:locale` param) +
+   `seed/02-seed-incident/{s1,s2,s3}-*.sql` (guarded via `_seed_meta` — S2 is genuinely
+   non-idempotent by nature, deletion, so the guard is load-bearing there).
+6. `recon/run-recon.sh dsk <db>` → diff against `data/recon/R0.md`.
+
+**Retained snapshots** (`data/dr-snapshots.md`): the US pre-catalog dump (Stage 1.2 T1) is a
+physical rollback point in `tpcds-staging/hartland/us/`. The CZ pre-seed state was **not**
+separately snapshotted — steps 1–4 above are fully deterministic and idempotent, so the
+pre-seed `hartland_cz` state is reproducible byte-for-byte from `tpc-ds-1g` + the committed
+scripts rather than needing its own physical dump (the fallback this stage's spec explicitly
+allows).
