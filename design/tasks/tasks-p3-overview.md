@@ -35,6 +35,15 @@ Model + agents (`[H]` `model/`, `agents/`) are authored in Phase 2 and **consume
 | **3.4** | The `hartland-query` run-set (both worlds) + repoint the olymp test-contexts + matrix + nightly | plan-cluster **H4**, extended (BM-10 §2.1) | [H][O][K] | [`tasks-p3-s4-run-set-repoint.md`](tasks-p3-s4-run-set-repoint.md) |
 | **3.5** | demo-reset/pre-show for both worlds; E-5 bar 1–7 per world; the twice-unaided DRY RUN; freeze window | plan-cluster **H5**, extended | [O][H] | [`tasks-p3-s5-dry-run-readiness.md`](tasks-p3-s5-dry-run-readiness.md) |
 
+## Phase-3 entry doc — the completeness matrix (Stage 3.0)
+
+**[`p3-completeness-matrix.md`](p3-completeness-matrix.md)** (backed by
+[`p3-completeness-inventory.md`](p3-completeness-inventory.md)) is the requirement→owning-task
+matrix the rest of Phase 3 is checked against — **produced by Stage 3.0, pending Bora sign-off**.
+Headline finding (**X-roster**): the E-3 roster + H3 wiring name services by their pre-rename
+identities; reconcile to current app names before the S3.1 trim and S3.3 wiring. Two orphans
+folded (rehearsal ladder R1–R3 → S3.5 T8; SPLIT probe → S3.4 T6).
+
 ## Pre-flight gates (track; do NOT start H2+ without them — from `plan-cluster.md`, extended)
 
 - [ ] **G1 — MP-4 release tags cut** [K]: the showcase runs **pinned tags only** (E-1). Bring-up (3.1) may

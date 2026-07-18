@@ -54,6 +54,16 @@
   metis (+mcp), iris, iris-bff, themis (+mcp), pythia, hebe, golem (the chart for the golems ApplicationSet).
   `landing` is optional/cosmetic — decide at 3.3, zero-risk either way. Trim the golems appset input:
   `clusters/hartland/golems/` **starts empty** (filled in Stage 3.3); **do NOT** copy bp-dsk's `golem-ucetnictvi`.
+  - **⚠ RECONCILE FIRST (Stage 3.0 X-roster).** The keep/remove names above are the **pre-rename**
+    E-3 roster — `theseus`/`proteus`/`argos`/`kyklop`/`arges`/`ariadne`/`echo`/`kadmos`/`prometheus`
+    **no longer exist** as apps on the live bp-dsk/collite-o1/hartland clusters (constellation
+    renamed; current apps: `dispatch`, `query`, `resolver`, `fuzzy`, `kallimachos`, `kleio`,
+    `veles`, `llm-gateway`, … + survivors `charon`/`metis`/`iris`/`hebe`/`pythia`/`themis`/`golem`/
+    `capabilities-mcp`). Establish the old→new mapping (source: the kantheon service list + the
+    live rosters) and rewrite the keep/remove lists against **current** names before trimming.
+    **Until then the trim is deferred and the full forked roster runs** (64 GB fits it) — the
+    estate is green, so the trim is a footprint optimization, not a correctness gate. See
+    `p3-completeness-matrix.md` (X-roster).
 
 - [ ] **T6 — Set the image policy = pinned (H1.2 T2, D12 per-cluster).**
   NO `hartland` entry in any ImageUpdater CR / disable `sys-image-updater` for this cluster. Every `config.json`

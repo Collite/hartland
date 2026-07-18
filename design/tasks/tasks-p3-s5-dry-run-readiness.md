@@ -78,6 +78,21 @@
   passes in **each** (the cs arc from T5's script). A run that needed a keyboard touch or a spoken clarification the
   docs should answer is a **fail** — fix the gap (fixture/recipe/script) and re-run.
 
+- [ ] **T8 — The rehearsal ladder R1–R3 up to the dry run (07-f §227–229; Stage 3.0 fold).**
+  The ladder that precedes T7's R4 had no owning task. Run it in order, in the delivery locale:
+  - **R1 (table read)** — script only, no cluster; tighten each `[BORA]` framing to ≤3 sentences.
+  - **R2 (beat drills)** — each beat 3× clean on the cluster **+ one deliberately broken run per
+    beat** (kill the pod / drop the plan) to drill its `[FALL]` move until the switch is <15 s with
+    no visible fluster. This is the **L0–L4 fallback rehearsal** — the substantive gap Stage 3.0
+    caught: verbatim-retry (L1), the Rehearsal-dashboard swap (L2), and the recording (L4) are only
+    trustworthy if drilled here.
+  - **R3 (full stopwatch runs)** — per-beat actuals vs the F-4 boxes; on the best run **capture the
+    L2 pins + the completed rehearsal investigation + the L4 recording** (feeds T2's install and
+    T7's capture), and **freeze the narration lines** that reference LooseEnds / tree-variance and
+    the satellite-G "what does Finance see" Q&A (07-f §240 / satellite G-3).
+  R1–R3 gate T7 (R4): the twice-unaided arc is not attempted until the beats and their fallbacks
+  are drilled. See `p3-completeness-matrix.md` (R1–R3, G-3, L1).
+
 ## DONE bar — Phase 3 (from the plan)
 
 - [ ] **demo-ready declared**; **both worlds** served + verified (E-5 1–7 recorded per delivered world).
