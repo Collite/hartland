@@ -1,0 +1,23 @@
+# model/connections.toml — the two Hartland worlds (BM-2). NOT a TTR-M construct: the
+# grammar has no `connection` def and no per-connection currency `unit` on a domain
+# (verified against packages/grammar/src/TTR.g4 — Money is currency-agnostic). This is a
+# repo-level descriptor consumed by Ariadne/Arges at deploy time (Phase 3, plan-cluster.md
+# H3). Both point at the *same* physical model (schema.dbo in modeler.toml) — the two
+# databases are schema-identical (Phase 1); currency is a display fact carried by the
+# lexicon locale (Stage 2.5), not a structural difference.
+
+[[connection]]
+id       = "pg-hartland-us"
+database = "hartland_us"
+dialect  = "postgres"
+schema   = "dbo"     # binds to modeler.toml's [schemas.dbo] handle
+currency = "USD"     # display fact — surfaces via lexicon locale en
+locale   = "en"
+
+[[connection]]
+id       = "pg-hartland-cz"
+database = "hartland_cz"
+dialect  = "postgres"
+schema   = "dbo"
+currency = "CZK"     # display fact — surfaces via lexicon locale cs
+locale   = "cs"

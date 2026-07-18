@@ -1,0 +1,28 @@
+# modeler.toml — project manifest for the Hartland demo model (BM-5/BM-9).
+# Schema per tatrman v4.0 (qname-redesign): named [schemas.<handle>] bindings, not the
+# legacy [schemas] declared/namespaces shape (that form is auto-lifted by
+# `modeler migrate-qnames` — see packages/migrate/src/manifest-lift.ts).
+
+[project]
+name = "hartland"
+version = "0.1.0"
+
+[language]
+preferred = "en"   # default hover/display locale; cs is the second lexicon (Stage 2.5)
+
+[schemas]
+declared = ["db", "er", "md", "binding", "lexicon"]   # model kinds in use (validation input)
+
+[schemas.dbo]
+# One physical schema, shared by both worlds (BM-2 — one model, two connections).
+# The live databases use Postgres schema "public"; "dbo" is kept as the TTR-side handle
+# name for consistency with the tatrman conformance fixtures (db.dbo.<table>.<column>).
+database  = "hartland"
+db-schema = "public"
+dialect   = "postgres"
+
+[defaults]
+schema = "dbo"
+
+[stock]
+load = ["cnc-roles"]   # fact/dimension/structural/master/transaction/bridge vocab

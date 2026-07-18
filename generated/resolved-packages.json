@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "generatedFrom": "hartland",
+  "root": "",
+  "packages": [
+    {
+      "canonicalName": "model.db",
+      "declaredName": "model.db",
+      "nested": true,
+      "directory": "model/db"
+    }
+  ],
+  "entities": [],
+  "areas": []
+}
