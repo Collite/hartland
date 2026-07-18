@@ -73,3 +73,20 @@ localized per-connection and isn't a stable cross-world key). `desugarLexicon`/`
 (`@tatrman/semantics`) are real, exported APIs — used directly in
 `model/lexicon/tests/lexicon.test.mjs` for en/cs twin-parity and diacritic-fold checks
 rather than reimplementing that logic.
+
+**Queries + Shems (Stage 2.6 finding — Phase 2 close):** the `15-query.ttrm` conformance
+fixture's own `search { keywords {...} }` pattern is itself deprecated
+(`ttr/lexicon-legacy-keywords`, RS-32) — none of the 15 `q.hartland.*` queries
+(`model/queries/q_hartland.ttrm`) carry it; Discover-chip triggering rides Stage 2.5's
+lexicon terms instead. There's also no "language: MD"/dot-path query form in the
+grammar, so the "md-derived" drills (#3/#4/#5) are literal SQL against the physical `db`
+layer like every other query, not md dot-paths — consistent with Stage 2.3's dot-path
+finding. All 15 were EXPLAIN-verified against live `hartland_us` (bonus, not part of the
+mocked DONE bar). `agents/hartland.yaml` + both Shem overlays
+(`agents/golem/shems/golem-hartland{,-finance}/shem.yaml`) mirror the real, schema-
+validated `ai-models` agent-def shape and the `golem-ucetnictvi` assembled-Shem
+precedent; checked structurally with `js-yaml` (also borrowed from the sibling tatrman
+checkout — see `agents/tests/shems.test.mjs`).
+
+**Phase 2 is done** — `model/tests/phase2-done.test.mjs` is the single-file roll-up of
+the DONE bar; 53 tests pass across all 6 stages (`just verify-model`).

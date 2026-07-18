@@ -1,0 +1,69 @@
+# Golem-hartland-finance Shem — "Hartland Finance" (F-1/Q-8 addendum, the governance-
+# cameo satellite). Same area, same model, no new data — a narrower preferred-query
+# subset and CFO-only visibility. A second pass through the D-7 onboarding path — itself
+# a talking point (05-d-ttrm-spec.md, Shem overlay #2).
+
+apiVersion: kantheon.shem/v1
+kind: golem-shem
+
+source:
+  repo: hartland
+  agentDef: agents/hartland.yaml   # same agent def as golem-hartland — no new data (F-1)
+  id: hartland
+  label: "Hartland Finance"
+  areas: [hartland]                # same area; the query SUBSET narrowing is this overlay's job
+
+# ── Derived / constant (DO NOT author — shown for reference only) ──
+#   agent_id          golem-hartland-finance
+#   display_name      "Hartland Finance"    (S-6 DomainCard)
+#   agent_kind        AREA_QA
+#   intent_kinds      [PROCEDURAL]
+#   service_endpoint  http://golem-hartland-finance.kantheon.svc.cluster.local:7420
+#   health_check_path /health
+
+overlay:
+  # CFO persona only — structurally unroutable for the category-manager role (B-2alpha
+  # holds: golem-hartland's visibility_roles is kantheon-area-hartland, disjoint from
+  # this). Wired to Dan (US CFO) and the CZ CFO in Keycloak (Phase 3 H3.2).
+  visibility_roles:
+    - kantheon-role-finance
+
+  description_for_router: |
+    Financial analytics for Hartland Stores — returns exposure, revenue rollups.
+
+  # Preferred-query SUBSET (05-d Shem overlay #2): channel_revenue_yoy,
+  # returns_rate_by_channel, + optionally returns_by_reason. Golem reads this to narrow
+  # the pattern_catalog it loads from the full 15 q.hartland.* — NOT a new query set.
+  preferred_query_subset:
+    - channel_revenue_yoy
+    - returns_rate_by_channel
+    - returns_by_reason
+
+  example_questions:
+    en:
+      - "What is our total returns exposure in dollars for 2025?"
+      - "Revenue by channel, 2025 vs 2024?"
+    cs:
+      - "Jaká je celková expozice vrácení v korunách za 2025?"
+      - "Tržby podle kanálu, 2025 vs 2024?"
+
+  # Shared with the main Shem (B-2 gap ammunition) — D-6a stands here too.
+  counter_examples:
+    en:
+      - "What are our supplier contract terms?"
+      - "What is our employee payroll for last month?"
+      - "What was our profit margin last quarter?"   # D-6a — not modeled anywhere
+    cs:
+      - "Jaké máme smluvní podmínky s dodavateli?"
+      - "Jaká byla mzdová agenda za minulý měsíc?"
+      - "Jaká byla naše zisková marže minulé čtvrtletí?"   # D-6a — nemodelováno
+
+  locale_defaults:
+    - locale: en-US
+      greeting: "Hi, how can I help with Hartland Finance today?"
+      date_format: "yyyy-MM-dd"
+      currency: "USD"
+    - locale: cs-CZ
+      greeting: "Dobrý den, jak vám mohu pomoci s Hartland Finance?"
+      date_format: "dd.MM.yyyy"
+      currency: "CZK"

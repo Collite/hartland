@@ -1,0 +1,19 @@
+# Agent "Hartland Analytics" — the ai-models-analog agent def (D-7, Q-10 build-time
+# concretization). Mirrors ai-models' agents/<id>.yaml shape and schema
+# (agents/agent.schema.json in that repo) field-for-field, with apiVersion
+# re-namespaced: this is Kantheon/Collite's own schema instance, not DF Partner's
+# (agents.dfpartner.cz/v1 would misattribute governance to a different org).
+#
+# This deliberately exercises the production onboarding path — model repo -> Ariadne ->
+# assembled Shem — a demo talking point in itself (05-d-ttrm-spec.md "The three layers").
+
+apiVersion: agents.kantheon/v1
+kind: golem
+id: hartland
+label: "Hartland Analytics"
+enabled: true
+environments: [test]
+shem:
+  # `def area hartland` (model/er/area.ttrm) resolves to the single flat `hartland`
+  # package (Stage 2.2's packaging finding — one package, not per-kind-dir packages).
+  areas: [hartland]

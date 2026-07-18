@@ -1,0 +1,91 @@
+# Golem-hartland Shem — "Hartland Analytics" (D-7, S-6). Mirrors the golem-ucetnictvi
+# precedent (kantheon agents/golem/shems/golem-ucetnictvi/shem.yaml) field-for-field:
+# an AgentCapability ASSEMBLED at boot from (1) the ai-models-analog agent def, (2) the
+# model (by area -> packages -> entities/preferred_queries/terminology), (3) this overlay,
+# (4) Golem-template constants — not a single hand-curated rich file.
+#
+# BM-6: cs is now in scope (was "unused per FI-4" in the pre-delta ai-models precedent) —
+# example_questions/counter_examples are per-locale here (a structural choice this Shem
+# needed and golem-ucetnictvi's single-locale precedent didn't have to make; no stronger
+# precedent found for a genuinely bilingual Shem in this codebase).
+
+apiVersion: kantheon.shem/v1
+kind: golem-shem
+
+# ── (1) Identity + model slice — sourced from the hartland agent definition ──
+# Golem reads hartland's own agents/hartland.yaml and asks Ariadne ResolveArea(hartland)
+# -> the single flat `hartland` package (Stage 2.2); GetModel(package) supplies the model.
+source:
+  repo: hartland                 # BM-9: hartland is the ai-models-analog, self-contained
+  agentDef: agents/hartland.yaml
+  id: hartland                   # hartland agent id -> kantheon agent_id = golem-hartland
+  label: "Hartland Analytics"
+  areas: [hartland]
+
+# ── Derived / constant (DO NOT author — shown for reference only) ──
+#   agent_id          golem-hartland        (golem-<id>)
+#   display_name      "Hartland Analytics"  (D-7/S-6 DomainCard)
+#   agent_kind        AREA_QA               (template constant for kind: golem)
+#   intent_kinds      [PROCEDURAL]          (RCA/FORECAST/SIMULATION -> Pythia, out of scope)
+#   service_endpoint  http://golem-hartland.kantheon.svc.cluster.local:7420
+#   health_check_path /health
+#   capability_refs / preferred_capabilities  query.query, query.compile, render.table, render.chart
+#   hitl_default      INTERACTIVE
+#   area_entities / preferred_queries / area_terminology  from the model — NOT listed here
+#     (preferred_queries = the 15 q.hartland.* defs, model/queries/q_hartland.ttrm)
+
+# ── (3) Overlay — the per-agent residue kantheon owns ──
+overlay:
+  # Entitlement: a Keycloak realm role. Convention: kantheon-area-<area>. Wired to
+  # Maya (US, Senior Category Manager) and Markéta Nováková (CZ, Senior Category
+  # Manager) in Keycloak (Phase 3 H3.2) — see ../../README.md for the persona mapping.
+  visibility_roles:
+    - kantheon-area-hartland
+
+  description_for_router: |
+    Sales, returns, inventory and customer analytics for Hartland Stores — store, web
+    and marketplace channels.
+
+  # Per-locale (BM-6/BM-8 — one locale is delivered at a time, but the Shem carries both
+  # so either delivery locale is ready). The rehearsed beats (05-d-ttrm-spec.md); cs uses
+  # Brno DC / Czech places, en uses Memphis DC, per BM-7's mirrored-not-reinvented story.
+  example_questions:
+    en:
+      - "How did Marketplace revenue develop in 2025?"
+      - "Which categories drove the H2 2025 drop?"
+      - "What is our return rate by channel?"
+      - "Which items were out of stock at Memphis DC in October 2025?"
+      - "Compare Web and Marketplace revenue, 2024 vs 2025"
+      - "Top products by revenue last year"
+    cs:
+      - "Jak se vyvíjela tržba z tržiště v roce 2025?"
+      - "Které kategorie způsobily propad v 2. pol. 2025?"
+      - "Jaká je míra vrácení podle kanálu?"
+      - "Které položky byly vyprodané v Brno DC v říjnu 2025?"
+      - "Porovnej tržby z webu a tržiště, 2024 vs 2025"
+      - "Nejprodávanější produkty za loňský rok"
+
+  # B-2 gap ammunition — deliberately unanswerable, routes away or gaps gracefully.
+  counter_examples:
+    en:
+      - "What are our supplier contract terms?"
+      - "What is our employee payroll for last month?"
+      - "How do our prices compare to Amazon's?"
+      - "What was our profit margin last quarter?"   # D-6a — not modeled
+    cs:
+      - "Jaké máme smluvní podmínky s dodavateli?"
+      - "Jaká byla mzdová agenda za minulý měsíc?"
+      - "Jak se naše ceny liší od konkurence?"
+      - "Jaká byla naše zisková marže minulé čtvrtletí?"   # D-6a — nemodelováno
+
+  # OPTIONAL locale defaults. BM-8: one locale per delivery, no on-stage switch — both
+  # are carried so either delivery is ready without re-authoring this file.
+  locale_defaults:
+    - locale: en-US
+      greeting: "Hi, how can I help with Hartland Analytics today?"
+      date_format: "yyyy-MM-dd"
+      currency: "USD"
+    - locale: cs-CZ
+      greeting: "Dobrý den, jak vám mohu pomoci s Hartland Analytics?"
+      date_format: "dd.MM.yyyy"
+      currency: "CZK"
