@@ -11,12 +11,10 @@
 
 ## Bora sign-off
 
-- **Status: matrix ALL-GREEN — pending Bora sign-off.** Presented 2026-07-18. Gate: **H2+
-  (Stages 3.2+) do not proceed until this matrix is all-green or every amber has an accepted
-  disposition** — there are now **zero ambers** (X-roster resolved + validated 2026-07-18).
-- Every requirement is `owned` / `folded` / `cross-ref` / `N-A`; the two folds (rehearsal ladder
-  R1–R3 → S3.5 T8; SPLIT probe → S3.4 T6) just need an ack.
-- _(Bora: sign here — date. This unblocks H2+.)_
+- **✅ SIGNED OFF — Bora, 2026-07-18. Matrix ALL-GREEN → H2+ (Stages 3.2+) UNBLOCKED.**
+- Zero ambers (X-roster resolved + validated against the live rosters 2026-07-18). Every
+  requirement is `owned` / `folded` / `cross-ref` / `N-A`. The two folds (rehearsal ladder
+  R1–R3 → S3.5 T8; SPLIT probe → S3.4 T6) accepted. No dispositions required.
 
 ## Matrix
 
