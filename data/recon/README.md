@@ -36,9 +36,14 @@ Same access path as the WS-T1 runbook (kubectl exec → `test-pg-1` local socket
 ## Baselines in this repo (Stage 1.2+)
 
 `results-precatalog/` is the 2026-07-09 reference (pre-BM-4 catalog, US world) — the "story
-unchanged" diff target for Stage 1.2 T3 / Stage 1.6. `results/` is the **live** baseline,
-refreshed after each stage that's allowed to move it (catalog apply, CZ seed, R0 freeze). Usage:
-`./run-recon.sh dsk hartland_us` / `./run-recon.sh dsk hartland_cz`.
+unchanged" diff target for Stage 1.2 T3 / Stage 1.6. `results-us/` and `results-cz/` are the
+**live per-world** baselines, refreshed after each stage that's allowed to move them (catalog
+apply, seed, R0 freeze). The script itself always writes to `./results/` (single output dir, no
+world parameter) — copy its output into the right per-world dir after each run:
+```sh
+./run-recon.sh dsk hartland_us && rm -rf results-us && mv results results-us
+./run-recon.sh dsk hartland_cz && rm -rf results-cz && mv results results-cz
+```
 
 ## After the run
 

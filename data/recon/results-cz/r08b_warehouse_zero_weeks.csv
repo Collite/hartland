@@ -1,0 +1,26 @@
+w_warehouse_name,d_year,zero_rows,items_with_zero
+Brno DC,2021,435,424
+Brno DC,2022,467,456
+Brno DC,2023,438,431
+Brno DC,2024,404,395
+Brno DC,2025,106654,6395
+Hradec Králové DC,2021,441,430
+Hradec Králové DC,2022,468,460
+Hradec Králové DC,2023,430,420
+Hradec Králové DC,2024,453,438
+Hradec Králové DC,2025,445,436
+Ostrava DC,2021,450,440
+Ostrava DC,2022,455,433
+Ostrava DC,2023,483,472
+Ostrava DC,2024,480,469
+Ostrava DC,2025,457,449
+Plzeň DC,2021,474,465
+Plzeň DC,2022,461,453
+Plzeň DC,2023,455,449
+Plzeň DC,2024,436,428
+Plzeň DC,2025,400,390
+Praha DC,2021,433,425
+Praha DC,2022,446,435
+Praha DC,2023,428,420
+Praha DC,2024,426,418
+Praha DC,2025,440,426
