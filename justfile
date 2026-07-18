@@ -5,8 +5,10 @@
 # content-only (BM-9). Pass `cli=` to point at a different tatrman checkout.
 
 # Run the Stage 2.x mocked unit-test suites (node's built-in test runner, no deps).
+# find picks up every *.test.mjs under model/ — new stages' test files are discovered
+# automatically, no glob list to maintain here.
 verify-model:
-    node --test model/db/tests/*.test.mjs
+    node --test $(find model -name '*.test.mjs')
 
 # Emit the deterministic resolved-packages.json artifact (packages, entities, areas) via
 # the tatrman Modeler CLI — the same tool ai-models uses (`just resolve-packages`).

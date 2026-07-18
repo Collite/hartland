@@ -26,3 +26,22 @@ schema = "dbo"
 
 [stock]
 load = ["cnc-roles"]   # fact/dimension/structural/master/transaction/bridge vocab
+
+[packages]
+# The BM-9 tree groups files by MODEL KIND (model/db, model/er, model/md, ...), not by
+# domain — so the directory-inferred package would differ per subfolder (model.db,
+# model.er, ...), forcing an `import` in every cross-kind binding (er2db, md2db, lexicon
+# `for:` targets — which is nearly all of them). Every model/*.ttrm file instead declares
+# `package hartland` explicitly, so the whole model is one flat package matching D-4's
+# `AreaDef hartland`; same-package refs need no import (verified: db.dbo.* resolves from
+# er/md/binding files with zero package-declaration diagnostics under layout="off").
+# layout="off" suppresses the resulting (intentional, structural) directory/declaration
+# mismatch — see packages/lint/src/rules/packages.ts `mismatchSeverity`.
+layout = "off"
+# Known accepted residual: `ttr/package-prefix-divergence` (info-adjacent, per-file,
+# non-suppressible by design — packages.ts `divergenceSeverity`) still fires on every
+# model/*.ttrm file, because "hartland" (1 segment) can never share an all-but-last-
+# segment prefix with a 2-segment directory-derived name like "model.db". Verified this
+# doesn't block resolution: er2db/relations/lexicon cross-refs into db/er all resolve
+# with zero ttr/unresolved-reference under this scheme (Stage 2.2 T6). Accepted trade-off
+# for a flat single-package model organized by kind-directory rather than domain-directory.

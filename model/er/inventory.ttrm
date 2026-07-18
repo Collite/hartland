@@ -1,0 +1,34 @@
+package hartland
+
+model er
+
+// Inventory Snapshots — the smoking gun (S1) — and its Distribution Center dim (D-5).
+
+def entity inventory {
+    description: "Weekly warehouse-level on-hand snapshots — the smoking gun behind the DC meltdown."
+    labelPlural: "Inventory Snapshots"
+    roles: [fact]
+    displayLabel: { en: "Inventory Snapshots", cs: "Stavy zásob" }
+    attributes: [
+        def attribute as_of_date       { type: int, isKey: true },
+        def attribute item             { type: int, isKey: true },
+        def attribute warehouse        { type: int, isKey: true },
+        def attribute quantity_on_hand { type: int }
+    ]
+}
+
+def entity warehouse {
+    description: "Distribution Centers — Memphis (us) / Brno (cz) DC is the beat-3 pivot."
+    labelPlural: "Distribution Centers"
+    nameAttribute: warehouse_name
+    codeAttribute: warehouse_id
+    roles: [dimension]
+    displayLabel: { en: "Distribution Center", cs: "Distribuční centrum" }
+    attributes: [
+        def attribute sk              { type: int, isKey: true },
+        def attribute warehouse_id    { type: text },
+        def attribute warehouse_name  { type: text },
+        def attribute city            { type: text },
+        def attribute state           { type: { type: char, length: 2 } }
+    ]
+}

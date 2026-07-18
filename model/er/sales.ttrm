@@ -1,0 +1,63 @@
+package hartland
+
+model er
+
+// Channel sales entities (D-5). Attribute names are logical — physical table-prefix
+// stripped (ss_/ws_/cs_) — the whole point of the er layer vs raw db columns. D-6's
+// channel-vocabulary structure (T4) is these three distinct entities + labelPlural/
+// displayLabel; the actual synonym forms (`aliases:` is legacy — flagged by
+// ttr/lexicon-legacy-aliases, "declare a lexicon `term`" instead) are Stage 2.5's lexicon.
+
+def entity store_sales {
+    description: "Stores-channel sales lines."
+    labelPlural: "Store Sales"
+    roles: [fact]
+    displayLabel: { en: "Store Sales", cs: "Tržby z prodejen" }
+    attributes: [
+        def attribute item           { type: int, isKey: true },
+        def attribute ticket_number  { type: int, isKey: true },
+        def attribute sold_date      { type: int },
+        def attribute customer       { type: int },
+        def attribute addr           { type: int },
+        def attribute store          { type: int },
+        def attribute promo          { type: int },
+        def attribute quantity       { type: int },
+        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 } }
+    ]
+}
+
+def entity web_sales {
+    description: "Web-channel sales lines."
+    labelPlural: "Web Orders"
+    roles: [fact]
+    displayLabel: { en: "Web Orders", cs: "Webové objednávky" }
+    attributes: [
+        def attribute item           { type: int, isKey: true },
+        def attribute order_number   { type: int, isKey: true },
+        def attribute sold_date      { type: int },
+        def attribute customer       { type: int },
+        def attribute addr           { type: int },
+        def attribute promo          { type: int },
+        def attribute quantity       { type: int },
+        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 } }
+    ]
+}
+
+def entity catalog_sales {
+    description: "Marketplace (third-party / fulfilled-by-Hartland) sales lines — the channel of the incident."
+    labelPlural: "Marketplace Orders"
+    roles: [fact]
+    displayLabel: { en: "Marketplace Orders", cs: "Objednávky z tržiště" }
+    attributes: [
+        def attribute item           { type: int, isKey: true },
+        def attribute order_number   { type: int, isKey: true },
+        def attribute sold_date      { type: int },
+        def attribute customer       { type: int },
+        def attribute addr           { type: int },
+        def attribute call_center    { type: int },
+        def attribute warehouse      { type: int },
+        def attribute promo          { type: int },
+        def attribute quantity       { type: int },
+        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 } }
+    ]
+}

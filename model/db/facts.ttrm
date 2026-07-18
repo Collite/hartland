@@ -1,3 +1,5 @@
+package hartland
+
 model db schema dbo
 
 // Physical fact tables — the demo subset (D-5 roster). Column selection: keys used by a

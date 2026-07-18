@@ -1,0 +1,53 @@
+package hartland
+
+model er
+
+// Products (the bilingual catalog, Phase 1), Promotions, and Seller Support Centers (D-5).
+
+def entity item {
+    description: "Products — category/brand drills; the bilingual catalog lit these up (Phase 1)."
+    labelPlural: "Products"
+    nameAttribute: product_name
+    codeAttribute: item_id
+    roles: [dimension]
+    displayLabel: { en: "Product", cs: "Produkt" }
+    attributes: [
+        def attribute sk           { type: int, isKey: true },
+        def attribute item_id      { type: text },
+        def attribute product_name { type: text },
+        def attribute brand        { type: text },
+        def attribute class        { type: text },
+        def attribute category     { type: text },
+        def attribute manufact     { type: text },
+        def attribute size         { type: text },
+        def attribute container    { type: text }
+    ]
+}
+
+def entity promotion {
+    description: "Promotions — the promo-dying branch (promo participation stays dense every year)."
+    labelPlural: "Promotions"
+    nameAttribute: promo_name
+    codeAttribute: promo_id
+    roles: [dimension]
+    displayLabel: { en: "Promotion", cs: "Akce" }
+    attributes: [
+        def attribute sk         { type: int, isKey: true },
+        def attribute promo_id   { type: text },
+        def attribute promo_name { type: text }
+    ]
+}
+
+def entity call_center {
+    description: "Seller support centers — Marketplace lore, light labeling only (D-5)."
+    labelPlural: "Seller Support Centers"
+    nameAttribute: name
+    codeAttribute: call_center_id
+    roles: [dimension]
+    displayLabel: { en: "Seller Support Center", cs: "Centrum podpory prodejců" }
+    attributes: [
+        def attribute sk             { type: int, isKey: true },
+        def attribute call_center_id { type: text },
+        def attribute name           { type: text }
+    ]
+}

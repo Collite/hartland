@@ -1,0 +1,27 @@
+package hartland
+
+model er
+
+// Calendar (D-5) — everything joins through it; holiday/seasonality live here.
+// Not listed in the Stage 2.2 task file's suggested layout (it groups date_dim into no
+// named file) — broken out into its own file since it backs the md Calendar dimension
+// (Stage 2.3), which is calc-backed rather than table-backed like the others.
+
+def entity date_dim {
+    description: "Calendar."
+    labelPlural: "Calendar"
+    nameAttribute: cal_date
+    roles: [dimension]
+    displayLabel: { en: "Calendar", cs: "Kalendář" }
+    attributes: [
+        def attribute sk        { type: int, isKey: true },
+        def attribute cal_date  { type: date },
+        def attribute year      { type: int },
+        def attribute month     { type: int },
+        def attribute quarter   { type: int },
+        def attribute week_seq  { type: int },
+        def attribute day_name  { type: text },
+        def attribute holiday   { type: { type: char, length: 1 } },
+        def attribute weekend   { type: { type: char, length: 1 } }
+    ]
+}

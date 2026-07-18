@@ -1,3 +1,5 @@
+package hartland
+
 model db schema dbo
 
 // Cross-table foreign keys — every fact -> dim edge the er2db relation bindings

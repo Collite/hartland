@@ -1,0 +1,89 @@
+package hartland
+
+model er
+
+// Customers + their addresses/demographics, and Stores (D-5).
+
+def entity customer {
+    description: "Customers — the channel-overlap and demographic branches key off this entity."
+    labelPlural: "Customers"
+    codeAttribute: customer_id
+    roles: [master, dimension]
+    displayLabel: { en: "Customer", cs: "Zákazník" }
+    attributes: [
+        def attribute sk          { type: int, isKey: true },
+        def attribute customer_id { type: text },
+        def attribute addr        { type: int },
+        def attribute cdemo       { type: int },
+        def attribute hdemo       { type: int },
+        def attribute birth_year  { type: int }
+    ]
+}
+
+def entity customer_address {
+    description: "Customer addresses — the regional-dying branch (revenue-by-state, confirmed flat)."
+    labelPlural: "Customer Addresses"
+    nameAttribute: city
+    codeAttribute: address_id
+    roles: [dimension]
+    displayLabel: { en: "Customer Address", cs: "Adresa zákazníka" }
+    attributes: [
+        def attribute sk         { type: int, isKey: true },
+        def attribute address_id { type: text },
+        def attribute city       { type: text },
+        def attribute county     { type: text },
+        def attribute state      { type: { type: char, length: 2 } }
+    ]
+}
+
+def entity customer_demographics {
+    description: "Customer demographics — the demographic-dying branch (buyer age, confirmed flat)."
+    labelPlural: "Customer Demographics"
+    roles: [dimension]
+    displayLabel: { en: "Customer Demographics", cs: "Demografie zákazníka" }
+    attributes: [
+        def attribute sk             { type: int, isKey: true },
+        def attribute gender         { type: { type: char, length: 1 } },
+        def attribute marital_status { type: { type: char, length: 1 } }
+    ]
+}
+
+def entity household_demographics {
+    description: "Household demographics — the demographic-dying branch."
+    labelPlural: "Household Demographics"
+    roles: [dimension]
+    displayLabel: { en: "Household Demographics", cs: "Demografie domácnosti" }
+    attributes: [
+        def attribute sk            { type: int, isKey: true },
+        def attribute income_band   { type: int },
+        def attribute buy_potential { type: text }
+    ]
+}
+
+def entity income_band {
+    description: "Income bands."
+    labelPlural: "Income Bands"
+    roles: [dimension]
+    displayLabel: { en: "Income Band", cs: "Příjmové pásmo" }
+    attributes: [
+        def attribute sk          { type: int, isKey: true },
+        def attribute lower_bound { type: int },
+        def attribute upper_bound { type: int }
+    ]
+}
+
+def entity store {
+    description: "Stores — the six TN stores (Stores-channel dim)."
+    labelPlural: "Stores"
+    nameAttribute: store_name
+    codeAttribute: store_id
+    roles: [dimension]
+    displayLabel: { en: "Store", cs: "Prodejna" }
+    attributes: [
+        def attribute sk         { type: int, isKey: true },
+        def attribute store_id   { type: text },
+        def attribute store_name { type: text },
+        def attribute city       { type: text },
+        def attribute state      { type: { type: char, length: 2 } }
+    ]
+}

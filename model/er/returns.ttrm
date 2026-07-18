@@ -1,0 +1,73 @@
+package hartland
+
+model er
+
+// Channel returns entities + the Return Reasons dim (D-5). return_amt is deliberately
+// the SAME logical name across all three returns entities even though the physical
+// column is cr_return_amount (not cr_return_amt) on catalog_returns — the er2db binding
+// (Stage 2.2 T2) absorbs that naming inconsistency so md-layer measures (Stage 2.4) can
+// treat the three symmetrically.
+
+def entity store_returns {
+    description: "Stores-channel returns."
+    labelPlural: "Store Returns"
+    roles: [fact]
+    displayLabel: { en: "Store Returns", cs: "Reklamace z prodejen" }
+    attributes: [
+        def attribute item            { type: int, isKey: true },
+        def attribute ticket_number   { type: int, isKey: true },
+        def attribute returned_date   { type: int },
+        def attribute customer        { type: int },
+        def attribute store           { type: int },
+        def attribute reason          { type: int },
+        def attribute return_quantity { type: int },
+        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 } }
+    ]
+}
+
+def entity web_returns {
+    description: "Web-channel returns."
+    labelPlural: "Web Returns"
+    roles: [fact]
+    displayLabel: { en: "Web Returns", cs: "Reklamace z webu" }
+    attributes: [
+        def attribute item            { type: int, isKey: true },
+        def attribute order_number    { type: int, isKey: true },
+        def attribute returned_date   { type: int },
+        def attribute customer        { type: int },
+        def attribute reason          { type: int },
+        def attribute return_quantity { type: int },
+        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 } }
+    ]
+}
+
+def entity catalog_returns {
+    description: "Marketplace-channel returns — S3's paired evidence signal alongside the inventory stockout."
+    labelPlural: "Marketplace Returns"
+    roles: [fact]
+    displayLabel: { en: "Marketplace Returns", cs: "Reklamace z tržiště" }
+    attributes: [
+        def attribute item            { type: int, isKey: true },
+        def attribute order_number    { type: int, isKey: true },
+        def attribute returned_date   { type: int },
+        def attribute customer        { type: int },
+        def attribute reason          { type: int },
+        def attribute warehouse       { type: int },
+        def attribute return_quantity { type: int },
+        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 } }
+    ]
+}
+
+def entity reason {
+    description: "Return reasons — \"Did not get it on time\" is the incident's late-delivery signal."
+    labelPlural: "Return Reasons"
+    nameAttribute: reason_desc
+    codeAttribute: reason_id
+    roles: [dimension]
+    displayLabel: { en: "Return Reason", cs: "Důvod reklamace" }
+    attributes: [
+        def attribute sk          { type: int, isKey: true },
+        def attribute reason_id   { type: text },
+        def attribute reason_desc { type: text }
+    ]
+}

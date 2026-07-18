@@ -24,3 +24,18 @@ One model set (BM-2/BM-5), served over `pg-hartland-us` (USD) and `pg-hartland-c
 `just resolve-packages` / `just check-model` (the tatrman Modeler CLI's deterministic
 `resolved-packages.json`, same tool `ai-models` uses) — both run from the repo root,
 borrowing the sibling `tatrman` checkout's built toolchain rather than vendoring one here.
+
+**Packaging (Stage 2.2 finding — read before adding a new model/*.ttrm file):** the BM-9
+tree groups files by model kind (`db/`, `er/`, `md/`, ...), which would normally give each
+subfolder its own directory-inferred package, forcing an `import` in nearly every
+cross-kind binding. Instead, **every model/*.ttrm file declares `package hartland`
+explicitly** (first line, after any file-level comment), collapsing the whole model into
+one flat package — same-package refs (`db.dbo.*`, `er.entity.*`) need no import anywhere.
+`modeler.toml`'s `[packages] layout = "off"` suppresses the resulting intentional
+directory/declaration mismatch; verified this doesn't block resolution (zero
+`ttr/unresolved-reference` project-wide). One residual, accepted, non-blocking diagnostic
+remains on every file — `ttr/package-prefix-divergence` — documented in `modeler.toml`.
+**Also:** `date` is a reserved grammar keyword — don't use it as a bare attribute name
+(hit this on `date_dim`/`inventory`; used `cal_date`/`as_of_date` instead). Entity-level
+`aliases:` is deprecated (`ttr/lexicon-legacy-aliases`) — declare a lexicon `term` instead
+(Stage 2.5).

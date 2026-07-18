@@ -4,12 +4,120 @@
   "root": "",
   "packages": [
     {
-      "canonicalName": "model.db",
-      "declaredName": "model.db",
-      "nested": true,
-      "directory": "model/db"
+      "canonicalName": "hartland",
+      "declaredName": "hartland",
+      "nested": false,
+      "directory": "model/binding"
     }
   ],
-  "entities": [],
-  "areas": []
+  "entities": [
+    {
+      "qname": "hartland.er.entity.call_center",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.catalog_returns",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.catalog_sales",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.customer",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.customer_address",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.customer_demographics",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.date_dim",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.household_demographics",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.income_band",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.inventory",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.item",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.promotion",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.reason",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.store",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.store_returns",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.store_sales",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.warehouse",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.web_returns",
+      "package": "hartland",
+      "schema": "er"
+    },
+    {
+      "qname": "hartland.er.entity.web_sales",
+      "package": "hartland",
+      "schema": "er"
+    }
+  ],
+  "areas": [
+    {
+      "name": "hartland",
+      "resolvedPackages": [
+        "hartland"
+      ],
+      "resolvedEntities": [
+        "hartland.er.entity.catalog_sales",
+        "hartland.er.entity.store_sales",
+        "hartland.er.entity.web_sales"
+      ]
+    }
+  ]
 }

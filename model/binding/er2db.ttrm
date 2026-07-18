@@ -1,0 +1,177 @@
+package hartland
+
+model binding
+
+// er2db — one def er2db_entity per D-5 entity, one def er2db_attribute per er attribute
+// (fixtures 12/13). Completeness rule (Stage 2.2 T2): every er attribute has a matching
+// er2db_attribute — enforced by the T6 suite, not just by convention.
+
+// ===== store_sales =====
+def er2db_entity store_sales_map { entity: er.entity.store_sales, target: { table: db.dbo.store_sales } }
+def er2db_attribute store_sales_item_map           { attribute: er.entity.store_sales.item,           target: { column: db.dbo.store_sales.ss_item_sk } }
+def er2db_attribute store_sales_ticket_number_map   { attribute: er.entity.store_sales.ticket_number,   target: { column: db.dbo.store_sales.ss_ticket_number } }
+def er2db_attribute store_sales_sold_date_map        { attribute: er.entity.store_sales.sold_date,       target: { column: db.dbo.store_sales.ss_sold_date_sk } }
+def er2db_attribute store_sales_customer_map         { attribute: er.entity.store_sales.customer,        target: { column: db.dbo.store_sales.ss_customer_sk } }
+def er2db_attribute store_sales_addr_map             { attribute: er.entity.store_sales.addr,             target: { column: db.dbo.store_sales.ss_addr_sk } }
+def er2db_attribute store_sales_store_map            { attribute: er.entity.store_sales.store,            target: { column: db.dbo.store_sales.ss_store_sk } }
+def er2db_attribute store_sales_promo_map            { attribute: er.entity.store_sales.promo,            target: { column: db.dbo.store_sales.ss_promo_sk } }
+def er2db_attribute store_sales_quantity_map         { attribute: er.entity.store_sales.quantity,         target: { column: db.dbo.store_sales.ss_quantity } }
+def er2db_attribute store_sales_ext_sales_price_map  { attribute: er.entity.store_sales.ext_sales_price,  target: { column: db.dbo.store_sales.ss_ext_sales_price } }
+
+// ===== web_sales =====
+def er2db_entity web_sales_map { entity: er.entity.web_sales, target: { table: db.dbo.web_sales } }
+def er2db_attribute web_sales_item_map          { attribute: er.entity.web_sales.item,          target: { column: db.dbo.web_sales.ws_item_sk } }
+def er2db_attribute web_sales_order_number_map   { attribute: er.entity.web_sales.order_number,   target: { column: db.dbo.web_sales.ws_order_number } }
+def er2db_attribute web_sales_sold_date_map       { attribute: er.entity.web_sales.sold_date,       target: { column: db.dbo.web_sales.ws_sold_date_sk } }
+def er2db_attribute web_sales_customer_map        { attribute: er.entity.web_sales.customer,        target: { column: db.dbo.web_sales.ws_bill_customer_sk } }
+def er2db_attribute web_sales_addr_map            { attribute: er.entity.web_sales.addr,            target: { column: db.dbo.web_sales.ws_bill_addr_sk } }
+def er2db_attribute web_sales_promo_map           { attribute: er.entity.web_sales.promo,           target: { column: db.dbo.web_sales.ws_promo_sk } }
+def er2db_attribute web_sales_quantity_map        { attribute: er.entity.web_sales.quantity,        target: { column: db.dbo.web_sales.ws_quantity } }
+def er2db_attribute web_sales_ext_sales_price_map { attribute: er.entity.web_sales.ext_sales_price, target: { column: db.dbo.web_sales.ws_ext_sales_price } }
+
+// ===== catalog_sales (Marketplace) =====
+def er2db_entity catalog_sales_map { entity: er.entity.catalog_sales, target: { table: db.dbo.catalog_sales } }
+def er2db_attribute catalog_sales_item_map          { attribute: er.entity.catalog_sales.item,          target: { column: db.dbo.catalog_sales.cs_item_sk } }
+def er2db_attribute catalog_sales_order_number_map   { attribute: er.entity.catalog_sales.order_number,   target: { column: db.dbo.catalog_sales.cs_order_number } }
+def er2db_attribute catalog_sales_sold_date_map       { attribute: er.entity.catalog_sales.sold_date,       target: { column: db.dbo.catalog_sales.cs_sold_date_sk } }
+def er2db_attribute catalog_sales_customer_map        { attribute: er.entity.catalog_sales.customer,        target: { column: db.dbo.catalog_sales.cs_bill_customer_sk } }
+def er2db_attribute catalog_sales_addr_map            { attribute: er.entity.catalog_sales.addr,            target: { column: db.dbo.catalog_sales.cs_bill_addr_sk } }
+def er2db_attribute catalog_sales_call_center_map     { attribute: er.entity.catalog_sales.call_center,     target: { column: db.dbo.catalog_sales.cs_call_center_sk } }
+def er2db_attribute catalog_sales_warehouse_map       { attribute: er.entity.catalog_sales.warehouse,       target: { column: db.dbo.catalog_sales.cs_warehouse_sk } }
+def er2db_attribute catalog_sales_promo_map           { attribute: er.entity.catalog_sales.promo,           target: { column: db.dbo.catalog_sales.cs_promo_sk } }
+def er2db_attribute catalog_sales_quantity_map        { attribute: er.entity.catalog_sales.quantity,        target: { column: db.dbo.catalog_sales.cs_quantity } }
+def er2db_attribute catalog_sales_ext_sales_price_map { attribute: er.entity.catalog_sales.ext_sales_price, target: { column: db.dbo.catalog_sales.cs_ext_sales_price } }
+
+// ===== store_returns =====
+def er2db_entity store_returns_map { entity: er.entity.store_returns, target: { table: db.dbo.store_returns } }
+def er2db_attribute store_returns_item_map            { attribute: er.entity.store_returns.item,            target: { column: db.dbo.store_returns.sr_item_sk } }
+def er2db_attribute store_returns_ticket_number_map    { attribute: er.entity.store_returns.ticket_number,    target: { column: db.dbo.store_returns.sr_ticket_number } }
+def er2db_attribute store_returns_returned_date_map     { attribute: er.entity.store_returns.returned_date,     target: { column: db.dbo.store_returns.sr_returned_date_sk } }
+def er2db_attribute store_returns_customer_map           { attribute: er.entity.store_returns.customer,          target: { column: db.dbo.store_returns.sr_customer_sk } }
+def er2db_attribute store_returns_store_map              { attribute: er.entity.store_returns.store,             target: { column: db.dbo.store_returns.sr_store_sk } }
+def er2db_attribute store_returns_reason_map             { attribute: er.entity.store_returns.reason,            target: { column: db.dbo.store_returns.sr_reason_sk } }
+def er2db_attribute store_returns_return_quantity_map    { attribute: er.entity.store_returns.return_quantity,   target: { column: db.dbo.store_returns.sr_return_quantity } }
+def er2db_attribute store_returns_return_amt_map         { attribute: er.entity.store_returns.return_amt,        target: { column: db.dbo.store_returns.sr_return_amt } }
+
+// ===== web_returns =====
+def er2db_entity web_returns_map { entity: er.entity.web_returns, target: { table: db.dbo.web_returns } }
+def er2db_attribute web_returns_item_map          { attribute: er.entity.web_returns.item,          target: { column: db.dbo.web_returns.wr_item_sk } }
+def er2db_attribute web_returns_order_number_map   { attribute: er.entity.web_returns.order_number,   target: { column: db.dbo.web_returns.wr_order_number } }
+def er2db_attribute web_returns_returned_date_map   { attribute: er.entity.web_returns.returned_date,   target: { column: db.dbo.web_returns.wr_returned_date_sk } }
+def er2db_attribute web_returns_customer_map        { attribute: er.entity.web_returns.customer,        target: { column: db.dbo.web_returns.wr_returning_customer_sk } }
+def er2db_attribute web_returns_reason_map          { attribute: er.entity.web_returns.reason,          target: { column: db.dbo.web_returns.wr_reason_sk } }
+def er2db_attribute web_returns_return_quantity_map { attribute: er.entity.web_returns.return_quantity, target: { column: db.dbo.web_returns.wr_return_quantity } }
+def er2db_attribute web_returns_return_amt_map      { attribute: er.entity.web_returns.return_amt,      target: { column: db.dbo.web_returns.wr_return_amt } }
+
+// ===== catalog_returns =====
+// Note: er attribute `return_amt` binds to the physical `cr_return_amount` column — the
+// one place the three returns entities' physical naming diverges (see returns.ttrm).
+def er2db_entity catalog_returns_map { entity: er.entity.catalog_returns, target: { table: db.dbo.catalog_returns } }
+def er2db_attribute catalog_returns_item_map          { attribute: er.entity.catalog_returns.item,          target: { column: db.dbo.catalog_returns.cr_item_sk } }
+def er2db_attribute catalog_returns_order_number_map   { attribute: er.entity.catalog_returns.order_number,   target: { column: db.dbo.catalog_returns.cr_order_number } }
+def er2db_attribute catalog_returns_returned_date_map   { attribute: er.entity.catalog_returns.returned_date,   target: { column: db.dbo.catalog_returns.cr_returned_date_sk } }
+def er2db_attribute catalog_returns_customer_map         { attribute: er.entity.catalog_returns.customer,        target: { column: db.dbo.catalog_returns.cr_returning_customer_sk } }
+def er2db_attribute catalog_returns_reason_map           { attribute: er.entity.catalog_returns.reason,          target: { column: db.dbo.catalog_returns.cr_reason_sk } }
+def er2db_attribute catalog_returns_warehouse_map        { attribute: er.entity.catalog_returns.warehouse,       target: { column: db.dbo.catalog_returns.cr_warehouse_sk } }
+def er2db_attribute catalog_returns_return_quantity_map  { attribute: er.entity.catalog_returns.return_quantity, target: { column: db.dbo.catalog_returns.cr_return_quantity } }
+def er2db_attribute catalog_returns_return_amt_map       { attribute: er.entity.catalog_returns.return_amt,      target: { column: db.dbo.catalog_returns.cr_return_amount } }
+
+// ===== reason =====
+def er2db_entity reason_map { entity: er.entity.reason, target: { table: db.dbo.reason } }
+def er2db_attribute reason_sk_map          { attribute: er.entity.reason.sk,          target: { column: db.dbo.reason.r_reason_sk } }
+def er2db_attribute reason_reason_id_map   { attribute: er.entity.reason.reason_id,   target: { column: db.dbo.reason.r_reason_id } }
+def er2db_attribute reason_reason_desc_map { attribute: er.entity.reason.reason_desc, target: { column: db.dbo.reason.r_reason_desc } }
+
+// ===== inventory =====
+def er2db_entity inventory_map { entity: er.entity.inventory, target: { table: db.dbo.inventory } }
+def er2db_attribute inventory_date_map             { attribute: er.entity.inventory.as_of_date,         target: { column: db.dbo.inventory.inv_date_sk } }
+def er2db_attribute inventory_item_map              { attribute: er.entity.inventory.item,              target: { column: db.dbo.inventory.inv_item_sk } }
+def er2db_attribute inventory_warehouse_map          { attribute: er.entity.inventory.warehouse,         target: { column: db.dbo.inventory.inv_warehouse_sk } }
+def er2db_attribute inventory_quantity_on_hand_map   { attribute: er.entity.inventory.quantity_on_hand,  target: { column: db.dbo.inventory.inv_quantity_on_hand } }
+
+// ===== warehouse =====
+def er2db_entity warehouse_map { entity: er.entity.warehouse, target: { table: db.dbo.warehouse } }
+def er2db_attribute warehouse_sk_map             { attribute: er.entity.warehouse.sk,             target: { column: db.dbo.warehouse.w_warehouse_sk } }
+def er2db_attribute warehouse_warehouse_id_map    { attribute: er.entity.warehouse.warehouse_id,    target: { column: db.dbo.warehouse.w_warehouse_id } }
+def er2db_attribute warehouse_warehouse_name_map   { attribute: er.entity.warehouse.warehouse_name,  target: { column: db.dbo.warehouse.w_warehouse_name } }
+def er2db_attribute warehouse_city_map             { attribute: er.entity.warehouse.city,             target: { column: db.dbo.warehouse.w_city } }
+def er2db_attribute warehouse_state_map            { attribute: er.entity.warehouse.state,            target: { column: db.dbo.warehouse.w_state } }
+
+// ===== customer =====
+def er2db_entity customer_map { entity: er.entity.customer, target: { table: db.dbo.customer } }
+def er2db_attribute customer_sk_map          { attribute: er.entity.customer.sk,          target: { column: db.dbo.customer.c_customer_sk } }
+def er2db_attribute customer_customer_id_map  { attribute: er.entity.customer.customer_id,  target: { column: db.dbo.customer.c_customer_id } }
+def er2db_attribute customer_addr_map         { attribute: er.entity.customer.addr,         target: { column: db.dbo.customer.c_current_addr_sk } }
+def er2db_attribute customer_cdemo_map        { attribute: er.entity.customer.cdemo,        target: { column: db.dbo.customer.c_current_cdemo_sk } }
+def er2db_attribute customer_hdemo_map        { attribute: er.entity.customer.hdemo,        target: { column: db.dbo.customer.c_current_hdemo_sk } }
+def er2db_attribute customer_birth_year_map   { attribute: er.entity.customer.birth_year,   target: { column: db.dbo.customer.c_birth_year } }
+
+// ===== customer_address =====
+def er2db_entity customer_address_map { entity: er.entity.customer_address, target: { table: db.dbo.customer_address } }
+def er2db_attribute customer_address_sk_map         { attribute: er.entity.customer_address.sk,         target: { column: db.dbo.customer_address.ca_address_sk } }
+def er2db_attribute customer_address_address_id_map  { attribute: er.entity.customer_address.address_id, target: { column: db.dbo.customer_address.ca_address_id } }
+def er2db_attribute customer_address_city_map         { attribute: er.entity.customer_address.city,       target: { column: db.dbo.customer_address.ca_city } }
+def er2db_attribute customer_address_county_map       { attribute: er.entity.customer_address.county,     target: { column: db.dbo.customer_address.ca_county } }
+def er2db_attribute customer_address_state_map        { attribute: er.entity.customer_address.state,      target: { column: db.dbo.customer_address.ca_state } }
+
+// ===== customer_demographics =====
+def er2db_entity customer_demographics_map { entity: er.entity.customer_demographics, target: { table: db.dbo.customer_demographics } }
+def er2db_attribute customer_demographics_sk_map             { attribute: er.entity.customer_demographics.sk,             target: { column: db.dbo.customer_demographics.cd_demo_sk } }
+def er2db_attribute customer_demographics_gender_map          { attribute: er.entity.customer_demographics.gender,          target: { column: db.dbo.customer_demographics.cd_gender } }
+def er2db_attribute customer_demographics_marital_status_map  { attribute: er.entity.customer_demographics.marital_status,  target: { column: db.dbo.customer_demographics.cd_marital_status } }
+
+// ===== household_demographics =====
+def er2db_entity household_demographics_map { entity: er.entity.household_demographics, target: { table: db.dbo.household_demographics } }
+def er2db_attribute household_demographics_sk_map            { attribute: er.entity.household_demographics.sk,            target: { column: db.dbo.household_demographics.hd_demo_sk } }
+def er2db_attribute household_demographics_income_band_map    { attribute: er.entity.household_demographics.income_band,   target: { column: db.dbo.household_demographics.hd_income_band_sk } }
+def er2db_attribute household_demographics_buy_potential_map   { attribute: er.entity.household_demographics.buy_potential, target: { column: db.dbo.household_demographics.hd_buy_potential } }
+
+// ===== income_band =====
+def er2db_entity income_band_map { entity: er.entity.income_band, target: { table: db.dbo.income_band } }
+def er2db_attribute income_band_sk_map          { attribute: er.entity.income_band.sk,          target: { column: db.dbo.income_band.ib_income_band_sk } }
+def er2db_attribute income_band_lower_bound_map  { attribute: er.entity.income_band.lower_bound, target: { column: db.dbo.income_band.ib_lower_bound } }
+def er2db_attribute income_band_upper_bound_map  { attribute: er.entity.income_band.upper_bound, target: { column: db.dbo.income_band.ib_upper_bound } }
+
+// ===== store =====
+def er2db_entity store_map { entity: er.entity.store, target: { table: db.dbo.store } }
+def er2db_attribute store_sk_map          { attribute: er.entity.store.sk,          target: { column: db.dbo.store.s_store_sk } }
+def er2db_attribute store_store_id_map     { attribute: er.entity.store.store_id,    target: { column: db.dbo.store.s_store_id } }
+def er2db_attribute store_store_name_map    { attribute: er.entity.store.store_name,  target: { column: db.dbo.store.s_store_name } }
+def er2db_attribute store_city_map          { attribute: er.entity.store.city,        target: { column: db.dbo.store.s_city } }
+def er2db_attribute store_state_map         { attribute: er.entity.store.state,       target: { column: db.dbo.store.s_state } }
+
+// ===== item =====
+def er2db_entity item_map { entity: er.entity.item, target: { table: db.dbo.item } }
+def er2db_attribute item_sk_map           { attribute: er.entity.item.sk,           target: { column: db.dbo.item.i_item_sk } }
+def er2db_attribute item_item_id_map       { attribute: er.entity.item.item_id,       target: { column: db.dbo.item.i_item_id } }
+def er2db_attribute item_product_name_map   { attribute: er.entity.item.product_name,  target: { column: db.dbo.item.i_product_name } }
+def er2db_attribute item_brand_map          { attribute: er.entity.item.brand,          target: { column: db.dbo.item.i_brand } }
+def er2db_attribute item_class_map          { attribute: er.entity.item.class,          target: { column: db.dbo.item.i_class } }
+def er2db_attribute item_category_map       { attribute: er.entity.item.category,       target: { column: db.dbo.item.i_category } }
+def er2db_attribute item_manufact_map       { attribute: er.entity.item.manufact,       target: { column: db.dbo.item.i_manufact } }
+def er2db_attribute item_size_map           { attribute: er.entity.item.size,           target: { column: db.dbo.item.i_size } }
+def er2db_attribute item_container_map      { attribute: er.entity.item.container,      target: { column: db.dbo.item.i_container } }
+
+// ===== promotion =====
+def er2db_entity promotion_map { entity: er.entity.promotion, target: { table: db.dbo.promotion } }
+def er2db_attribute promotion_sk_map          { attribute: er.entity.promotion.sk,          target: { column: db.dbo.promotion.p_promo_sk } }
+def er2db_attribute promotion_promo_id_map     { attribute: er.entity.promotion.promo_id,    target: { column: db.dbo.promotion.p_promo_id } }
+def er2db_attribute promotion_promo_name_map    { attribute: er.entity.promotion.promo_name,  target: { column: db.dbo.promotion.p_promo_name } }
+
+// ===== call_center =====
+def er2db_entity call_center_map { entity: er.entity.call_center, target: { table: db.dbo.call_center } }
+def er2db_attribute call_center_sk_map             { attribute: er.entity.call_center.sk,             target: { column: db.dbo.call_center.cc_call_center_sk } }
+def er2db_attribute call_center_call_center_id_map  { attribute: er.entity.call_center.call_center_id, target: { column: db.dbo.call_center.cc_call_center_id } }
+def er2db_attribute call_center_name_map            { attribute: er.entity.call_center.name,           target: { column: db.dbo.call_center.cc_name } }
+
+// ===== date_dim =====
+def er2db_entity date_dim_map { entity: er.entity.date_dim, target: { table: db.dbo.date_dim } }
+def er2db_attribute date_dim_sk_map        { attribute: er.entity.date_dim.sk,        target: { column: db.dbo.date_dim.d_date_sk } }
+def er2db_attribute date_dim_date_map       { attribute: er.entity.date_dim.cal_date,   target: { column: db.dbo.date_dim.d_date } }
+def er2db_attribute date_dim_year_map       { attribute: er.entity.date_dim.year,       target: { column: db.dbo.date_dim.d_year } }
+def er2db_attribute date_dim_month_map      { attribute: er.entity.date_dim.month,      target: { column: db.dbo.date_dim.d_moy } }
+def er2db_attribute date_dim_quarter_map    { attribute: er.entity.date_dim.quarter,    target: { column: db.dbo.date_dim.d_qoy } }
+def er2db_attribute date_dim_week_seq_map   { attribute: er.entity.date_dim.week_seq,   target: { column: db.dbo.date_dim.d_week_seq } }
+def er2db_attribute date_dim_day_name_map   { attribute: er.entity.date_dim.day_name,   target: { column: db.dbo.date_dim.d_day_name } }
+def er2db_attribute date_dim_holiday_map    { attribute: er.entity.date_dim.holiday,    target: { column: db.dbo.date_dim.d_holiday } }
+def er2db_attribute date_dim_weekend_map    { attribute: er.entity.date_dim.weekend,    target: { column: db.dbo.date_dim.d_weekend } }

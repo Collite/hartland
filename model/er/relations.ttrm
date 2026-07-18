@@ -1,0 +1,65 @@
+package hartland
+
+model er
+
+// Fact -> dim relationships, one per Stage 2.1 fks.ttrm foreign key (26-relation-fk-mapping
+// pattern: `binding: { fk: db.dbo.fk_… } }`). Facts are the "many" side (cardinality
+// from: "0..*"), dims the "one" side (to: "1") — plus customer's own address/demographics
+// chains and household_demographics -> income_band.
+
+// -- store_sales --
+def relation rel_store_sales_item     { from: er.entity.store_sales, to: er.entity.item,     cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ss_item } }
+def relation rel_store_sales_customer { from: er.entity.store_sales, to: er.entity.customer, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ss_customer } }
+def relation rel_store_sales_addr     { from: er.entity.store_sales, to: er.entity.customer_address, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ss_addr } }
+def relation rel_store_sales_store    { from: er.entity.store_sales, to: er.entity.store,    cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ss_store } }
+def relation rel_store_sales_promo    { from: er.entity.store_sales, to: er.entity.promotion, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ss_promo } }
+def relation rel_store_sales_date     { from: er.entity.store_sales, to: er.entity.date_dim,  cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ss_date } }
+
+// -- web_sales --
+def relation rel_web_sales_item     { from: er.entity.web_sales, to: er.entity.item,             cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ws_item } }
+def relation rel_web_sales_customer { from: er.entity.web_sales, to: er.entity.customer,         cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ws_customer } }
+def relation rel_web_sales_addr     { from: er.entity.web_sales, to: er.entity.customer_address, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ws_addr } }
+def relation rel_web_sales_promo    { from: er.entity.web_sales, to: er.entity.promotion,        cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ws_promo } }
+def relation rel_web_sales_date     { from: er.entity.web_sales, to: er.entity.date_dim,         cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_ws_date } }
+
+// -- catalog_sales (Marketplace) --
+def relation rel_catalog_sales_item       { from: er.entity.catalog_sales, to: er.entity.item,             cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_item } }
+def relation rel_catalog_sales_customer   { from: er.entity.catalog_sales, to: er.entity.customer,         cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_customer } }
+def relation rel_catalog_sales_addr       { from: er.entity.catalog_sales, to: er.entity.customer_address, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_addr } }
+def relation rel_catalog_sales_callcenter { from: er.entity.catalog_sales, to: er.entity.call_center,      cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_callcenter } }
+def relation rel_catalog_sales_warehouse  { from: er.entity.catalog_sales, to: er.entity.warehouse,        cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_warehouse } }
+def relation rel_catalog_sales_promo      { from: er.entity.catalog_sales, to: er.entity.promotion,        cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_promo } }
+def relation rel_catalog_sales_date       { from: er.entity.catalog_sales, to: er.entity.date_dim,         cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cs_date } }
+
+// -- store_returns --
+def relation rel_store_returns_item     { from: er.entity.store_returns, to: er.entity.item,     cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_sr_item } }
+def relation rel_store_returns_customer { from: er.entity.store_returns, to: er.entity.customer, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_sr_customer } }
+def relation rel_store_returns_store    { from: er.entity.store_returns, to: er.entity.store,    cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_sr_store } }
+def relation rel_store_returns_reason   { from: er.entity.store_returns, to: er.entity.reason,   cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_sr_reason } }
+def relation rel_store_returns_date     { from: er.entity.store_returns, to: er.entity.date_dim, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_sr_date } }
+
+// -- web_returns --
+def relation rel_web_returns_item     { from: er.entity.web_returns, to: er.entity.item,     cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_wr_item } }
+def relation rel_web_returns_customer { from: er.entity.web_returns, to: er.entity.customer, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_wr_customer } }
+def relation rel_web_returns_reason   { from: er.entity.web_returns, to: er.entity.reason,   cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_wr_reason } }
+def relation rel_web_returns_date     { from: er.entity.web_returns, to: er.entity.date_dim, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_wr_date } }
+
+// -- catalog_returns --
+def relation rel_catalog_returns_item      { from: er.entity.catalog_returns, to: er.entity.item,      cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cr_item } }
+def relation rel_catalog_returns_customer  { from: er.entity.catalog_returns, to: er.entity.customer,  cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cr_customer } }
+def relation rel_catalog_returns_reason    { from: er.entity.catalog_returns, to: er.entity.reason,    cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cr_reason } }
+def relation rel_catalog_returns_warehouse { from: er.entity.catalog_returns, to: er.entity.warehouse, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cr_warehouse } }
+def relation rel_catalog_returns_date      { from: er.entity.catalog_returns, to: er.entity.date_dim,  cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_cr_date } }
+
+// -- inventory --
+def relation rel_inventory_item      { from: er.entity.inventory, to: er.entity.item,      cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_inv_item } }
+def relation rel_inventory_warehouse { from: er.entity.inventory, to: er.entity.warehouse, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_inv_warehouse } }
+def relation rel_inventory_date      { from: er.entity.inventory, to: er.entity.date_dim,  cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_inv_date } }
+
+// -- customer's own dimension chains --
+def relation rel_customer_addr  { from: er.entity.customer, to: er.entity.customer_address,        cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_c_addr } }
+def relation rel_customer_cdemo { from: er.entity.customer, to: er.entity.customer_demographics,    cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_c_cdemo } }
+def relation rel_customer_hdemo { from: er.entity.customer, to: er.entity.household_demographics,   cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_c_hdemo } }
+
+// -- household_demographics -> income_band --
+def relation rel_household_demographics_income_band { from: er.entity.household_demographics, to: er.entity.income_band, cardinality: { from: "0..*", to: "1" }, binding: { fk: db.dbo.fk_hd_income } }
