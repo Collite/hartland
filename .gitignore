@@ -1,0 +1,10 @@
+# TTR-M build artifacts (regenerated)
+dist/
+node_modules/
+.modeler/
+*.log
+
+# data build scratch (dumps live in SeaweedFS tpcds-staging/hartland/{us,cz}/, not in git)
+data/**/*.dump
+data/**/*.sql.gz
+data/recon/results/*.tmp
