@@ -20,20 +20,23 @@ UPDATE warehouse SET w_warehouse_name = 'Reno DC'      WHERE w_warehouse_sk = 3;
 UPDATE warehouse SET w_warehouse_name = 'Allentown DC' WHERE w_warehouse_sk = 4;
 
 -- S-9: the 13 placeholder "reason NN" rows (keyed on r_reason_sk -- two rows, 30 and 31, share
--- the literal text "reason 31", a dsdgen quirk, so text-matching would collapse them).
+-- the literal text "reason 31", a dsdgen quirk, so text-matching would collapse them). This
+-- canonical set is shared verbatim (as translations) with localize-cz/03-reasons.sql sk 23-35 --
+-- see data/seed/reason-placeholders-fix.sql, which is the single source of truth for both
+-- locales; keep this block and that script in sync if either changes.
 UPDATE reason SET r_reason_desc = 'Changed my mind'                 WHERE r_reason_sk = 23;
 UPDATE reason SET r_reason_desc = 'Found a better price'            WHERE r_reason_sk = 24;
-UPDATE reason SET r_reason_desc = 'Wrong size'                      WHERE r_reason_sk = 25;
-UPDATE reason SET r_reason_desc = 'Wrong color'                     WHERE r_reason_sk = 26;
+UPDATE reason SET r_reason_desc = 'Not as pictured'                 WHERE r_reason_sk = 25;
+UPDATE reason SET r_reason_desc = 'Unwanted gift'                   WHERE r_reason_sk = 26;
 UPDATE reason SET r_reason_desc = 'Ordered by mistake'              WHERE r_reason_sk = 27;
 UPDATE reason SET r_reason_desc = 'No longer needed'                WHERE r_reason_sk = 28;
-UPDATE reason SET r_reason_desc = 'Not as pictured'                 WHERE r_reason_sk = 29;
-UPDATE reason SET r_reason_desc = 'Unwanted gift'                   WHERE r_reason_sk = 30;
-UPDATE reason SET r_reason_desc = 'Incompatible with my device'     WHERE r_reason_sk = 31;
-UPDATE reason SET r_reason_desc = 'Quality not as expected'         WHERE r_reason_sk = 32;
-UPDATE reason SET r_reason_desc = 'Arrived too late for the occasion' WHERE r_reason_sk = 33;
-UPDATE reason SET r_reason_desc = 'Better price found online'       WHERE r_reason_sk = 34;
-UPDATE reason SET r_reason_desc = 'Changed delivery plans'          WHERE r_reason_sk = 35;
+UPDATE reason SET r_reason_desc = 'Incompatible with my device'     WHERE r_reason_sk = 29;
+UPDATE reason SET r_reason_desc = 'Quality not as expected'         WHERE r_reason_sk = 30;
+UPDATE reason SET r_reason_desc = 'Duplicate order'                 WHERE r_reason_sk = 31;
+UPDATE reason SET r_reason_desc = 'Missing accessory'                WHERE r_reason_sk = 32;
+UPDATE reason SET r_reason_desc = 'Damaged packaging'                WHERE r_reason_sk = 33;
+UPDATE reason SET r_reason_desc = 'Other reason'                     WHERE r_reason_sk = 34;
+UPDATE reason SET r_reason_desc = 'Manufacturer claim'                WHERE r_reason_sk = 35;
 
 COMMIT;
 

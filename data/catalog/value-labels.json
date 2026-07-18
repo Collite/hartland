@@ -1,0 +1,447 @@
+{
+  "category": [
+    {
+      "key": "Books",
+      "en": "Books",
+      "cs": "Knihy"
+    },
+    {
+      "key": "Children",
+      "en": "Children",
+      "cs": "Dětské"
+    },
+    {
+      "key": "Electronics",
+      "en": "Electronics",
+      "cs": "Elektronika"
+    },
+    {
+      "key": "Home",
+      "en": "Home",
+      "cs": "Domácnost"
+    },
+    {
+      "key": "Jewelry",
+      "en": "Jewelry",
+      "cs": "Šperky"
+    },
+    {
+      "key": "Men",
+      "en": "Men",
+      "cs": "Pánské"
+    },
+    {
+      "key": "Music",
+      "en": "Music",
+      "cs": "Hudba"
+    },
+    {
+      "key": "Shoes",
+      "en": "Shoes",
+      "cs": "Obuv"
+    },
+    {
+      "key": "Sports",
+      "en": "Sports",
+      "cs": "Sport"
+    },
+    {
+      "key": "Women",
+      "en": "Women",
+      "cs": "Dámské"
+    }
+  ],
+  "reason": [
+    {
+      "key": "r_reason_sk_1",
+      "en": "Package was damaged",
+      "cs": "Balík byl poškozen"
+    },
+    {
+      "key": "r_reason_sk_2",
+      "en": "Stopped working",
+      "cs": "Přestalo fungovat"
+    },
+    {
+      "key": "r_reason_sk_3",
+      "en": "Did not get it on time",
+      "cs": "Nedorazilo včas"
+    },
+    {
+      "key": "r_reason_sk_4",
+      "en": "Not the product that was ordred",
+      "cs": "Nebyl to objednaný produkt"
+    },
+    {
+      "key": "r_reason_sk_5",
+      "en": "Parts missing",
+      "cs": "Chybí díly"
+    },
+    {
+      "key": "r_reason_sk_6",
+      "en": "Does not work with a product that I have",
+      "cs": "Nefunguje s produktem, který mám"
+    },
+    {
+      "key": "r_reason_sk_7",
+      "en": "Gift exchange",
+      "cs": "Výměna dárku"
+    },
+    {
+      "key": "r_reason_sk_8",
+      "en": "Did not like the color",
+      "cs": "Nelíbila se mi barva"
+    },
+    {
+      "key": "r_reason_sk_9",
+      "en": "Did not like the model",
+      "cs": "Nelíbil se mi model"
+    },
+    {
+      "key": "r_reason_sk_10",
+      "en": "Did not like the make",
+      "cs": "Nelíbila se mi značka"
+    },
+    {
+      "key": "r_reason_sk_11",
+      "en": "Did not like the warranty",
+      "cs": "Nelíbila se mi záruka"
+    },
+    {
+      "key": "r_reason_sk_12",
+      "en": "No service location in my area",
+      "cs": "V mém okolí není servis"
+    },
+    {
+      "key": "r_reason_sk_13",
+      "en": "Found a better price in a store",
+      "cs": "Našel/našla jsem lepší cenu v obchodě"
+    },
+    {
+      "key": "r_reason_sk_14",
+      "en": "Found a better extended warranty in a store",
+      "cs": "Lepší prodloužená záruka v obchodě"
+    },
+    {
+      "key": "r_reason_sk_15",
+      "en": "Not working any more",
+      "cs": "Přestalo fungovat úplně"
+    },
+    {
+      "key": "r_reason_sk_16",
+      "en": "Did not fit",
+      "cs": "Nesedělo to"
+    },
+    {
+      "key": "r_reason_sk_17",
+      "en": "Wrong size",
+      "cs": "Špatná velikost"
+    },
+    {
+      "key": "r_reason_sk_18",
+      "en": "Lost my job",
+      "cs": "Přišel/přišla jsem o práci"
+    },
+    {
+      "key": "r_reason_sk_19",
+      "en": "unauthoized purchase",
+      "cs": "Neautorizovaný nákup"
+    },
+    {
+      "key": "r_reason_sk_20",
+      "en": "duplicate purchase",
+      "cs": "Duplicitní nákup"
+    },
+    {
+      "key": "r_reason_sk_21",
+      "en": "its is a boy",
+      "cs": "Je to kluk"
+    },
+    {
+      "key": "r_reason_sk_22",
+      "en": "it is a girl",
+      "cs": "Je to holka"
+    },
+    {
+      "key": "r_reason_sk_23",
+      "en": "Changed my mind",
+      "cs": "Změnil/a jsem názor"
+    },
+    {
+      "key": "r_reason_sk_24",
+      "en": "Found a better price",
+      "cs": "Našel/našla jsem lepší cenu"
+    },
+    {
+      "key": "r_reason_sk_25",
+      "en": "Not as pictured",
+      "cs": "Neodpovídá popisu"
+    },
+    {
+      "key": "r_reason_sk_26",
+      "en": "Unwanted gift",
+      "cs": "Nechtěný dárek"
+    },
+    {
+      "key": "r_reason_sk_27",
+      "en": "Ordered by mistake",
+      "cs": "Objednáno omylem"
+    },
+    {
+      "key": "r_reason_sk_28",
+      "en": "No longer needed",
+      "cs": "Již nepotřebuji"
+    },
+    {
+      "key": "r_reason_sk_29",
+      "en": "Incompatible with my device",
+      "cs": "Nekompatibilní se zařízením"
+    },
+    {
+      "key": "r_reason_sk_30",
+      "en": "Quality not as expected",
+      "cs": "Kvalita neodpovídá"
+    },
+    {
+      "key": "r_reason_sk_31",
+      "en": "Duplicate order",
+      "cs": "Duplicitní objednávka"
+    },
+    {
+      "key": "r_reason_sk_32",
+      "en": "Missing accessory",
+      "cs": "Chybějící příslušenství"
+    },
+    {
+      "key": "r_reason_sk_33",
+      "en": "Damaged packaging",
+      "cs": "Poškozený obal"
+    },
+    {
+      "key": "r_reason_sk_34",
+      "en": "Other reason",
+      "cs": "Jiný důvod"
+    },
+    {
+      "key": "r_reason_sk_35",
+      "en": "Manufacturer claim",
+      "cs": "Reklamace u výrobce"
+    }
+  ],
+  "dc": [
+    {
+      "key": "warehouse_sk_5",
+      "en": "Memphis DC",
+      "cs": "Brno DC"
+    },
+    {
+      "key": "warehouse_sk_1",
+      "en": "Columbus DC",
+      "cs": "Praha DC"
+    },
+    {
+      "key": "warehouse_sk_2",
+      "en": "Dallas DC",
+      "cs": "Ostrava DC"
+    },
+    {
+      "key": "warehouse_sk_3",
+      "en": "Reno DC",
+      "cs": "Plzeň DC"
+    },
+    {
+      "key": "warehouse_sk_4",
+      "en": "Allentown DC",
+      "cs": "Hradec Králové DC"
+    }
+  ],
+  "container": [
+    {
+      "key": "Bag",
+      "en": "Bag",
+      "cs": "Taška"
+    },
+    {
+      "key": "Blister",
+      "en": "Blister",
+      "cs": "Blistr"
+    },
+    {
+      "key": "Box",
+      "en": "Box",
+      "cs": "Krabice"
+    },
+    {
+      "key": "Case",
+      "en": "Case",
+      "cs": "Pouzdro"
+    },
+    {
+      "key": "Digipak",
+      "en": "Digipak",
+      "cs": "Digipack"
+    },
+    {
+      "key": "Dust Bag",
+      "en": "Dust Bag",
+      "cs": "Sáček"
+    },
+    {
+      "key": "Garment",
+      "en": "Garment",
+      "cs": "Krabice"
+    },
+    {
+      "key": "Gift Box",
+      "en": "Gift Box",
+      "cs": "Krabice"
+    },
+    {
+      "key": "Hardcover",
+      "en": "Hardcover",
+      "cs": "Vázaná"
+    },
+    {
+      "key": "Jewel Box",
+      "en": "Jewel Box",
+      "cs": "Krabička"
+    },
+    {
+      "key": "Jewel Case",
+      "en": "Jewel Case",
+      "cs": "Obal na CD"
+    },
+    {
+      "key": "Paperback",
+      "en": "Paperback",
+      "cs": "Brožovaná"
+    },
+    {
+      "key": "Poly Bag",
+      "en": "Poly Bag",
+      "cs": "Fólie"
+    },
+    {
+      "key": "Pouch",
+      "en": "Pouch",
+      "cs": "Sáček"
+    },
+    {
+      "key": "Roll",
+      "en": "Roll",
+      "cs": "Role"
+    },
+    {
+      "key": "Set",
+      "en": "Set",
+      "cs": "Sada"
+    },
+    {
+      "key": "Shoe Box",
+      "en": "Shoe Box",
+      "cs": "Krabice"
+    }
+  ],
+  "size": [
+    {
+      "key": "L",
+      "en": "L",
+      "cs": "L"
+    },
+    {
+      "key": "M",
+      "en": "M",
+      "cs": "M"
+    },
+    {
+      "key": "S",
+      "en": "S",
+      "cs": "S"
+    },
+    {
+      "key": "XL",
+      "en": "XL",
+      "cs": "XL"
+    },
+    {
+      "key": "XS",
+      "en": "XS",
+      "cs": "XS"
+    },
+    {
+      "key": "compact",
+      "en": "compact",
+      "cs": "kompaktní"
+    },
+    {
+      "key": "deluxe",
+      "en": "deluxe",
+      "cs": "deluxe"
+    },
+    {
+      "key": "infant",
+      "en": "infant",
+      "cs": "kojenecká"
+    },
+    {
+      "key": "large",
+      "en": "large",
+      "cs": "velké"
+    },
+    {
+      "key": "large-print",
+      "en": "large-print",
+      "cs": "velký tisk"
+    },
+    {
+      "key": "medium",
+      "en": "medium",
+      "cs": "střední"
+    },
+    {
+      "key": "newborn",
+      "en": "newborn",
+      "cs": "novorozenecká"
+    },
+    {
+      "key": "petite",
+      "en": "petite",
+      "cs": "malá"
+    },
+    {
+      "key": "pocket",
+      "en": "pocket",
+      "cs": "kapesní"
+    },
+    {
+      "key": "pro",
+      "en": "pro",
+      "cs": "profesionální"
+    },
+    {
+      "key": "single",
+      "en": "single",
+      "cs": "singl"
+    },
+    {
+      "key": "small",
+      "en": "small",
+      "cs": "malé"
+    },
+    {
+      "key": "standard",
+      "en": "standard",
+      "cs": "standardní"
+    },
+    {
+      "key": "statement",
+      "en": "statement",
+      "cs": "výrazná"
+    },
+    {
+      "key": "toddler",
+      "en": "toddler",
+      "cs": "batolecí"
+    }
+  ]
+}
