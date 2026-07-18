@@ -34,13 +34,16 @@
 
 ## Tasks
 
-> **⚠ RECONCILE SERVICE NAMES FIRST (Stage 3.0 X-roster).** T1–T4 below name apps/services by
-> their **pre-rename** identities — `ariadne` (model resolve), `arges` (DB connection), `kyklop`
-> (world map), `proteus`, `prometheus` (LLM provider). The live constellation was renamed (e.g.
-> the LLM provider is now `llm-gateway`; see the current rosters in `p3-completeness-matrix.md`
-> X-roster). Map each to its **current** app dir + values path (`clusters/hartland/apps/<name>/`)
-> and the current env-var names before editing values. The wiring *shape* here (two connections,
-> two Kyklop maps, real LLM keys) is unchanged — only the service/app names need updating.
+> **⚠ SERVICE NAMES RECONCILED (Stage 3.0 X-roster, resolved 2026-07-18 — `p3-completeness-matrix.md`).**
+> T1–T4 name apps by their pre-rename identities; use the **current** app dirs
+> (`clusters/hartland/apps/<name>/`): **T1** Ariadne → **`veles`** (model Git source = `Collite/hartland`);
+> **T2** Arges (DB connection) → **`postgres`** (the PG worker holding the `pg-hartland` conn — the
+> `ARGES_PG_HARTLAND_*` env lives here now; **not** `validate`, which is argos); **T3** Kyklop
+> (world map) → **`dispatch`**; **T4** Prometheus (real LLM keys) → **`llm-gateway`** (the LLM
+> gateway — **not** the monitoring `prometheus`). Full chain: theseus→`query`, proteus→`translate`,
+> argos→`validate`, kyklop→`dispatch`, arges→`postgres`. The wiring *shape* (two connections, two
+> Kyklop maps, real LLM keys) is unchanged — only names + env-var prefixes. (Confirm the Themis
+> routing app dir: `resolver` vs `themis-mcp`.)
 
 - [ ] **T1 — Ariadne model Git source = `Collite/hartland` (H3.1 T1; resolve Q-9).**
   Point Ariadne at the `Collite/hartland` repo (`model/` folder) as its model Git source in

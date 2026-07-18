@@ -39,10 +39,12 @@ Model + agents (`[H]` `model/`, `agents/`) are authored in Phase 2 and **consume
 
 **[`p3-completeness-matrix.md`](p3-completeness-matrix.md)** (backed by
 [`p3-completeness-inventory.md`](p3-completeness-inventory.md)) is the requirement→owning-task
-matrix the rest of Phase 3 is checked against — **produced by Stage 3.0, pending Bora sign-off**.
-Headline finding (**X-roster**): the E-3 roster + H3 wiring name services by their pre-rename
-identities; reconcile to current app names before the S3.1 trim and S3.3 wiring. Two orphans
-folded (rehearsal ladder R1–R3 → S3.5 T8; SPLIT probe → S3.4 T6).
+matrix the rest of Phase 3 is checked against — **produced by Stage 3.0; matrix all-green, pending
+Bora sign-off**. Headline finding (**X-roster, RESOLVED**): the E-3 roster + H3 wiring named
+services by pre-rename identities — the read-spine was extracted to `tatrman-server` + renamed
+(theseus→`query`, ariadne→`veles`, arges→`postgres`, kyklop→`dispatch`, prometheus→`llm-gateway`, …);
+mapping validated against the live rosters and folded into S3.1 T5 + S3.3. Two orphans folded
+(rehearsal ladder R1–R3 → S3.5 T8; SPLIT probe → S3.4 T6).
 
 ## Pre-flight gates (track; do NOT start H2+ without them — from `plan-cluster.md`, extended)
 

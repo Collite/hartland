@@ -11,12 +11,12 @@
 
 ## Bora sign-off
 
-- **Status: PENDING Bora sign-off.** Presented 2026-07-18. Gate: Stage 3.1 (fork/trim/pin) is
-  orphan-independent and already in flight; **H2+ (Stages 3.2+) do not proceed until this matrix
-  is all-green or every amber has an accepted disposition.**
-- Dispositions requested: **X-roster** (the service-rename reconcile — headline amber) and the
-  two folded orphans below.
-- _(Bora: sign here — date + any dispositions.)_
+- **Status: matrix ALL-GREEN — pending Bora sign-off.** Presented 2026-07-18. Gate: **H2+
+  (Stages 3.2+) do not proceed until this matrix is all-green or every amber has an accepted
+  disposition** — there are now **zero ambers** (X-roster resolved + validated 2026-07-18).
+- Every requirement is `owned` / `folded` / `cross-ref` / `N-A`; the two folds (rehearsal ladder
+  R1–R3 → S3.5 T8; SPLIT probe → S3.4 T6) just need an ack.
+- _(Bora: sign here — date. This unblocks H2+.)_
 
 ## Matrix
 
@@ -30,9 +30,9 @@
 | A-data-3 recon → demo dump → staging | App A | **P1 S1.6** | owned ✓done | dumps in `tpcds-staging/hartland/{us,cz}/` |
 | A-clu-1 fork of bp-dsk | App A | **P3 S3.1** | owned ✓done | forked **collite-o1** (correct tenant; see s1 note) |
 | A-clu-2 pinned MP-4 tags | App A | **P3 S3.1 T6 / S3.5 T4** | owned (deferred) | bring-up on `:testing`; pin-flip = G1 @ 3.5 |
-| A-clu-3 E-3 estate | App A | **P3 S3.1 T5 + S3.3 T4** | **amber** | X-roster: E-3 names are pre-rename → reconcile before trim/wire |
+| A-clu-3 E-3 estate | App A | **P3 S3.1 T5 + S3.3 T4** | owned | names reconciled (X-roster resolved); trim deferred as footprint-only |
 | A-clu-4 warehouse CNPG (S-14) | App A | **P3 S3.2** | owned | |
-| A-clu-5 `pg-hartland` conn + Kyklop map | App A | **P3 S3.3 T2/T3** | **amber** | X-roster: `arges`/`kyklop` app names |
+| A-clu-5 `pg-hartland` conn + Kyklop map | App A | **P3 S3.3 T2/T3** | owned | reconciled: `arges`→**postgres** (conn), `kyklop`→**dispatch** (map) |
 | A-clu-6 Keycloak realm (Maya, Dan) | App A | **P3 S3.3 T5** | owned | + CZ personas (Q-BM-4a) |
 | A-clu-7 `hartland-query` run-set | App A | **P3 S3.4** | owned | |
 | A-clu-8 demo-reset + fixtures | App A | **P3 S3.5 T1/T2** | owned | |
@@ -122,19 +122,53 @@ install-without-preserve (a demo-killer). All green:
 | Keycloak users (both persona sets) | **S3.3 T5** | **S3.5 T1** |
 | warehouse (read-only, never dirtied) | **S3.2** (restore) | **S3.5 T1** (never touch `hartland-pg`) |
 
+## X-roster — RESOLVED (2026-07-18)
+
+The E-3 roster + H3 wiring named services by their **pre-rename** identities. The rename is the
+**read-spine extraction to the open-source `tatrman-server` repo** (2026-07, SV-P0/P1), deployed via
+olymp under **functional** app names. **Source:** `kantheon/docs/architecture/kantheon-architecture.md`
+§2.b + kantheon `CLAUDE.md` §2/§9 (doc dated 2026-07-11). **Validated:** every "current app" below
+**exists as a deployed app** on the live bp-dsk / collite-o1 / hartland rosters (checked 2026-07-18) —
+the doc is current, not stale.
+
+| E-3 / demo name (old) | **current olymp app** | tatrman-server service | role |
+|---|---|---|---|
+| theseus (+mcp) | **query** (+ `query-mcp`) | ttr-query | query orchestrator (the OBO data-path edge) |
+| proteus | **translate** | ttr-translate | lang ↔ RelNode ↔ SQL translator |
+| argos | **validate** | ttr-validate | validator + RLS (roles from the bearer) |
+| kyklop | **dispatch** | ttr-dispatch | worker dispatcher (`world.table-connections`) |
+| **arges** | **postgres** | ttr-worker-postgres | ⚠ the Postgres **worker** that holds the `pg-hartland` connection + executes — **NOT** `argos`/validate |
+| ariadne (+mcp) | **veles** (+ `veles-mcp`) | Veles | model graph/metadata; serves model+prompts (**Ariadne model Git source → the `veles` app**) |
+| echo | **fuzzy** (+ `fuzzy-mcp`) | ttr-fuzzy | Czech-aware fuzzy matcher |
+| kadmos | **nlp** (+ `nlp-mcp`) | ttr-nlp | NLP foundation (Python) |
+| **prometheus** (real LLM keys) | **llm-gateway** | ttr-llm-gateway | ⚠ the **LLM gateway** — **NOT** the monitoring Prometheus (`platform/monitoring/prometheus`, stays) |
+| brontes | **mssql** | ttr-worker-mssql | MSSQL worker — **OUT** for the demo (nothing routes to MSSQL) |
+| steropes | **polars** | ttr-worker-polars | Polars worker — **IN** (Beat 5 Metis/forecast needs it, contra E-3's "if a dep surfaces") |
+| whois | **identity** | ttr-identity | user/role directory (Argos role source = bearer default → off the hot path) |
+| capabilities-mcp · charon(+mcp) · metis(+mcp) · iris · iris-bff · themis(+mcp) · pythia · golem · hebe · report-renderer · landing · health | **unchanged** | stay in kantheon | survivors (persona names kept) |
+
+**Two gotchas the reconcile must respect** (both flagged inline above): (1) **argos vs arges** — the
+demo substrate chain `theseus→proteus→argos→kyklop→arges` has *both*: `argos`→**validate** (validator)
+and `arges`→**postgres** (the PG worker that carries the `ARGES_PG_HARTLAND_*` connection env). (2)
+**two Prometheis** — E-3's "prometheus with real LLM keys" is the LLM gateway → **`llm-gateway`**; the
+metrics Prometheus is a separate monitoring component that stays.
+
+**One residual to confirm at S3.3 (not blocking):** the live rosters show both a `resolver` app and
+`themis-mcp` — Themis is "the Resolver post-extraction", so the routing agent is likely deployed as
+`resolver` with `themis-mcp` as its wrapper; confirm the app dir when wiring. Also: the live clusters
+carry extra non-demo services (`kallimachos`/`pinakes`/`kleio` = DocWH; `grounding-mcp`/`chrono`/`geo`/
+`money`) that the S3.1 trim removes — not part of the demo E-3.
+
 ## Orphan-resolution log (T3)
 
 No orphan closed by assertion — each got a concrete home:
 
-1. **X-roster (amber, headline).** The 06-e E-3 roster and the H3 wiring (s3 T2/T3/T4) name
-   services by their **pre-rename** names (theseus/proteus/argos/kyklop/arges/ariadne/echo/kadmos/
-   prometheus) — none exist on the live clusters (renamed constellation; current apps: dispatch,
-   query, resolver, fuzzy, kallimachos, kleio, veles, llm-gateway, … + survivors charon/metis/iris/
-   hebe/pythia/themis/golem/capabilities-mcp). **Resolution:** folded a reconcile note into
-   `tasks-p3-s1-fork-foundation.md` T5 and `tasks-p3-s3-estate-both-worlds.md` T2/T3/T4 — the
-   old→new mapping must be established (source: the kantheon service list + the live bp-dsk/collite-o1
-   rosters) before trim (S3.1) and wiring (S3.3). **Needs a Bora disposition** (this is why S3.1 T5
-   trim + S3.3 were deferred; the full roster is running meanwhile, 64 GB fits it).
+1. **X-roster (was amber → RESOLVED, see the section above).** Old→new mapping established from
+   `kantheon-architecture.md` §2.b and **validated against the live cluster rosters**. Folded the
+   concrete names into `tasks-p3-s1-fork-foundation.md` T5 (trim against current app names) and
+   `tasks-p3-s3-estate-both-worlds.md` T1–T4 (wire `veles`/`postgres`/`dispatch`/`validate`/
+   `translate`/`query`/`llm-gateway`). No longer blocks H2+; the S3.1 trim stays deferred only as a
+   footprint optimization (full roster runs, 64 GB fits it).
 2. **R1/R2/R3 rehearsal ladder (orphan → folded).** The ladder up to the dry-run had no owning
    task — critically **R2's per-beat "broken run" [FALL] drills** (the L1/L2/L4 fallback moves) and
    R3's stopwatch runs. **Resolution:** folded a new **T8 (rehearsal ladder R1–R3)** into
