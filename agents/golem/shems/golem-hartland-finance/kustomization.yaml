@@ -1,0 +1,16 @@
+# Renders the golem-hartland-finance Shem overlay into the `golem-hartland-finance-shem` ConfigMap
+# for GitOps deploy — the olymp `hartland-golems` ApplicationSet applies this as one source and the
+# golem chart mounts the result at GOLEM_SHEM_DIR (`shem.configMapName: golem-hartland-finance-shem`).
+# Flat by design: only shem.yaml is mounted; the en+cs prompt bundle is mounted separately (Stage 3.3
+# T6), and until then prompts fall back to the golem image classpath. Mirrors the kantheon golem-erp
+# precedent (agents/golem/shems/golem-erp/kustomization.yaml).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configMapGenerator:
+  - name: golem-hartland-finance-shem
+    files:
+      - shem.yaml
+generatorOptions:
+  # Stable name — the golem chart references `golem-hartland-finance-shem` by a fixed `shem.configMapName`.
+  disableNameSuffixHash: true
