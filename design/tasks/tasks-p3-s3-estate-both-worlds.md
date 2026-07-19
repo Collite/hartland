@@ -135,13 +135,26 @@
     iris + iris-bff at **Iris-P4 scope** (inbox, artifacts/pins, discover, feedback) — values per bp-dsk with hartland
     deltas; **pinned tags (G1)**.
 
-- [ ] **T5 — Keycloak personas — both worlds (H3.2 T3 Δ — Q-BM-4a).**
-  Realm-as-code additions to the hartland demo realm:
+- [x] **T5 — Keycloak personas — both worlds (H3.2 T3 Δ — Q-BM-4a). ✅ DONE 2026-07-19.**
+  Realm-as-code additions to the hartland demo realm (`olymp/platform/auth/keycloak/overlays/hartland/realm/kantheon.json`,
+  imported by the PostSync `keycloak-config-sync` job — commit `5b5f76e`):
   - **US:** *Maya Chen* `maya@hartland.example` (`kantheon-area-hartland`) + *Dan Whitaker* `cfo@hartland.example`
     (`kantheon-area-hartland` + `kantheon-role-finance`) — F-1/S-13.
-  - **CZ (new, Q-BM-4a):** *Markéta Nováková* (Senior Category Manager, `kantheon-area-hartland`) + a **CZ CFO**
+  - **CZ (new, Q-BM-4a):** *Markéta Nováková* `marketa@hartland.example` (Senior Category Manager, `kantheon-area-hartland`)
+    + *Tomáš Horák* `cfo-cz@hartland.example` (CZ CFO — unnamed cameo in docs, defaulted; rename freely)
     (`kantheon-area-hartland` + `kantheon-role-finance`).
   The delivery locale picks its persona set (BM-8, one-locale-per-delivery); both sets are demo-ready.
+  > **Modeling correction (verified against source, not groups):** area/finance are **REALM ROLES**, not
+  > Keycloak groups. iris-bff reads `realm_access.roles` (`agents/iris-bff/.../BearerRoles.kt:30-35`) and
+  > Discover intersects them against each Shem's `visibility_roles` (`.../DiscoverService.kt:35-36`) — the
+  > runtime has **no `groups`-claim reader**. golem-hartland gates on `kantheon-area-hartland`;
+  > golem-hartland-finance on `kantheon-role-finance` (disjoint — B-2α). **CFOs need BOTH roles** (else Discover
+  > shows them only the finance card = 1, breaking the E-5 item-6 "CFO=2 cards" contrast); category managers hold
+  > area only → 1 card. Personas are tenant-less (pg-hartland connections `requires-tenant-id=false` → no RLS attr).
+  > **Also delivered here (was a missing pre-smoke prerequisite, Stage 2.4 B4):** the **`iris` public OIDC client**
+  > (PKCE S256, standard flow + direct-access-grants) — the Iris SPA references `clientId=iris` but the realm never
+  > defined it. Direct-access-grants let T7 mint persona tokens (`grant_type=password`) for the verify block.
+  > Demo password (all four): `Hartland!2026` (`temporary=false`). Standing fixture — `demo-reset` preserves them (H5.1 T1).
 
 - [ ] **T6 — Mount the cs prompt bundle (H3.2 Δ — BM-6).**
   Mount the Shem's **cs prompt bundle** (`agents/golem/shems/prompts/cs/`, previously "unused per FI-4", now in
