@@ -34,6 +34,37 @@
 
 ## Tasks
 
+> **⚑ FINDING — LEXICON PARSE ERRORS = STALE veles IMAGE (2026-07-19, T1 verification; corrected).**
+> veles serves the real `Collite/hartland` model (branch `demo-p2`, commit `44b4d3f`, 548 objects) via
+> `METADATA_GIT_*` + the `veles-github-pat` secret, loading with **48 errors**:
+> - **20 `ttr/package-declaration-mismatch`** — non-fatal (`LoadWarning`), the documented `modeler.toml`
+>   `layout="off"` residual. Core star (db/er/md/binding/queries) loads + resolves (zero unresolved-refs).
+> - **28 parse errors in all 6 `lexicon/` files** — `mismatched input 'lexicon'/'term'/'example'`. **Cause:
+>   the live image `veles:0.9.0` bundles a pre-lexicon (0.9.4-era) parser.** The released `ttr-parser
+>   0.9.5-rc1` DOES parse the v4.4 lexicon (verified: `LexiconEntryDefContext` in the jar); tatrman-server
+>   HEAD already pins it (`c0984c1`, 2026-07-16). No new tatrman release needed — the running image is just stale.
+>
+> **Fix (hours, no code):** build+publish a veles image from tatrman-server HEAD → bump
+> `clusters/hartland/apps/veles/values.yaml` `image.tag` → ArgoCD redeploys. Clears the 28 errors AND
+> enables attribute `valueLabels` localized display.
+>
+> **Architecture caveat (cs grounding) — RESOLVED 2026-07-19: OFF the demo critical path.** veles does NOT
+> serve lexicon *content* by design (`ttr-metadata` has no `LexiconEntryDef` ingest; RG-P4 routes the lexicon
+> via a TS vocabulary-snapshot → resolver/fuzzy path). Scoping confirmed that path is a **dormant, unwired
+> seam**: no CLI emits a snapshot artifact, no delivery transport (PL-P1, unbuilt), fuzzy is constructed with
+> `snapshotSource=null` (`ttr-fuzzy/Application.kt:154`), the resolver registry adapter returns empty
+> (`RegistrySource.kt:63-69`), and neither a snapshot-seeded `fuzzy` nor the `resolver` service is even deployed
+> on hartland (deliberately trimmed — `tasks-p3-s1-fork-foundation.md:64-65`). **But the scripted demo does not
+> need it:** it resolves via golem (LLM) → pattern plans → theseus→proteus→argos→kyklop→arges → SQL. The cs
+> experience the demo depends on is all present/cheap — **cs `example_questions` in the Shem JSON** (P2 done),
+> the **cs prompt bundle** (T6 mount), **localized `valueLabels` display** (served by veles → handled by the
+> `0.9.1` image bump), cs `counter_example`, and CZK Money rendering. Live `tržba/obrat` fuzzy grounding is the
+> reference target for **SV-P4·S5 golem-conformance**, not a Stage-3.3 demo requirement → **deferred to SV-P4.**
+> Memory: `hartland-lexicon-runtime-gap`. **✅ RESOLVED 2026-07-19:** `veles/v0.9.7-RELEASE` cut (Bora) →
+> olymp `image.tag 0.9.0→0.9.7` (`0943e69`) → redeployed. New pod loads **548 objects, 0 parse errors** (the 6
+> `lexicon/*.ttrm` now parse); the 26 remaining are all cosmetic `ttr/package-declaration-mismatch` warnings.
+> Lexicon parses + `valueLabels` served. T1 lexicon-load acceptance met (content-serving deferred per above).
+
 > **⚠ SERVICE NAMES RECONCILED (Stage 3.0 X-roster, resolved 2026-07-18 — `p3-completeness-matrix.md`).**
 > T1–T4 name apps by their pre-rename identities; use the **current** app dirs
 > (`clusters/hartland/apps/<name>/`): **T1** Ariadne → **`veles`** (model Git source = `Collite/hartland`);
@@ -73,10 +104,26 @@
   ```
   Both DBs live on the same CNPG (Q-BM-3a), so the host is shared; the role/db differ per connection.
 
-- [ ] **T3 — TWO Kyklop `world.table-connections` mappings (H3.1 T3 Δ — BM-6).**
-  In `clusters/hartland/apps/kyklop/values.yaml`, map the **same** hartland model tables → `pg-hartland-us` **and**
-  → `pg-hartland-cz` (the star is currency-agnostic; the Money measure's unit resolves per connection — USD on us,
-  CZK on cz, BM-2). Verify each mapping resolves the full table set (facts + used dims) with no dangling table.
+- [x] **T3 — Kyklop `world.table-connections` (H3.1 T3 Δ — BM-6). ✅ DONE 2026-07-19 (2 upstream fixes).**
+  Verified: dispatch (`0.9.7`) routes `WORLD_DEFAULT_CONNECTION=pg-hartland-us` with empty baked map; the
+  postgres worker (`0.9.7`) advertises `pg-hartland-us`/`pg-hartland-cz`/`pg-tpcds` with **live pools
+  (idle:10 each)**; dispatch registry sees all three. Full SELECT through theseus→…→pg-hartland-us deferred
+  to T7 (needs a query source + personas). Two tatrman-server fixes required (see flag above +
+  `hartland-dispatch-tpcds-collision`): dispatch base-conf table-connections emptied (`1d418b3`); worker
+  base conf declares pg-hartland-{us,cz} + skips host-less connections (`71337b2`).
+  In `clusters/hartland/apps/dispatch/values.yaml`. **Design correction (2026-07-19):** identical qnames across
+  worlds + single-world `WorldConfig` + ttr-query sends no explicit `connection_id` ⇒ world selection is a
+  per-deployment dispatch-config fact (one `default-connection` per delivery, flipped us↔cz), NOT two coexisting
+  table-map entries. **BLOCKER:** the deployed `ttr-dispatch:0.9.0` bakes `db.dbo.{store_sales,catalog_sales,
+  web_sales,date_dim,item,customer,store} → pg-tpcds`; hartland's tables are exactly those names → every query
+  derives `pg-tpcds` → `no_worker_for_connection` (both worlds). Not overridable via Helm values (only
+  `WORLD_DEFAULT_CONNECTION` env, bypassed when derived is non-empty; table-connections hardcoded, no mount).
+  **Fix path (A) chosen + implemented 2026-07-19:** tatrman-server `1d418b3` empties the base conf's
+  `table-connections` (drops the baked tpcds block); olymp `6f7138a` sets hartland dispatch
+  `WORLD_DEFAULT_CONNECTION=pg-hartland-us` (extraEnv, worker endpoints restated; flip →`-cz` per delivery).
+  **Remaining:** Bora cuts a `ttr-dispatch/v*` release → bump `clusters/hartland/apps/dispatch/values.yaml`
+  `image.tag 0.9.0→<new>` → verify hartland queries derive `pg-hartland-us` (no `no_worker_for_connection`).
+  Memory: `hartland-dispatch-tpcds-collision`.
 
 - [ ] **T4 — Register both Shems + platform deps live (H3.1 T4/T5, H3.2 T1/T2).**
   - `clusters/hartland/golems/golem-hartland.json` + `golem-hartland-finance.json` (the dynamic golems
