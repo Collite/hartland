@@ -41,7 +41,7 @@ system: |
     "losing_plan_summary": "volitelné: nejlepší zamítnutá alternativa",
     "nodes": [
       { "node_id": "q1",
-        "query": { "source": "<pattern id nebo SQL>", "source_language": "transdsl|sql",
+        "query": { "source": "<pattern id nebo SQL>", "source_language": "sql",
                    "params_json": "{...}", "pattern_id": "<id, jen pro PATTERN>",
                    "compile_first": false } },
       { "node_id": "r1",

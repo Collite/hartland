@@ -45,7 +45,7 @@ system: |
     "losing_plan_summary": "optional: the best rejected alternative",
     "nodes": [
       { "node_id": "q1",
-        "query": { "source": "<pattern id or SQL>", "source_language": "transdsl|sql",
+        "query": { "source": "<pattern id or SQL>", "source_language": "sql",
                    "params_json": "{...}", "pattern_id": "<id, PATTERN only>",
                    "compile_first": false } },
       { "node_id": "r1",
