@@ -1,9 +1,12 @@
-# Renders the golem-hartland-finance Shem overlay into the `golem-hartland-finance-shem` ConfigMap
-# for GitOps deploy — the olymp `hartland-golems` ApplicationSet applies this as one source and the
-# golem chart mounts the result at GOLEM_SHEM_DIR (`shem.configMapName: golem-hartland-finance-shem`).
-# Flat by design: only shem.yaml is mounted; the en+cs prompt bundle is mounted separately (Stage 3.3
-# T6), and until then prompts fall back to the golem image classpath. Mirrors the kantheon golem-erp
-# precedent (agents/golem/shems/golem-erp/kustomization.yaml).
+# Renders the golem-hartland-finance Shem overlay + prompt bundle into the
+# `golem-hartland-finance-shem` ConfigMap for GitOps deploy — the olymp `hartland-golems`
+# ApplicationSet applies this as one source and the golem chart mounts it at GOLEM_SHEM_DIR
+# (`shem.configMapName: golem-hartland-finance-shem`).
+#
+# Stage 3.3 T6 — the en+cs prompt bundle is packed alongside shem.yaml. ConfigMap keys can't contain
+# '/', so each prompt gets a flat key (`prompts-<locale>-intent.yaml`); the golem chart re-nests them
+# into `prompts/<locale>/intent.yaml` at mount time via `shem.items` (olymp _values.yaml →
+# _volumes.tpl). See the golem-hartland kustomization for the full mechanism note.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -11,6 +14,8 @@ configMapGenerator:
   - name: golem-hartland-finance-shem
     files:
       - shem.yaml
+      - prompts-en-intent.yaml=prompts/en/intent.yaml
+      - prompts-cs-intent.yaml=prompts/cs/intent.yaml
 generatorOptions:
   # Stable name — the golem chart references `golem-hartland-finance-shem` by a fixed `shem.configMapName`.
   disableNameSuffixHash: true
