@@ -9,7 +9,12 @@ kind: golem-shem
 source:
   repo: hartland
   agentDef: agents/hartland.yaml   # same agent def as golem-hartland — no new data (F-1)
-  id: hartland
+  id: hartland-finance             # DISTINCT from golem-hartland's id — golem-<id> drives BOTH the
+                                   # registered agent_id (golem-hartland-finance) AND the service
+                                   # endpoint (golem-hartland-finance:7420). Sharing `hartland` here
+                                   # collided both Shems onto agent_id golem-hartland (last-writer
+                                   # won Discover) and mis-pointed finance routing at the analytics
+                                   # pod. Stage 3.3 T7. The area stays `hartland` (areas, below).
   label: "Hartland Finance"
   areas: [hartland]                # same area; the query SUBSET narrowing is this overlay's job
 
