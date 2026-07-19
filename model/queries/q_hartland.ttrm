@@ -39,6 +39,18 @@ def query channel_revenue_monthly {
         GROUP BY d.d_year, d.d_moy
         ORDER BY d_year, d_moy, channel
     """
+    search {
+        patterns: [
+            "(monthly|month by month) revenue (per|by) channel",
+            "revenue by channel over time",
+            "(mesicni|měsíční) trzby (podle|dle) kanalu",
+            "vyvoj trzeb (podle|dle) kanalu (v case|po mesicich)"
+        ],
+        examples: [
+            "Monthly revenue by channel",
+            "Měsíční tržby podle kanálu"
+        ]
+    }
     parameters: [
         { name: year_from, type: int, label: "From year" },
         { name: year_to, type: int, label: "To year" }
@@ -63,6 +75,22 @@ def query channel_revenue_yoy {
         FROM cur JOIN prior ON cur.channel = prior.channel
         ORDER BY cur.channel
     """
+    search {
+        patterns: [
+            "(year over year|year-over-year|yoy) revenue (per|by) channel",
+            "compare (revenue|sales) {prior_year} (vs|versus|and) {year}",
+            "how did (marketplace |web |store |)revenue develop in {year}",
+            "mezirocni trzby (podle|dle) kanalu",
+            "porovnej trzby {prior_year} (vs|a) {year}",
+            "jak se vyvijela trzba (z trziste |z webu |z prodejen |)(v roce|za rok) {year}"
+        ],
+        examples: [
+            "Compare Web and Marketplace revenue, 2024 vs 2025",
+            "How did Marketplace revenue develop in 2025?",
+            "Porovnej tržby z webu a tržiště, 2024 vs 2025",
+            "Jak se vyvíjela tržba z tržiště v roce 2025?"
+        ]
+    }
     parameters: [
         { name: year, type: int, label: "Year" },
         { name: prior_year, type: int, label: "Prior year" }
@@ -92,6 +120,19 @@ def query category_revenue {
         GROUP BY category
         ORDER BY revenue DESC
     """
+    search {
+        patterns: [
+            "revenue by (product |)category (for |)(channel |){channel}",
+            "which (category|categories) (drove|caused) the (drop|decline)",
+            "trzby (podle|dle) kategorie (pro |)(kanal |){channel}",
+            "ktere kategorie (zpusobily|zapricinily) (propad|pokles)"
+        ],
+        examples: [
+            "Which categories drove the H2 2025 drop?",
+            "Revenue by category for Web",
+            "Které kategorie způsobily propad v 2. pol. 2025?"
+        ]
+    }
     parameters: [
         { name: channel, type: text, label: "Channel" },
         { name: year, type: int, label: "Year" }
@@ -110,6 +151,18 @@ def query marketplace_revenue_by_warehouse {
         GROUP BY w.w_warehouse_name, d.d_year
         ORDER BY d.d_year, revenue DESC
     """
+    search {
+        patterns: [
+            "marketplace revenue by (warehouse|distribution center|DC)",
+            "which (DC|warehouse|distribution center) drives marketplace",
+            "trzby z trziste (podle|dle) (skladu|distribucniho centra|DC)",
+            "ktere (DC|sklad) tahne trziste"
+        ],
+        examples: [
+            "Marketplace revenue by distribution center",
+            "Tržby z tržiště podle skladu"
+        ]
+    }
     parameters: [
         { name: year_from, type: int, label: "From year" },
         { name: year_to, type: int, label: "To year" }
@@ -129,6 +182,18 @@ def query top_items_by_revenue {
         ORDER BY revenue DESC
         LIMIT :limit
     """
+    search {
+        patterns: [
+            "top (products|items) by revenue",
+            "best selling (products|items)",
+            "nej(prodavanejsi|lepe prodavane) (produkty|polozky)",
+            "top (produkty|polozky) (podle|dle) trzeb"
+        ],
+        examples: [
+            "Top products by revenue last year",
+            "Nejprodávanější produkty za loňský rok"
+        ]
+    }
     parameters: [
         { name: year, type: int, label: "Year" },
         { name: limit, type: int, label: "Limit" }
@@ -158,6 +223,18 @@ def query returns_by_reason {
         GROUP BY reason
         ORDER BY return_amt DESC
     """
+    search {
+        patterns: [
+            "returns by reason (for |)(channel |){channel}",
+            "why (are|were) (products|items) returned",
+            "(reklamace|vraceni) (podle|dle) duvodu (pro |)(kanal |){channel}",
+            "proc (se vraci|byly vraceny) (produkty|polozky)"
+        ],
+        examples: [
+            "Returns by reason for Marketplace",
+            "Reklamace podle důvodu"
+        ]
+    }
     parameters: [
         { name: channel, type: text, label: "Channel" },
         { name: year, type: int, label: "Year" }
@@ -182,6 +259,18 @@ def query returns_rate_by_channel {
         FROM sales JOIN returns ON sales.channel = returns.channel
         ORDER BY sales.channel
     """
+    search {
+        patterns: [
+            "return rate (per|by) channel",
+            "what is (our |the |)return rate",
+            "mira (vraceni|reklamaci) (podle|dle) kanalu",
+            "jaka je mira vraceni (podle|dle) kanalu"
+        ],
+        examples: [
+            "What is our return rate by channel?",
+            "Jaká je míra vrácení podle kanálu?"
+        ]
+    }
     parameters: [
         { name: year, type: int, label: "Year" }
     ]
@@ -201,6 +290,18 @@ def query warehouse_stockout_weeks {
         GROUP BY w.w_warehouse_name, d.d_week_seq
         ORDER BY w.w_warehouse_name, d.d_week_seq
     """
+    search {
+        patterns: [
+            "(weekly |)stockout (weeks |)(per|by) warehouse",
+            "which (items|products) were out of stock",
+            "vyprodane (tydny |)(zasoby |)(podle|dle) skladu",
+            "ktere (polozky|produkty) byly vyprodane"
+        ],
+        examples: [
+            "Which items were out of stock at Memphis DC in October 2025?",
+            "Které položky byly vyprodané v Brno DC v říjnu 2025?"
+        ]
+    }
     parameters: [
         { name: year, type: int, label: "Year" }
     ]
@@ -218,6 +319,18 @@ def query inventory_on_hand_series {
         GROUP BY w.w_warehouse_name, d.d_week_seq
         ORDER BY d.d_week_seq
     """
+    search {
+        patterns: [
+            "(weekly |)inventory (on hand|level) (for|at) (warehouse |){warehouse}",
+            "on hand (quantity|stock) series",
+            "(tydenni |)stav zasob (pro|ve skladu) (sklad |){warehouse}",
+            "vyvoj zasob (skladu |){warehouse}"
+        ],
+        examples: [
+            "Weekly inventory on hand for Memphis DC",
+            "Stav zásob v Brno DC"
+        ]
+    }
     parameters: [
         { name: warehouse, type: text, label: "Warehouse" },
         { name: year, type: int, label: "Year" }
@@ -247,6 +360,18 @@ def query customer_channel_overlap {
         GROUP BY bought_store, bought_web, bought_marketplace
         ORDER BY customers DESC
     """
+    search {
+        patterns: [
+            "customer channel overlap",
+            "customers (buy|shop) across (multiple |)channels",
+            "prekryv (zakazniku|kanalu)",
+            "kteri zakaznici nakupuji napric kanaly"
+        ],
+        examples: [
+            "Customer channel overlap",
+            "Překryv zákazníků mezi kanály"
+        ]
+    }
     parameters: [
         { name: year, type: int, label: "Year" }
     ]
@@ -275,6 +400,18 @@ def query revenue_by_customer_state {
         GROUP BY state
         ORDER BY revenue DESC
     """
+    search {
+        patterns: [
+            "revenue by (customer |billing |)state (for |)(channel |){channel}",
+            "(regional|geographic) revenue",
+            "trzby (podle|dle) (statu|kraje) (pro |)(kanal |){channel}",
+            "regionalni trzby"
+        ],
+        examples: [
+            "Revenue by state for Web",
+            "Tržby podle státu"
+        ]
+    }
     parameters: [
         { name: channel, type: text, label: "Channel" },
         { name: year, type: int, label: "Year" }
@@ -304,6 +441,18 @@ def query buyer_age_profile {
         GROUP BY buyer_age
         ORDER BY buyer_age
     """
+    search {
+        patterns: [
+            "buyer age (profile|distribution) (for |)(channel |){channel}",
+            "customer age (breakdown|demographics)",
+            "vekovy profil (kupujicich|zakazniku) (pro |)(kanal |){channel}",
+            "demografie zakazniku (podle|dle) veku"
+        ],
+        examples: [
+            "Buyer age profile for Marketplace",
+            "Věkový profil kupujících"
+        ]
+    }
     parameters: [
         { name: channel, type: text, label: "Channel" },
         { name: year, type: int, label: "Year" }
@@ -334,6 +483,18 @@ def query promo_share {
         FROM by_channel
         WHERE channel = :channel
     """
+    search {
+        patterns: [
+            "promo (share|revenue share) (for |)(channel |){channel}",
+            "promoted (vs|versus) unpromoted (revenue|sales)",
+            "podil (promo|akcnich) trzeb (pro |)(kanal |){channel}",
+            "akcni (vs|versus) neakcni trzby"
+        ],
+        examples: [
+            "Promo share for Web",
+            "Podíl akčních tržeb"
+        ]
+    }
     parameters: [
         { name: channel, type: text, label: "Channel" },
         { name: year, type: int, label: "Year" }
@@ -350,6 +511,18 @@ def query store_sales_by_month {
         GROUP BY d.d_year, d.d_moy
         ORDER BY d.d_year, d.d_moy
     """
+    search {
+        patterns: [
+            "store (channel |)revenue by month",
+            "monthly store sales",
+            "trzby prodejen (podle|po) (mesici|mesicich)",
+            "mesicni trzby prodejen"
+        ],
+        examples: [
+            "Store revenue by month",
+            "Měsíční tržby prodejen"
+        ]
+    }
     parameters: []
 }
 
@@ -364,5 +537,17 @@ def query customer_running_total {
         JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
         ORDER BY c.c_customer_id, d.d_date
     """
+    search {
+        patterns: [
+            "running total (of |)(customer |)spend",
+            "cumulative (spend|sales) per customer",
+            "kumulativni (utrata|trzby) zakaznika",
+            "prubezny soucet utrat zakazniku"
+        ],
+        examples: [
+            "Running total of customer spend",
+            "Kumulativní útrata zákazníka"
+        ]
+    }
     parameters: []
 }
