@@ -435,11 +435,14 @@ def query buyer_age_profile {
             FROM catalog_sales cs JOIN customer c ON cs.cs_bill_customer_sk = c.c_customer_sk JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
             WHERE d.d_year = {year}
         )
-        SELECT ({year} - birth_year) AS buyer_age, COUNT(*) AS order_lines
-        FROM by_channel
-        WHERE channel = {channel} AND birth_year IS NOT NULL
-        GROUP BY birth_year
-        ORDER BY birth_year DESC
+        SELECT buyer_age, COUNT(*) AS order_lines
+        FROM (
+            SELECT ({year} - birth_year) AS buyer_age
+            FROM by_channel
+            WHERE channel = {channel} AND birth_year IS NOT NULL
+        ) ages
+        GROUP BY buyer_age
+        ORDER BY buyer_age
     """
     search {
         patterns: [
