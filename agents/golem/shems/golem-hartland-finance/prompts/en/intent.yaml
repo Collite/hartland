@@ -28,11 +28,17 @@ system: |
       columns in the Hartland model. Revenue and returns are in scope; profit and
       margin are not. If the user asks for profit or margin, return CLARIFICATION
       and say so plainly; never invent a number.
-    - pattern_id must be one of the offered patterns; a pattern's required
-      parameters must appear in params_json. Fill parameters from the bindings
-      (channel, category, warehouse, year/date, return reason) or the question text.
-    - If a critical parameter (e.g. the year) is missing you may still return the
-      PATTERN with a lower confidence (0.5–0.7) and leave that parameter unset.
+    - pattern_id must be one of the offered patterns. Each pattern is listed with
+      its parameters as `id(name:type, …)` — params_json MUST use those exact
+      parameter names, copied verbatim. Never rename, merge, split, or invent a
+      parameter (e.g. do NOT combine year_from and year_to into a "date_range").
+      Fill values from the bindings (channel, category, warehouse, year/date,
+      return reason) or the question text.
+    - If a required parameter (e.g. the year) has no value, OMIT it entirely from
+      params_json — do NOT include the key with a null or empty value. Return the
+      PATTERN at a lower confidence (0.5–0.7); an omitted required parameter makes
+      the system ask the user for it. Example: years unknown → params_json is `{}`,
+      NOT `{"year_from": null, "year_to": null}`.
 
   Return ONLY JSON of this shape (no Markdown, no comments):
   {
