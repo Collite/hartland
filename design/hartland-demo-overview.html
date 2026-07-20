@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Overview & operator's guide for the Kantheon Hartland demo — data, model, fixtures, cluster setup, the demo story, and satellite demos.">
+<title>The Hartland Demo — Overview &amp; Operator's Guide</title>
+<style>
+  /* minimal reset for standalone (the claude.ai host supplies its own; this mirrors it) */
+  html,body{margin:0;padding:0}
+  img,svg{max-width:100%}
+</style>
+</head>
+<body>
+<style>
+  :root{
+    --yellow-1:#FFCB2E; --yellow-2:#F2A200; --navy:#16283F; --charcoal:#4A4B4D;
+    --midgray:#96989B; --ice:#CBDDF4; --gold:#B57F3A;
+    /* light theme (brand "on white") */
+    --bg:#ffffff; --panel:#EFF4FA; --panel-2:#F6F9FD; --ink:#1F2937; --head:#16283F;
+    --muted:#6B7280; --border:#E4E9F0; --rule:#C7D2E0; --code-bg:#f3f6fb; --code-ink:#2b3a4d;
+    --link:#B57F3A; --link-hover:#8f6224; --accent:#F2A200;
+    --tag-live-bg:#FFCB2E; --tag-live-ink:#4A3a00; --tag-mid:#B57F3A; --tag-off:#9aa3b0;
+    --hero-ink:#ffffff; --hero-sub:#CBDDF4;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0f1d2c; --panel:#17293e; --panel-2:#152738;
+      --ink:#E4ECF6; --head:#F4F8FD; --muted:#9DB2CE; --border:#26405f; --rule:#335073;
+      --code-bg:#0c1826; --code-ink:#cfe0f2; --link:#FFCB2E; --link-hover:#ffdd6b;
+      --accent:#FFCB2E; --tag-live-bg:#FFCB2E; --tag-live-ink:#3a2c00; --tag-mid:#e0a94a; --tag-off:#6f8199;
+      --hero-ink:#ffffff; --hero-sub:#CBDDF4;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#ffffff; --panel:#EFF4FA; --panel-2:#F6F9FD; --ink:#1F2937; --head:#16283F;
+    --muted:#6B7280; --border:#E4E9F0; --rule:#C7D2E0; --code-bg:#f3f6fb; --code-ink:#2b3a4d;
+    --link:#B57F3A; --link-hover:#8f6224; --accent:#F2A200;
+    --tag-live-ink:#4A3a00; --tag-mid:#B57F3A; --tag-off:#9aa3b0;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1d2c; --panel:#17293e; --panel-2:#152738; --ink:#E4ECF6; --head:#F4F8FD;
+    --muted:#9DB2CE; --border:#26405f; --rule:#335073; --code-bg:#0c1826; --code-ink:#cfe0f2;
+    --link:#FFCB2E; --link-hover:#ffdd6b; --accent:#FFCB2E;
+    --tag-live-ink:#3a2c00; --tag-mid:#e0a94a; --tag-off:#6f8199;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace}
+
+  /* ---- brand bar ---- */
+  .brandbar{
+    display:flex; align-items:center; gap:12px; padding:14px 24px;
+    border-bottom:1px solid var(--border); background:var(--bg);
+    position:sticky; top:0; z-index:20; backdrop-filter:saturate(1.2) blur(6px);
+  }
+  .brandbar .wm{font-weight:800; letter-spacing:.3px; color:var(--head); font-size:19px}
+  .brandbar .spacer{flex:1}
+  .brandbar .tag-doc{
+    font-size:11px; text-transform:uppercase; letter-spacing:2px; font-weight:700;
+    color:var(--gold);
+  }
+
+  /* ---- hero ---- */
+  .hero{background:var(--navy); color:#fff; padding:56px 24px 60px; position:relative; overflow:hidden}
+  .hero-inner{max-width:1120px; margin:0 auto; display:grid; grid-template-columns:1fr auto; gap:40px; align-items:center}
+  .kicker{
+    color:var(--yellow-1); font-weight:700; letter-spacing:2.5px; font-size:12px;
+    text-transform:uppercase; margin:0 0 14px;
+  }
+  .hero h1{
+    font-size:clamp(30px,5vw,50px); line-height:1.05; margin:0 0 18px; color:#fff;
+    letter-spacing:-.5px; text-wrap:balance; font-weight:800;
+  }
+  .hero h1 em{color:var(--yellow-1); font-style:normal}
+  .hero .standfirst{font-size:17px; line-height:1.62; color:var(--ice); max-width:60ch; margin:0}
+  .hero .standfirst b{color:#fff}
+  .hero-coin{align-self:center; filter:drop-shadow(0 10px 30px rgba(0,0,0,.35))}
+  .hero-metrics{
+    display:flex; flex-wrap:wrap; gap:12px; margin-top:26px;
+  }
+  .metric{
+    background:rgba(255,255,255,.06); border:1px solid rgba(203,221,244,.18);
+    border-radius:12px; padding:12px 16px; min-width:120px;
+  }
+  .metric .n{font-size:23px; font-weight:800; color:var(--yellow-1); font-variant-numeric:tabular-nums}
+  .metric .l{font-size:11.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--ice); margin-top:2px}
+
+  /* ---- layout ---- */
+  .shell{max-width:1120px; margin:0 auto; padding:0 24px; display:grid; grid-template-columns:220px 1fr; gap:44px; align-items:start}
+  nav.toc{position:sticky; top:78px; align-self:start; padding:28px 0; font-size:13.5px; max-height:calc(100vh - 90px); overflow-y:auto}
+  nav.toc .tl{font-size:11px; text-transform:uppercase; letter-spacing:1.6px; color:var(--muted); font-weight:700; margin:0 0 12px}
+  nav.toc a{display:flex; gap:9px; align-items:baseline; color:var(--muted); text-decoration:none; padding:5px 10px 5px 0; border-left:2px solid transparent; padding-left:12px; line-height:1.35; transition:color .15s}
+  nav.toc a .num{color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums; min-width:16px}
+  nav.toc a:hover{color:var(--head)}
+  nav.toc a.active{color:var(--head); border-left-color:var(--yellow-2); font-weight:600}
+
+  main{padding:34px 0 80px; min-width:0}
+  section{margin-bottom:8px; padding-top:24px}
+  section:first-child{padding-top:8px}
+  .snum{
+    display:inline-block; font-weight:800; color:var(--accent); font-size:14px;
+    letter-spacing:1px; margin-bottom:2px; font-variant-numeric:tabular-nums;
+  }
+  h2{font-size:clamp(23px,3.2vw,30px); color:var(--head); margin:2px 0 6px; letter-spacing:-.3px; line-height:1.12; text-wrap:balance; font-weight:800}
+  h3{font-size:18px; color:var(--head); margin:30px 0 8px; font-weight:700}
+  h4{font-size:14px; color:var(--head); margin:22px 0 6px; font-weight:700; text-transform:uppercase; letter-spacing:.6px}
+  p{margin:0 0 14px; max-width:70ch}
+  main a{color:var(--link); text-decoration:none; border-bottom:1px solid color-mix(in srgb,var(--link) 35%,transparent)}
+  main a:hover{color:var(--link-hover)}
+  strong,b{color:var(--head); font-weight:700}
+  em{color:var(--ink)}
+  ul,ol{max-width:70ch; padding-left:22px; margin:0 0 14px}
+  li{margin:6px 0}
+  hr{border:none; border-top:1px solid var(--border); margin:34px 0}
+  code{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace; font-size:.86em; background:var(--code-bg); color:var(--code-ink); padding:.12em .38em; border-radius:5px; border:1px solid var(--border)}
+  pre{background:var(--code-bg); border:1px solid var(--border); border-left:3px solid var(--yellow-2); border-radius:10px; padding:16px 18px; overflow-x:auto; margin:0 0 16px}
+  pre code{background:none; border:none; padding:0; color:var(--code-ink); font-size:13px; line-height:1.6}
+
+  /* lead paragraph */
+  .lead{font-size:17.5px; line-height:1.6; color:var(--ink)}
+  .lead b{color:var(--head)}
+
+  /* ---- callout / note (brand: navy panel, yellow emphasis) ---- */
+  .note{
+    background:var(--navy); color:#eaf1fb; border-radius:14px; padding:18px 22px; margin:18px 0;
+    border:1px solid #23405f; position:relative;
+  }
+  .note .nt{display:block; font-size:11px; text-transform:uppercase; letter-spacing:1.8px; color:var(--yellow-1); font-weight:800; margin-bottom:7px}
+  .note b{color:#fff}
+  .note code{background:rgba(255,255,255,.09); border-color:rgba(255,255,255,.14); color:#ffe6a6}
+  .note p{max-width:none; margin:0}
+  .note.plain{background:var(--panel); color:var(--ink); border-color:var(--border)}
+  .note.plain .nt{color:var(--gold)}
+  .note.plain b{color:var(--head)}
+  .note.plain code{background:var(--code-bg); color:var(--code-ink); border-color:var(--border)}
+
+  /* ---- cards / panels ---- */
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin:0 0 16px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+  /* ---- tables ---- */
+  .tw{overflow-x:auto; margin:0 0 18px; border:1px solid var(--border); border-radius:12px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:min-content}
+  thead th{background:var(--panel); color:var(--head); text-align:left; font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.7px; padding:10px 14px; border-bottom:2px solid var(--rule); white-space:nowrap}
+  tbody td{padding:9px 14px; border-bottom:1px solid var(--border); vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even){background:var(--panel-2)}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,monospace; white-space:nowrap}
+  .qid{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--accent); font-weight:600}
+
+  /* ---- maturity tags: yellow = what lives ---- */
+  .tag{display:inline-block; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; padding:2px 9px; border-radius:20px; white-space:nowrap; vertical-align:middle}
+  .tag.live{background:var(--tag-live-bg); color:var(--tag-live-ink)}
+  .tag.mid{background:transparent; color:var(--tag-mid); border:1.5px solid var(--tag-mid)}
+  .tag.off{background:transparent; color:var(--tag-off); border:1.5px solid var(--tag-off)}
+
+  /* ---- coin chips (constellation) ---- */
+  .coins{display:flex; flex-wrap:wrap; gap:14px; margin:6px 0 18px}
+  .coin-chip{display:flex; gap:11px; align-items:center; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 14px 10px 10px; min-width:210px; flex:1}
+  .coin-d{width:40px; height:40px; border-radius:50%; background:var(--navy); display:grid; place-items:center; flex-shrink:0; border:2px solid var(--yellow-2); color:#fff; font-weight:800; font-size:15px}
+  .coin-d.silver{border-color:#b9c2cc}
+  .coin-chip .cn{font-weight:700; color:var(--head); font-size:14.5px; line-height:1.1}
+  .coin-chip .cr{font-size:11.5px; color:var(--muted); line-height:1.3; margin-top:2px}
+  .coin-chip .metal{font-size:9.5px; text-transform:uppercase; letter-spacing:1px; font-weight:700}
+  .coin-chip .metal.gold{color:var(--gold)} .coin-chip .metal.silv{color:#8a97a5}
+
+  /* footer */
+  footer{border-top:1px solid var(--border); margin-top:40px; padding:26px 0; color:var(--muted); font-size:13px}
+  footer b{color:var(--head)}
+
+  @media(max-width:860px){
+    .shell{grid-template-columns:1fr; gap:0}
+    nav.toc{display:none}
+    .hero-inner{grid-template-columns:1fr}
+    .hero-coin{display:none}
+  }
+</style>
+
+<!-- reusable coin ring + temple mark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="coinRing" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="96" fill="#16283F"/>
+    <circle cx="100" cy="100" r="96" fill="none" stroke="#F2A200" stroke-width="2"/>
+    <g fill="none" stroke="#F2A200" stroke-width="2.2">
+      <path d="M 179.7 101.3 L 192.3 101.4 L 190.6 117.9 L 182.7 116.3 L 183.8 108.5 L 188.0 108.9 L 184.9 124.7 L 176.5 122.2"/><path d="M 175.4 125.8 L 187.3 129.9 L 180.6 145.0 L 173.6 141.1 L 177.1 133.9 L 181.0 135.6 L 173.2 149.7 L 165.9 144.8"/><path d="M 163.7 147.9 L 173.8 155.4 L 162.8 167.7 L 157.3 161.8 L 162.8 156.1 L 166.0 158.9 L 154.2 169.9 L 148.8 163.0"/><path d="M 145.8 165.2 L 153.1 175.5 L 138.8 183.8 L 135.4 176.5 L 142.4 172.8 L 144.5 176.4 L 130.0 183.2 L 127.0 175.0"/><path d="M 123.4 176.2 L 127.1 188.2 L 111.0 191.6 L 110.0 183.7 L 117.9 182.3 L 118.8 186.4 L 102.8 188.4 L 102.5 179.7"/><path d="M 98.7 179.7 L 98.6 192.3 L 82.1 190.6 L 83.7 182.7 L 91.5 183.8 L 91.1 188.0 L 75.3 184.9 L 77.8 176.5"/><path d="M 74.2 175.4 L 70.1 187.3 L 55.0 180.6 L 58.9 173.6 L 66.1 177.1 L 64.4 181.0 L 50.3 173.2 L 55.2 165.9"/><path d="M 52.1 163.7 L 44.6 173.8 L 32.3 162.8 L 38.2 157.3 L 43.9 162.8 L 41.1 166.0 L 30.1 154.2 L 37.0 148.8"/><path d="M 34.8 145.8 L 24.5 153.1 L 16.2 138.8 L 23.5 135.4 L 27.2 142.4 L 23.6 144.5 L 16.8 130.0 L 25.0 127.0"/><path d="M 23.8 123.4 L 11.8 127.1 L 8.4 111.0 L 16.3 110.0 L 17.7 117.9 L 13.6 118.8 L 11.6 102.8 L 20.3 102.5"/><path d="M 20.3 98.7 L 7.7 98.6 L 9.4 82.1 L 17.3 83.7 L 16.2 91.5 L 12.0 91.1 L 15.1 75.3 L 23.5 77.8"/><path d="M 24.6 74.2 L 12.7 70.1 L 19.4 55.0 L 26.4 58.9 L 22.9 66.1 L 19.0 64.4 L 26.8 50.3 L 34.1 55.2"/><path d="M 36.3 52.1 L 26.2 44.6 L 37.2 32.3 L 42.7 38.2 L 37.2 43.9 L 34.0 41.1 L 45.8 30.1 L 51.2 37.0"/><path d="M 54.2 34.8 L 46.9 24.5 L 61.2 16.2 L 64.6 23.5 L 57.6 27.2 L 55.5 23.6 L 70.0 16.8 L 73.0 25.0"/><path d="M 76.6 23.8 L 72.9 11.8 L 89.0 8.4 L 90.0 16.3 L 82.1 17.7 L 81.2 13.6 L 97.2 11.6 L 97.5 20.3"/><path d="M 101.3 20.3 L 101.4 7.7 L 117.9 9.4 L 116.3 17.3 L 108.5 16.2 L 108.9 12.0 L 124.7 15.1 L 122.2 23.5"/><path d="M 125.8 24.6 L 129.9 12.7 L 145.0 19.4 L 141.1 26.4 L 133.9 22.9 L 135.6 19.0 L 149.7 26.8 L 144.8 34.1"/><path d="M 147.9 36.3 L 155.4 26.2 L 167.7 37.2 L 161.8 42.7 L 156.1 37.2 L 158.9 34.0 L 169.9 45.8 L 163.0 51.2"/><path d="M 165.2 54.2 L 175.5 46.9 L 183.8 61.2 L 176.5 64.6 L 172.8 57.6 L 176.4 55.5 L 183.2 70.0 L 175.0 73.0"/><path d="M 176.2 76.6 L 188.2 72.9 L 191.6 89.0 L 183.7 90.0 L 182.3 82.1 L 186.4 81.2 L 188.4 97.2 L 179.7 97.5"/>
+    </g>
+    <circle cx="100" cy="100" r="74" fill="none" stroke="#F2A200" stroke-width="1.6"/>
+  </symbol>
+</svg>
+
+<!-- ======================= BRAND BAR ======================= -->
+<div class="brandbar">
+  <svg viewBox="0 0 240 240" width="30" height="30" aria-label="Kantheon">
+    <defs><linearGradient id="kbmk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFCB2E"/><stop offset="1" stop-color="#F2A200"/></linearGradient></defs>
+    <path d="M 120 42 L 54 88 L 186 88 Z" fill="none" stroke="var(--head)" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M 107 80 C 107 65 112 57 120 57 C 128 57 133 65 133 80 Z" fill="url(#kbmk)"/><path d="M 112.5 67 L 118 67 L 115.2 72 Z" fill="var(--bg)"/><path d="M 122 67 L 127.5 67 L 124.8 72 Z" fill="var(--bg)"/><circle cx="120" cy="62" r="1.4" fill="var(--bg)"/>
+    <rect x="63" y="104" width="30" height="11" rx="5.5" fill="var(--head)"/><rect x="63" y="121" width="30" height="11" rx="5.5" fill="var(--head)"/><rect x="63" y="138" width="30" height="11" rx="5.5" fill="var(--head)"/>
+    <rect x="105" y="104" width="30" height="11" rx="5.5" fill="var(--head)"/><rect x="105" y="121" width="30" height="11" rx="5.5" fill="url(#kbmk)"/><rect x="105" y="138" width="30" height="11" rx="5.5" fill="var(--head)"/>
+    <rect x="147" y="104" width="30" height="11" rx="5.5" fill="var(--head)"/><rect x="147" y="121" width="30" height="11" rx="5.5" fill="var(--head)"/><rect x="147" y="138" width="30" height="11" rx="5.5" fill="var(--head)"/>
+    <rect x="52" y="160" width="136" height="12" rx="6" fill="var(--head)"/>
+  </svg>
+  <span class="wm">Kantheon</span>
+  <span class="spacer"></span>
+  <span class="tag-doc">Hartland Demo · Field Guide</span>
+</div>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="kicker">Tatrman ecosystem · operator's guide · 2026-07-20</p>
+      <h1>The <em>Hartland</em> Demo</h1>
+      <p class="standfirst">A category manager types a plain-language question into one box. The platform classifies it, routes it to the right agent, compiles it against a <b>governed model</b> of the warehouse, runs it on real data, and answers in sentences and charts — every block showing its work. The thesis it exists to prove: <b>the LLM handles intent only; everything from intent to data execution is deterministic and governed.</b> The seeded plot is an operational incident — a distribution centre that quietly melts down for ~17 weeks — buried in otherwise-flat data, so an AI-driven investigation lands on the true cause while every wrong hypothesis dies on real numbers. It runs bilingually: the same arc in English over <span class="mono">hartland_us</span> and Czech over <span class="mono">hartland_cz</span>.</p>
+      <div class="hero-metrics">
+        <div class="metric"><div class="n">15</div><div class="l">curated patterns</div></div>
+        <div class="metric"><div class="n">2</div><div class="l">worlds · USD / CZK</div></div>
+        <div class="metric"><div class="n">72</div><div class="l">rows, verified live</div></div>
+        <div class="metric"><div class="n">4</div><div class="l">personas · 2 Shems</div></div>
+      </div>
+    </div>
+    <div class="hero-coin" aria-label="Golem — the agent that answers">
+      <svg viewBox="0 0 200 200" width="188" height="188">
+        <use href="#coinRing"/>
+        <g transform="translate(100 100) scale(0.76) translate(-100 -100)">
+          <path d="M 40 166 C 34 116 52 88 74 80 C 74 56 84 42 100 42 C 116 42 126 56 126 80 C 148 88 166 116 160 166 Z" fill="#FFFFFF"/>
+          <path d="M 86 57 L 97 57 L 91.5 67 Z" fill="#16283F"/>
+          <path d="M 103 57 L 114 57 L 108.5 67 Z" fill="#16283F"/>
+          <circle cx="100" cy="47" r="2.6" fill="#16283F"/>
+          <path d="M 54 122 Q 100 142 146 122" stroke="#16283F" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M 100 166 L 100 152" stroke="#16283F" stroke-width="6" stroke-linecap="round"/>
+          <rect x="88" y="96" width="24" height="14" rx="3" fill="#16283F"/>
+          <path d="M 93 99.5 L 93 106.5 M 100 99.5 L 100 106.5 M 107 99.5 L 107 106.5" stroke="#F2A200" stroke-width="2.2" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= BODY ======================= -->
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <p class="tl">Contents</p>
+    <a href="#data"><span class="num">1</span><span>Data overview</span></a>
+    <a href="#model"><span class="num">2</span><span>The model</span></a>
+    <a href="#fixtures"><span class="num">3</span><span>Test fixtures</span></a>
+    <a href="#setup"><span class="num">4</span><span>Cluster setup</span></a>
+    <a href="#story"><span class="num">5</span><span>The demo story</span></a>
+    <a href="#satellites"><span class="num">6</span><span>Satellite demos</span></a>
+    <a href="#appendix"><span class="num">§</span><span>Key paths</span></a>
+  </nav>
+
+  <main>
+    <p class="lead">Hartland Stores is a fictional Tennessee retailer (HQ Nashville, ≈&nbsp;$2.1&nbsp;B/yr across three channels — Stores, Web, and a third-party <b>Marketplace</b> it fulfils from five distribution centres). This is the reference for the whole demo: the data, the model, the fixtures, how to stand the cluster up, and the story plus the satellite demos that hang off it. It draws on the two authoritative field docs it sits beside — <a href="#">demo-transcript.md</a> (the narrative — <em>"the demo <b>is</b> its transcript"</em>) and <a href="#">demo-quirks.md</a> (what actually works, and why).</p>
+
+    <!-- ===== 1 DATA ===== -->
+    <section id="data">
+      <span class="snum">01</span>
+      <h2>Data overview</h2>
+      <p>The underlying data is <b>TPC-DS at Scale Factor 1</b> (<span class="mono">tpc-ds-1g</span>, dsdgen-generated). Both worlds are restored from one pristine dump and put through a deterministic, idempotent pipeline: <b>redate → localize-cz → catalog → seed → recon</b>. Every stage is hash- or snapshot-guarded, so any world is rebuildable from <span class="mono">tpc-ds-1g</span> plus the committed scripts. The redate step re-points every date +23 years (1998–2003 → 2021–2026) with believable ages.</p>
+
+      <h3>Row counts — demo-ready state, both worlds identical</h3>
+      <div class="tw"><table>
+        <thead><tr><th>table</th><th class="num">rows</th><th>table</th><th class="num">rows</th></tr></thead>
+        <tbody>
+          <tr><td>store_sales</td><td class="num">2,880,404</td><td>catalog_sales</td><td class="num">1,424,874</td></tr>
+          <tr><td>store_returns</td><td class="num">287,514</td><td>catalog_returns</td><td class="num">142,371</td></tr>
+          <tr><td>web_sales</td><td class="num">719,384</td><td>web_returns</td><td class="num">71,763</td></tr>
+          <tr><td>inventory</td><td class="num">11,745,000</td><td>customer</td><td class="num">100,000</td></tr>
+          <tr><td>item</td><td class="num">18,000</td><td>warehouse</td><td class="num">5</td></tr>
+          <tr><td>store</td><td class="num">12</td><td>reason</td><td class="num">35</td></tr>
+        </tbody>
+      </table></div>
+      <p>The pre-seed baseline differs on exactly two tables — the seed's S2 deletion removes 16,674 <span class="mono">catalog_sales</span> and 1,696 <span class="mono">catalog_returns</span> lines. Everything else is identical, which is the point (see the catalog delta below). Post-catalog the 18,000-item population carries <b>10 categories, 42 brands, 99 classes</b>.</p>
+
+      <h3>The two worlds — <span class="mono">hartland_us</span> (USD) vs <span class="mono">hartland_cz</span> (CZK)</h3>
+      <p>Two schema-identical Postgres databases on <b>one CNPG cluster</b> (one CNPG, two DBs), one TTR-M model set, <b>two connections</b> (<span class="mono">pg-hartland-us</span> / <span class="mono">pg-hartland-cz</span>). The physical schema is byte-identical; only the lexicon (en vs cs) and the currency data differ — <span class="mono">md.Money</span> is a currency-agnostic <span class="mono">decimal</span> domain, so USD vs CZK is a data fact plus a display label, not a structural difference.</p>
+      <ul>
+        <li><b>FX constant = 23.</b> CZ derives from US by FX-scaling every monetary column ×23, rounded to a believable price point. Applied <b>once</b>, guarded by <span class="mono">_localize_meta</span> (a second run would compound to ×529 and is refused).</li>
+        <li><b>Full re-grounding, not a re-skin:</b> CZK currency; geography mapped US-state → Czech kraj distribution-preservingly (stores → Praha, Brno, Ostrava, Plzeň, Olomouc, Liberec); the meltdown DC re-pointed from <b>Memphis</b> to <b>Brno</b>; Czech lexicon, reasons, and catalog.</li>
+        <li><b>Story mirrored, not re-invented:</b> seed magnitudes are tuned once on US and inherited verbatim by CZ; the S2 deletion is currency-invariant (hash-keyed on <span class="mono">cs_order_number</span>), so both worlds delete the <em>same</em> lines. One locale per delivery — never both on stage.</li>
+      </ul>
+
+      <h3>The catalog delta — real names on top of dsdgen gibberish</h3>
+      <p>A full per-item bilingual catalog for all 18,000 items — real product names, brands, manufacturers, sizes, containers per world — so the Product hierarchy (Category → Class → Brand → Manufacturer → Item) is a genuine drill. The generator is <b>deterministic</b> (every choice is <span class="mono">sha256(i_item_sk:salt) mod n</span>, no <span class="mono">random()</span>).</p>
+      <div class="note plain">
+        <span class="nt">Why it matters</span>
+        <p>The catalog rewrite never touches <span class="mono">i_item_sk</span>, <span class="mono">i_category</span>, price, or the SCD window — the invariants the item-agnostic seeds and recon depend on. Pre- vs post-catalog aggregates are <b>identical</b> except where the seed later moved them. <b>"The catalog is orthogonal to the sales story" is made physically true, not asserted.</b></p>
+      </div>
+
+      <h3>R0 — the frozen numbers &amp; the seeded incident</h3>
+      <p><span class="mono">data/recon/R0.md</span> is the authoritative record every <span class="mono">⟨R0⟩</span> slot in the transcript and every test oracle resolves against, frozen 2026-07-18. Rule: <b>CZ = US × FX(23)</b>; percentages are currency-invariant. The seeded plot lives in these numbers:</p>
+      <div class="tw"><table>
+        <thead><tr><th>signal (US → CZ mirrors ×23)</th><th class="num">value</th></tr></thead>
+        <tbody>
+          <tr><td>Marketplace weeks 32–48 / 2025 YoY (briefing headline)</td><td class="num">−10.62%</td></tr>
+          <tr><td>Marketplace calendar-H2 2025 YoY · worst month (Nov)</td><td class="num">−8.44% · −12.45%</td></tr>
+          <tr><td>Meltdown-DC weeks 32–48 YoY (spec ≈ −60%)</td><td class="num">−58.99%</td></tr>
+          <tr><td>Meltdown-DC zero-inventory streak</td><td class="num">17 weeks</td></tr>
+          <tr><td>Meltdown-DC zero-row share 2025 (vs ~0.09% elsewhere)</td><td class="num">22.8%</td></tr>
+          <tr><td>"Did not get it on time" reason share (vs 2.87% base)</td><td class="num">39.10%</td></tr>
+        </tbody>
+      </table></div>
+      <p>Deliberate red herrings — confirmed flat in both worlds so wrong hypotheses die: the Web channel, Stores, promo linkage (~99.6%), buyer age, and geographic distribution. The two demo dumps (<span class="mono">pg_dump -Fc -Z6</span>, 2026-07-18) are pinned by path + sha256 + size in <span class="mono">dump-manifest.md</span> (US 380&nbsp;MB, CZ 339&nbsp;MB).</p>
+    </section>
+
+    <hr>
+
+    <!-- ===== 2 MODEL ===== -->
+    <section id="model">
+      <span class="snum">02</span>
+      <h2>The model — the Hartland TTR-M</h2>
+      <p>A single TTR-M model set (every file declares <span class="mono">package hartland</span>, flattened), a curated TPC-DS subset dressed as Hartland Stores, in <b>five layers plus bindings</b>.</p>
+
+      <h3>The layer cake</h3>
+      <div class="grid2">
+        <div class="panel"><b>db/</b> — physical (<span class="mono">schema dbo</span>). The TPC-DS tables actually present: the sale/return facts + <span class="mono">inventory</span>, plus the dimension tables. Money is <span class="mono">decimal(10,2)</span>. <b>No profit path exists at all</b> — every <span class="mono">net_profit</span> / cost / discount column is deliberately unmodelled (D-6a).</div>
+        <div class="panel"><b>er/</b> — 19 curated logical entities, prefixes stripped, each with a bilingual <span class="mono">displayLabel</span> (e.g. <span class="mono">catalog_sales</span> → <em>Marketplace Orders / Objednávky z tržiště</em>). <span class="mono">def area hartland</span> is what the agent's Ariadne resolves.</div>
+        <div class="panel"><b>md/</b> — the ROLAP star: measures (<span class="mono">revenue</span>, <span class="mono">returnAmount</span>, semi-additive <span class="mono">onHandQty</span>…) and dimensions incl. <span class="mono">Product</span> with the 5-level drill and <span class="mono">DistributionCentre</span> / <span class="mono">ReturnReason</span> value-labels.</div>
+        <div class="panel"><b>lexicon/en + cs · binding/</b> — the same <span class="mono">for:</span> targets in both locales (one model, two locales); descriptive attributes bind to physical columns via table-backed <span class="mono">def map</span>.</div>
+      </div>
+
+      <h3>Worlds &amp; named connections</h3>
+      <pre><code>[[connection]] id="pg-hartland-us" database="hartland_us" currency="USD" locale="en"
+[[connection]] id="pg-hartland-cz" database="hartland_cz" currency="CZK" locale="cs"</code></pre>
+      <p>Both point at the same physical model. Row-level security: read-only roles <span class="mono">hartland_us_readonly</span> / <span class="mono">hartland_cz_readonly</span> (CNPG managed roles), materialised by the <span class="mono">pg-hartland-{us,cz}-ro</span> ClusterExternalSecrets; Arges reaches each world through them.</p>
+
+      <h3>The 15 pattern queries — the heart of the deterministic path</h3>
+      <p>All 15 are <span class="mono">def query</span> blocks, <span class="mono">language: SQL</span>, literal SQL against the physical layer, each with an EN + CS search block. #1–#8 carry the demo; #10–#13 are the RCA fan-out branches that <em>die on real numbers</em>; #14/#15 are coverage. <b>No query touches profit/cost.</b></p>
+      <div class="tw"><table>
+        <thead><tr><th class="num">#</th><th>name</th><th>params</th><th>answers</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td class="qid">channel_revenue_monthly</td><td>year_from, year_to</td><td>monthly revenue per channel — the pinned chart (<b>72 rows</b> = 24 mo × 3 ch)</td></tr>
+          <tr><td class="num">2</td><td class="qid">channel_revenue_yoy</td><td>year, prior_year</td><td>YoY revenue per channel — the briefing KPI</td></tr>
+          <tr><td class="num">3</td><td class="qid">category_revenue</td><td>channel, year</td><td>revenue by product category for one channel</td></tr>
+          <tr><td class="num">4</td><td class="qid">marketplace_revenue_by_warehouse</td><td>year_from, year_to</td><td>Marketplace revenue by DC — Memphis/Brno stands out</td></tr>
+          <tr><td class="num">5</td><td class="qid">top_items_by_revenue</td><td>year, limit</td><td>top products by revenue on Marketplace</td></tr>
+          <tr><td class="num">6</td><td class="qid">returns_by_reason</td><td>channel, year</td><td>returns by reason — the "did not get it on time" skew</td></tr>
+          <tr><td class="num">7</td><td class="qid">returns_rate_by_channel</td><td>year</td><td>return amount / revenue per channel</td></tr>
+          <tr><td class="num">8</td><td class="qid">warehouse_stockout_weeks</td><td>year</td><td>weekly zero-inventory per warehouse — the 17-week streak</td></tr>
+          <tr><td class="num">9</td><td class="qid">inventory_on_hand_series</td><td>warehouse, year</td><td>weekly on-hand series for one warehouse</td></tr>
+          <tr><td class="num">10–13</td><td class="qid">overlap · state · age · promo</td><td>channel, year</td><td>the RCA branches that die (cannibalisation, region, demographics, promo)</td></tr>
+          <tr><td class="num">14–15</td><td class="qid">store_sales_by_month · running_total</td><td>—</td><td>seed-heritage texture &amp; window coverage</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>How the model is served &amp; the two rules that bite</h3>
+      <p>veles polls the model from git <span class="mono">Collite/hartland@demo-p2</span> and serves it as a ModelBundle; golem resolves the area via Ariadne and loads the 15 patterns as its <span class="mono">preferred_queries</span>.</p>
+      <div class="note">
+        <span class="nt">The two-refresh rule</span>
+        <p>After <b>any</b> model edit you must refresh <b>both</b>: veles (<span class="mono">VelesService/Refresh {force:true}</span> → confirm queries flip to PARSED) <b>and</b> golem (<span class="mono">kubectl rollout restart deployment/golem-hartland</span> and <span class="mono">-finance</span>) — golem caches the ModelBundle at boot. Skip the golem restart and it keeps sending stale SQL that fails at the translator — which golem masks as <span class="mono">STATUS_DONE, 0 rows</span>.</p>
+      </div>
+      <div class="note">
+        <span class="nt">The meta-quirk — never trust a 0-row turn</span>
+        <p>A failed query node reports <span class="mono">STATUS_DONE, rowCount=0</span>, <b>not</b> an error. "0 rows" usually means <em>rejected</em> (translator, empty, or RLS-zeroed), not empty data. The real cause is only in the <span class="mono">ttr-query</span> log by <span class="mono">correlation_id</span>. Calcite is also stricter than Postgres: a CTE named <span class="mono">returns</span> is reserved (→ <span class="mono">rets</span>), <span class="mono">GROUP BY</span> on a SELECT alias is forbidden, and named params must be single-curly <span class="mono">{name}</span> only.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ===== 3 FIXTURES ===== -->
+    <section id="fixtures">
+      <span class="snum">03</span>
+      <h2>Test fixtures</h2>
+      <p>The two Phase-1 worlds become the <b>standard warehouse for all e2e / integration / nightly tests on every cluster</b> (bp-dsk, collite-o1, hartland) — one platform component authored once in olymp (<span class="mono">platform/data/hartland-pg/</span>) and composed into each cluster's data tier. Tests default to CZ; EN where language-agnostic. This replaces the old per-context ad-hoc data.</p>
+      <ul>
+        <li><b>Source of truth:</b> the versioned dumps in <span class="mono">tpcds-staging/hartland/{us,cz}/</span> (SeaweedFS), pinned in the restore Job from <span class="mono">dump-manifest.md</span>. Re-freeze R0 → one values bump + a Job re-run per cluster.</li>
+        <li><b>Composition:</b> <span class="mono">base/</span> is a CNPG Cluster (roles <span class="mono">hartland</span> + two <span class="mono">*_readonly</span>) + two Databases; <span class="mono">overlays/&lt;cluster&gt;/</span> adds the three role-password ExternalSecrets.</li>
+      </ul>
+      <div class="note plain">
+        <span class="nt">Restore is by hand — deliberately</span>
+        <p>The <span class="mono">hartland-restore</span> Job is <b>not</b> in any kustomization, so ArgoCD never re-runs the ~700&nbsp;MB restore on a sync. Apply it manually after the dumps are staged to that cluster's SeaweedFS (SeaweedFS is per-cluster — a new cluster's bucket must be seeded first).</p>
+      </div>
+      <pre><code>kubectl --context &lt;c&gt; -n data delete job hartland-restore --ignore-not-found
+kubectl --context &lt;c&gt; -n data apply  -f platform/data/hartland-pg/base/restore-job.yaml</code></pre>
+      <p>It pulls each dump from SeaweedFS, <span class="mono">pg_restore --clean --if-exists --no-owner</span> into each DB, GRANTs to the read-only role, and prints a row-count sanity check (item 18000, store_sales 2880404, catalog_sales 1424874). Test contexts read via <span class="mono">pg-hartland-{us,cz}</span>, whose namespaceSelectors match harness run namespaces; the olymp re-plan moves <span class="mono">tpcds-query → hartland-query</span>, <span class="mono">golem-erp → golem-hartland</span>, and repoints the nightly at <span class="mono">hartland_cz</span>.</p>
+    </section>
+
+    <hr>
+
+    <!-- ===== 4 SETUP ===== -->
+    <section id="setup">
+      <span class="snum">04</span>
+      <h2>Standing the cluster up</h2>
+      <p>Standalone ArgoCD per cluster: bootstrap → root-app → app-of-apps → three ApplicationSets. <b>appset-ops</b> renders one app per <span class="mono">platform/*</span> area (auth, data, gateway, monitoring); <b>appset-apps</b> one per service; <b>appset-golems</b> one golem per enabled Shem.</p>
+
+      <h3>The runtime constellation for a single demo turn</h3>
+      <div class="panel mono" style="font-size:13.5px;line-height:1.9">
+        golem-* <span style="color:var(--muted)">(kantheon :7420)</span><br>
+        &nbsp;&nbsp;├─▶ <b>veles</b>.ttr-server <span style="color:var(--muted)">:7261 — ResolveArea / model</span><br>
+        &nbsp;&nbsp;├─▶ <b>llm-gateway</b>.ttr-server <span style="color:var(--muted)">:7280 — Bearer ttrk-golem</span><br>
+        &nbsp;&nbsp;└─▶ <b>query-mcp</b> :7307/mcp ─▶ <b>theseus</b> ─▶ translate / validate / worker ─▶ <b>hartland-pg</b> <span style="color:var(--muted)">(ns data)</span>
+      </div>
+      <p>Cross-namespace hosts <b>must</b> be FQDNs. The golems' Shem bundles come from <span class="mono">Collite/hartland@demo-p2</span>; the image is pinned (<span class="mono">ghcr.io/collite/golem:0.9.4</span>). All secrets pull from a <b>separate</b> vault — <span class="mono">hartland.vault.azure.net</span> (Collite tenant): <span class="mono">veles-github-pat</span>, <span class="mono">ttrk-golem</span>, <span class="mono">azure-openai-key</span>, the pg-hartland RO creds, and the ArgoCD repo cred.</p>
+
+      <h3>The four steps GitOps does <em>not</em> do</h3>
+      <p>Run these by hand — the collite-o1 bring-up on 2026-07-20 proved every one is a real gate:</p>
+      <div class="tw"><table>
+        <thead><tr><th class="num">#</th><th>manual step</th><th>the gotcha</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Restore the warehouse (the <span class="mono">hartland-restore</span> Job)</td><td>dumps must be staged to <em>that</em> cluster's SeaweedFS first</td></tr>
+          <tr><td class="num">2</td><td>Seed the gateway virtual keys into <span class="mono">virtual_keys</span></td><td>the vault value must be a properly-minted <span class="mono">ttrk-</span> key — the validator rejects on the prefix check <em>before</em> any DB lookup, so a malformed placeholder can never be seeded into working</td></tr>
+          <tr><td class="num">3</td><td>Load the Keycloak realm personas</td><td>config-sync is a PostSync <em>hook</em> — it re-runs only on a real <b>Sync</b>, not a refresh; its finalizer can wedge on a delete</td></tr>
+          <tr><td class="num">4</td><td>The two-refresh after any model edit</td><td>golem caches the ModelBundle at boot (see §2)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note plain">
+        <span class="nt">Other operational gotchas</span>
+        <p>Helm <span class="mono">extraEnv</span> <em>replaces</em> (re-list the chart's veles env or the validator loses it) · <span class="mono">VALIDATE_DEFAULT_TOP_N=100</span> is set on hartland (see §5) · images must be multi-arch (the node is amd64 — prefix jib with <span class="mono">CI=true</span>).</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ===== 5 STORY ===== -->
+    <section id="story">
+      <span class="snum">05</span>
+      <h2>The demo story</h2>
+      <p>The transcript is the design artifact — the demo <em>is</em> its transcript. Six beats plus two in-script satellites. Setting: a Monday morning, mid-January 2026, "we just closed 2025."</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>beat</th><th>what happens</th></tr></thead>
+        <tbody>
+          <tr><td><b>1 · Cold open</b></td><td>Iris' inbox holds an overnight "Monday channel health brief" (a Hebe routine). Stores flat, Web noise, <b>Marketplace −6.18% FY / −8.65% H2</b>, incident window <b>−10.62%</b> — rendered live from patterns #2 and #1. "Nothing on this stage is a mock-up."</td></tr>
+          <tr><td><b>2 · Q&amp;A with Golem</b> <span style="color:var(--muted)">(the core)</span></td><td>Five turns narrow it: Web is noise-level; the category drop is spread <em>evenly</em> (a product problem hits products — this hit a channel); AOV via plan source <b><span class="mono">free_sql</span></b> ("not a decision tree, an analyst"); and the pivotal <b>model gap</b> — "what did it cost us in profit?" → <em>it says it doesn't know</em> (profit isn't modelled).</td></tr>
+          <tr><td><b>3 · Pythia RCA</b> <span style="color:var(--muted)">(centerpiece)</span></td><td>A live hypothesis tree with a budget meter. Customer-shift, demographic, promo, and regional branches <b>die on flat numbers</b>; the fulfilment branch <b>survives</b> — reason skew to 39.10%, Memphis −58.99%, a 17-week zero-on-hand streak. Conclusion: <em>Memphis DC stopped fulfilling for ~17 weeks; H2 impact −$44.9M</em>, plus honest loose ends.</td></tr>
+          <tr><td><b>4 · Pin it</b></td><td>The conclusion + chart pin to a "Channel Health" dashboard — "the chart re-executes on refresh (a living view); the evidence is frozen (a record). Replay versus reproduce."</td></tr>
+          <tr><td><b>5 · Forecast + what-if</b></td><td>Per-channel forecast with confidence intervals (Metis), then a live what-if simulation — a runtime answer, not an R0-frozen fact.</td></tr>
+          <tr><td><b>6 · Close the loop</b></td><td>"Set this up as my Monday brief" → Hebe creates the routine from chat — the same routine that wrote Beat 1.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>The personas &amp; the two Shems</h3>
+      <p>Realm <span class="mono">kantheon</span>, all password <span class="mono">Hartland!2026</span>. Two <b>disjoint</b> realm roles gate visibility — so for Maya the finance agent doesn't <em>exist</em> (nothing greyed-out to click), while a CFO sees two Discover cards.</p>
+      <div class="tw"><table>
+        <thead><tr><th>persona</th><th>role · world · locale</th><th>demonstrates</th></tr></thead>
+        <tbody>
+          <tr><td><b>Maya Chen</b></td><td>Category Mgr · US · en · <span class="mono">area-hartland</span></td><td>the narrator; general analytics; one Discover card</td></tr>
+          <tr><td><b>Markéta Nováková</b></td><td>Category Mgr · CZ · cs · <span class="mono">area-hartland</span></td><td>the identical arc in Czech (Brno, Kč)</td></tr>
+          <tr><td><b>Dan Whitaker</b></td><td>CFO · US · en · <span class="mono">+ role-finance</span></td><td>governance cameo — two cards, finance-only agent</td></tr>
+          <tr><td><b>Tomáš Horák</b></td><td>CFO · CZ · cs · <span class="mono">+ role-finance</span></td><td>the Czech governance cameo</td></tr>
+        </tbody>
+      </table></div>
+      <p><b><span class="mono">golem-hartland</span></b> (Analytics, all 15 patterns) and <b><span class="mono">golem-hartland-finance</span></b> (a subset of three, role-gated, distinct agent id so Discover and routing don't collide) point at the <em>same</em> area and model — no new data.</p>
+
+      <div class="note">
+        <span class="nt">The 4-bug cascade behind "72 rows"</span>
+        <p>The headline turn only works once four independent fixes line up: single-curly <span class="mono">{param}</span> (parse) · correct <span class="mono">source_language=sql</span> + <span class="mono">source_schema=DB</span> (not translator-rejected) · lowercase channel token (filter matches instead of 0 rows) · <span class="mono">VALIDATE_DEFAULT_TOP_N=100</span> (all 72 rows survive the governance cap). Each otherwise fails <em>silently</em> as a phantom "0 rows," and each needs the two-refresh to take effect. The 72 rows are 24 months × 3 channels.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ===== 6 SATELLITES ===== -->
+    <section id="satellites">
+      <span class="snum">06</span>
+      <h2>Satellite demos</h2>
+      <p>The main demo can be surrounded by side-shows, each foregrounding one facet. Honestly labelled by maturity — and mapped onto the brand's own rule that <b>yellow is what lives</b>:
+        <span class="tag live">Live</span> runs today · <span class="tag mid">Partial</span> exists with caveats · <span class="tag off">Roadmap</span> designed, not built.</p>
+
+      <h4>Show the model — authoring &amp; visualisation</h4>
+      <ul>
+        <li><span class="tag live">Live</span> <b>VS Code TTR-M editing</b> — open <span class="mono">hartland/model/</span>, edit an entity, watch live diagnostics; push to <span class="mono">demo-p2</span>, do the two-refresh, and <em>the answer changes</em>.</li>
+        <li><span class="tag live">Live</span> <b>The Designer ("Studio Viewer")</b> — a read-only browser renderer of the <span class="mono">db</span>/<span class="mono">er</span> schema; <span class="mono">?veles=&lt;base&gt;</span> renders the <em>deployed</em> Hartland model straight from the running cluster.</li>
+        <li><span class="tag mid">Partial</span> Designer live editing (unverified in-browser).</li>
+      </ul>
+
+      <h4>Show the processing — TTR-P</h4>
+      <ul>
+        <li><span class="tag live">Live</span> <b>One program, two engines</b> — the same TTR-P program compiled to Postgres SQL and to Polars produces <b>byte-identical</b> results (Check A).</li>
+        <li><span class="tag live">Live</span> <b>LLM-assisted TTR-P authoring</b> — an assist demo against the gateway → Azure, with a pinned eval baseline (Checks C+D).</li>
+        <li><span class="tag mid">Partial</span> TTR-P VS Code (diagnostics, SSA-rename, Build/Run/Explain). <span class="tag off">Roadmap</span> the optimizer &amp; the graphical <span class="mono">ttrp-designer</span>.</li>
+      </ul>
+
+      <h4>Show the runtime — the governed query path</h4>
+      <ul>
+        <li><span class="tag live">Live</span> <b>Drive the MCP surface directly</b> — <span class="mono">query</span> and <span class="mono">compile</span>: "any agent, any vendor, through a contract."</li>
+        <li><span class="tag live">Live</span> <b>The deterministic plan without executing</b> — <span class="mono">compile</span> returns the physical plan before a row moves.</li>
+        <li><span class="tag live">Live</span> <b>Provenance</b> (ⓘ → the exact SQL, <span class="mono">db=hartland</span>, timestamp) · <b>identity fail-closed</b> (a service token with no user claim is refused) · <b>RLS + the visible TopN cap</b> ("no flag bypasses the validator").</li>
+      </ul>
+
+      <h4>Show the constellation — the twelve, struck as coins</h4>
+      <p>The cast that runs the demo — <span style="color:var(--gold);font-weight:700">gold rings</span> for the speaking gods, <span style="color:#8a97a5;font-weight:700">silver</span> for the services below:</p>
+      <div class="coins">
+        <div class="coin-chip"><span class="coin-d">◉</span><div><div class="cn">Golem <span class="metal gold">· gold</span></div><div class="cr">the per-area Q&amp;A agent — clay animated by a Shem</div></div></div>
+        <div class="coin-chip"><span class="coin-d">⚖</span><div><div class="cn">Themis <span class="metal gold">· gold</span></div><div class="cr">the invisible router — reads intent, picks the agent</div></div></div>
+        <div class="coin-chip"><span class="coin-d">◭</span><div><div class="cn">Pythia <span class="metal gold">· gold</span></div><div class="cr">the autonomous RCA investigator</div></div></div>
+        <div class="coin-chip"><span class="coin-d">♆</span><div><div class="cn">Hebe <span class="metal gold">· gold</span></div><div class="cr">personal routines — writes the Monday brief</div></div></div>
+        <div class="coin-chip"><span class="coin-d">◈</span><div><div class="cn">Iris <span class="metal gold">· gold</span></div><div class="cr">the chat surface — every word in and answer back</div></div></div>
+        <div class="coin-chip"><span class="coin-d silver">∿</span><div><div class="cn">Metis <span class="metal silv">· silver</span></div><div class="cr">forecasting &amp; what-if simulation</div></div></div>
+        <div class="coin-chip"><span class="coin-d silver">⛴</span><div><div class="cn">Charon <span class="metal silv">· silver</span></div><div class="cr">the ferry — object &amp; session substrate</div></div></div>
+        <div class="coin-chip"><span class="coin-d silver">☰</span><div><div class="cn">Kallimachos · Pinakes <span class="metal silv">· silver</span></div><div class="cr">the catalogue &amp; registry services</div></div></div>
+      </div>
+
+      <h4>Show the data — raw vs governed</h4>
+      <p>The interesting satellite is the <em>divergence</em>, not the match. Re-run the <span class="mono">free_sql</span> AOV answer raw in <span class="mono">psql</span> — same numbers. Then show where the governed path deliberately <em>differs</em>: the validator's TopN LIMIT is injected (governance made concrete); Calcite rejects queries Postgres accepts (contract-vs-trust); and RLS scopes the CFO's rows where raw psql sees everything (row-level security doing its job).</p>
+    </section>
+
+    <hr>
+
+    <!-- ===== APPENDIX ===== -->
+    <section id="appendix">
+      <span class="snum">§</span>
+      <h2>Key paths</h2>
+      <div class="tw"><table>
+        <thead><tr><th>what</th><th>path</th></tr></thead>
+        <tbody>
+          <tr><td>Demo narrative</td><td class="mono">hartland/design/demo-transcript.md</td></tr>
+          <tr><td>Bring-up field notes (read this)</td><td class="mono">hartland/design/demo-quirks.md</td></tr>
+          <tr><td>Fixture re-plan</td><td class="mono">hartland/design/test-fixture-hartland-replan.md</td></tr>
+          <tr><td>Data pipeline · recon / R0 / dumps</td><td class="mono">hartland/data/{README,recon/{R0,dump-manifest}}</td></tr>
+          <tr><td>Model &amp; pattern queries</td><td class="mono">hartland/model/{db,er,md,binding,lexicon}, queries/q_hartland.ttrm</td></tr>
+          <tr><td>Shems / agents</td><td class="mono">hartland/agents/golem/shems/golem-hartland{,-finance}</td></tr>
+          <tr><td>Warehouse fixture (olymp)</td><td class="mono">olymp/platform/data/hartland-pg/</td></tr>
+          <tr><td>Cluster</td><td class="mono">olymp/clusters/hartland/</td></tr>
+          <tr><td>Personas realm</td><td class="mono">olymp/platform/auth/keycloak/overlays/hartland/realm/kantheon.json</td></tr>
+          <tr><td>Gateway cutover runbook</td><td class="mono">tatrman-server/services/ttr-llm-gateway/docs/cutover-runbook.md</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <footer>
+      <b>Kantheon · the Hartland demo</b> — one universe, two marks: the marionette on its stage, the temple standing on tables. Overview compiled 2026-07-20. Numbers resolve against R0 (frozen 2026-07-18); percentages are currency-invariant and match across both worlds.
+    </footer>
+  </main>
+</div>
+
+<script>
+  // scrollspy: highlight the active TOC entry
+  (function(){
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+    if(!('IntersectionObserver' in window) || !sections.length) return;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-20% 0px -70% 0px', threshold:0});
+    sections.forEach(function(s){ io.observe(s); });
+  })();
+</script>
+
+</body>
+</html>
