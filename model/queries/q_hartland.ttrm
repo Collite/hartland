@@ -25,17 +25,17 @@ def query channel_revenue_monthly {
     sourceText: """
         SELECT 'store' AS channel, d.d_year, d.d_moy, SUM(ss.ss_ext_sales_price) AS revenue
         FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
-        WHERE d.d_year BETWEEN :year_from AND :year_to
+        WHERE d.d_year BETWEEN {year_from} AND {year_to}
         GROUP BY d.d_year, d.d_moy
         UNION ALL
         SELECT 'web', d.d_year, d.d_moy, SUM(ws.ws_ext_sales_price)
         FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
-        WHERE d.d_year BETWEEN :year_from AND :year_to
+        WHERE d.d_year BETWEEN {year_from} AND {year_to}
         GROUP BY d.d_year, d.d_moy
         UNION ALL
         SELECT 'marketplace', d.d_year, d.d_moy, SUM(cs.cs_ext_sales_price)
         FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-        WHERE d.d_year BETWEEN :year_from AND :year_to
+        WHERE d.d_year BETWEEN {year_from} AND {year_to}
         GROUP BY d.d_year, d.d_moy
         ORDER BY d_year, d_moy, channel
     """
@@ -62,13 +62,13 @@ def query channel_revenue_yoy {
     language: SQL
     sourceText: """
         WITH cur AS (
-            SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
-            UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
-            UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
+            SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
+            UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
+            UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
         ), prior AS (
-            SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = :prior_year
-            UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = :prior_year
-            UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = :prior_year
+            SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = {prior_year}
+            UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = {prior_year}
+            UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = {prior_year}
         )
         SELECT cur.channel, cur.revenue AS revenue_current, prior.revenue AS revenue_prior,
                (cur.revenue - prior.revenue) / NULLIF(prior.revenue, 0) * 100 AS yoy_pct
@@ -104,19 +104,19 @@ def query category_revenue {
         WITH by_channel AS (
             SELECT 'store' AS channel, i.i_category AS category, ss.ss_ext_sales_price AS ext_sales_price
             FROM store_sales ss JOIN item i ON ss.ss_item_sk = i.i_item_sk JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'web', i.i_category, ws.ws_ext_sales_price
             FROM web_sales ws JOIN item i ON ws.ws_item_sk = i.i_item_sk JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'marketplace', i.i_category, cs.cs_ext_sales_price
             FROM catalog_sales cs JOIN item i ON cs.cs_item_sk = i.i_item_sk JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
         )
         SELECT category, SUM(ext_sales_price) AS revenue
         FROM by_channel
-        WHERE channel = :channel
+        WHERE channel = {channel}
         GROUP BY category
         ORDER BY revenue DESC
     """
@@ -147,7 +147,7 @@ def query marketplace_revenue_by_warehouse {
         FROM catalog_sales cs
         JOIN warehouse w ON cs.cs_warehouse_sk = w.w_warehouse_sk
         JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-        WHERE d.d_year BETWEEN :year_from AND :year_to
+        WHERE d.d_year BETWEEN {year_from} AND {year_to}
         GROUP BY w.w_warehouse_name, d.d_year
         ORDER BY d.d_year, revenue DESC
     """
@@ -177,10 +177,10 @@ def query top_items_by_revenue {
         FROM catalog_sales cs
         JOIN item i ON cs.cs_item_sk = i.i_item_sk
         JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-        WHERE d.d_year = :year
+        WHERE d.d_year = {year}
         GROUP BY i.i_item_id, i.i_product_name
         ORDER BY revenue DESC
-        LIMIT :limit
+        LIMIT {limit}
     """
     search {
         patterns: [
@@ -207,19 +207,19 @@ def query returns_by_reason {
         WITH by_channel AS (
             SELECT 'store' AS channel, r.r_reason_desc AS reason, sr.sr_return_quantity AS return_quantity, sr.sr_return_amt AS return_amt
             FROM store_returns sr JOIN reason r ON sr.sr_reason_sk = r.r_reason_sk JOIN date_dim d ON sr.sr_returned_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'web', r.r_reason_desc, wr.wr_return_quantity, wr.wr_return_amt
             FROM web_returns wr JOIN reason r ON wr.wr_reason_sk = r.r_reason_sk JOIN date_dim d ON wr.wr_returned_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'marketplace', r.r_reason_desc, cr.cr_return_quantity, cr.cr_return_amount
             FROM catalog_returns cr JOIN reason r ON cr.cr_reason_sk = r.r_reason_sk JOIN date_dim d ON cr.cr_returned_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
         )
         SELECT reason, SUM(return_quantity) AS return_qty, SUM(return_amt) AS return_amt
         FROM by_channel
-        WHERE channel = :channel
+        WHERE channel = {channel}
         GROUP BY reason
         ORDER BY return_amt DESC
     """
@@ -246,17 +246,17 @@ def query returns_rate_by_channel {
     language: SQL
     sourceText: """
         WITH sales AS (
-            SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
-            UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
-            UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
-        ), returns AS (
-            SELECT 'store' AS channel, SUM(sr_return_amt) AS return_amt FROM store_returns sr JOIN date_dim d ON sr.sr_returned_date_sk = d.d_date_sk WHERE d.d_year = :year
-            UNION ALL SELECT 'web', SUM(wr_return_amt) FROM web_returns wr JOIN date_dim d ON wr.wr_returned_date_sk = d.d_date_sk WHERE d.d_year = :year
-            UNION ALL SELECT 'marketplace', SUM(cr_return_amount) FROM catalog_returns cr JOIN date_dim d ON cr.cr_returned_date_sk = d.d_date_sk WHERE d.d_year = :year
+            SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
+            UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
+            UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
+        ), rets AS (
+            SELECT 'store' AS channel, SUM(sr_return_amt) AS return_amt FROM store_returns sr JOIN date_dim d ON sr.sr_returned_date_sk = d.d_date_sk WHERE d.d_year = {year}
+            UNION ALL SELECT 'web', SUM(wr_return_amt) FROM web_returns wr JOIN date_dim d ON wr.wr_returned_date_sk = d.d_date_sk WHERE d.d_year = {year}
+            UNION ALL SELECT 'marketplace', SUM(cr_return_amount) FROM catalog_returns cr JOIN date_dim d ON cr.cr_returned_date_sk = d.d_date_sk WHERE d.d_year = {year}
         )
-        SELECT sales.channel, sales.revenue, returns.return_amt,
-               returns.return_amt / NULLIF(sales.revenue, 0) * 100 AS return_rate_pct
-        FROM sales JOIN returns ON sales.channel = returns.channel
+        SELECT sales.channel, sales.revenue, rets.return_amt,
+               rets.return_amt / NULLIF(sales.revenue, 0) * 100 AS return_rate_pct
+        FROM sales JOIN rets ON sales.channel = rets.channel
         ORDER BY sales.channel
     """
     search {
@@ -286,7 +286,7 @@ def query warehouse_stockout_weeks {
         FROM inventory inv
         JOIN warehouse w ON inv.inv_warehouse_sk = w.w_warehouse_sk
         JOIN date_dim d ON inv.inv_date_sk = d.d_date_sk
-        WHERE d.d_year = :year
+        WHERE d.d_year = {year}
         GROUP BY w.w_warehouse_name, d.d_week_seq
         ORDER BY w.w_warehouse_name, d.d_week_seq
     """
@@ -315,7 +315,7 @@ def query inventory_on_hand_series {
         FROM inventory inv
         JOIN warehouse w ON inv.inv_warehouse_sk = w.w_warehouse_sk
         JOIN date_dim d ON inv.inv_date_sk = d.d_date_sk
-        WHERE w.w_warehouse_id = :warehouse AND d.d_year = :year
+        WHERE w.w_warehouse_id = {warehouse} AND d.d_year = {year}
         GROUP BY w.w_warehouse_name, d.d_week_seq
         ORDER BY d.d_week_seq
     """
@@ -342,11 +342,11 @@ def query customer_channel_overlap {
     language: SQL
     sourceText: """
         WITH touches AS (
-            SELECT ss_customer_sk AS customer_sk, 'store' AS channel FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
+            SELECT ss_customer_sk AS customer_sk, 'store' AS channel FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
             UNION ALL
-            SELECT ws_bill_customer_sk, 'web' FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
+            SELECT ws_bill_customer_sk, 'web' FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
             UNION ALL
-            SELECT cs_bill_customer_sk, 'marketplace' FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = :year
+            SELECT cs_bill_customer_sk, 'marketplace' FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
         ), per_customer AS (
             SELECT customer_sk,
                 bool_or(channel = 'store') AS bought_store,
@@ -384,19 +384,19 @@ def query revenue_by_customer_state {
         WITH by_channel AS (
             SELECT 'store' AS channel, ca.ca_state AS state, ss.ss_ext_sales_price AS ext_sales_price
             FROM store_sales ss JOIN customer_address ca ON ss.ss_addr_sk = ca.ca_address_sk JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'web', ca.ca_state, ws.ws_ext_sales_price
             FROM web_sales ws JOIN customer_address ca ON ws.ws_bill_addr_sk = ca.ca_address_sk JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'marketplace', ca.ca_state, cs.cs_ext_sales_price
             FROM catalog_sales cs JOIN customer_address ca ON cs.cs_bill_addr_sk = ca.ca_address_sk JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
         )
         SELECT state, SUM(ext_sales_price) AS revenue
         FROM by_channel
-        WHERE channel = :channel
+        WHERE channel = {channel}
         GROUP BY state
         ORDER BY revenue DESC
     """
@@ -425,21 +425,27 @@ def query buyer_age_profile {
         WITH by_channel AS (
             SELECT 'store' AS channel, c.c_birth_year AS birth_year
             FROM store_sales ss JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'web', c.c_birth_year
             FROM web_sales ws JOIN customer c ON ws.ws_bill_customer_sk = c.c_customer_sk JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'marketplace', c.c_birth_year
             FROM catalog_sales cs JOIN customer c ON cs.cs_bill_customer_sk = c.c_customer_sk JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
         )
-        SELECT (:year - birth_year) AS buyer_age, COUNT(*) AS order_lines
+        -- NOTE (2026-07-20): grouping by the raw `birth_year` column is the only form
+        -- that serves rows through the translator for this query. Grouping by a same-level
+        -- SELECT alias fails Calcite parse; wrapping in a derived table + GROUP BY the
+        -- subquery column parses but returns 0 rows through the pipeline (translator quirk,
+        -- valid in raw Postgres). The translator also appears to drop the birth_year filter
+        -- here (a null-age bucket surfaces) — tracked as a demo-polish follow-up.
+        SELECT ({year} - birth_year) AS buyer_age, COUNT(*) AS order_lines
         FROM by_channel
-        WHERE channel = :channel AND birth_year IS NOT NULL
-        GROUP BY buyer_age
-        ORDER BY buyer_age
+        WHERE channel = {channel} AND birth_year IS NOT NULL
+        GROUP BY birth_year
+        ORDER BY birth_year DESC
     """
     search {
         patterns: [
@@ -466,22 +472,22 @@ def query promo_share {
         WITH by_channel AS (
             SELECT 'store' AS channel, ss.ss_promo_sk AS promo_sk, ss.ss_ext_sales_price AS ext_sales_price
             FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'web', ws.ws_promo_sk, ws.ws_ext_sales_price
             FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
             UNION ALL
             SELECT 'marketplace', cs.cs_promo_sk, cs.cs_ext_sales_price
             FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
-            WHERE d.d_year = :year
+            WHERE d.d_year = {year}
         )
         SELECT
             SUM(CASE WHEN promo_sk IS NOT NULL THEN ext_sales_price ELSE 0 END) AS promo_revenue,
             SUM(ext_sales_price) AS total_revenue,
             SUM(CASE WHEN promo_sk IS NOT NULL THEN ext_sales_price ELSE 0 END) / NULLIF(SUM(ext_sales_price), 0) * 100 AS promo_share_pct
         FROM by_channel
-        WHERE channel = :channel
+        WHERE channel = {channel}
     """
     search {
         patterns: [
