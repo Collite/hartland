@@ -110,13 +110,16 @@ Physical (DB-level) SQL was parsed against the **ER** schema by default →
 `'ss_sold_date_sk' is a db object; parsed against er`. query-mcp now defaults
 `source_schema=DB` when `source_language=SQL`.
 
-### 3.3 Text parameters are case-sensitive (being fixed in the toolchain)
+### 3.3 Text parameters are case-sensitive (fix implemented, pending toolchain release)
 `WHERE channel = {channel}` with the utterance "…for **Marketplace**" binds
 `channel="Marketplace"`, but the data literal is lowercase `'marketplace'` → 0 rows. This
 is **not** golem's job to normalise — it belongs in the parametrized-query normalization
-pass (ttr-translator). Fix: text-parameter equality is case-folded in the translator so
-"Marketplace"/"marketplace"/"MARKETPLACE" all match. (Until the toolchain release lands,
-phrase demo utterances with the lowercase channel token.)
+pass (ttr-translator). Fix implemented: a RESOLVE-stage pass (`CaseFoldingParams`) folds
+`=`/`<>` comparisons that involve a text parameter to `LOWER()` on both sides, so
+"Marketplace"/"marketplace"/"MARKETPLACE" all match — tatrman branch
+`feat/case-insensitive-text-params`. **Reaches hartland only after a ttr-translator release
++ ttr-translate repoint + redeploy** (tag-driven publish). Until then, phrase demo
+utterances with the lowercase channel token.
 
 ---
 
