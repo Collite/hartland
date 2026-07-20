@@ -249,14 +249,14 @@ def query returns_rate_by_channel {
             SELECT 'store' AS channel, SUM(ss_ext_sales_price) AS revenue FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
             UNION ALL SELECT 'web', SUM(ws_ext_sales_price) FROM web_sales ws JOIN date_dim d ON ws.ws_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
             UNION ALL SELECT 'marketplace', SUM(cs_ext_sales_price) FROM catalog_sales cs JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk WHERE d.d_year = {year}
-        ), returns AS (
+        ), rets AS (
             SELECT 'store' AS channel, SUM(sr_return_amt) AS return_amt FROM store_returns sr JOIN date_dim d ON sr.sr_returned_date_sk = d.d_date_sk WHERE d.d_year = {year}
             UNION ALL SELECT 'web', SUM(wr_return_amt) FROM web_returns wr JOIN date_dim d ON wr.wr_returned_date_sk = d.d_date_sk WHERE d.d_year = {year}
             UNION ALL SELECT 'marketplace', SUM(cr_return_amount) FROM catalog_returns cr JOIN date_dim d ON cr.cr_returned_date_sk = d.d_date_sk WHERE d.d_year = {year}
         )
-        SELECT sales.channel, sales.revenue, returns.return_amt,
-               returns.return_amt / NULLIF(sales.revenue, 0) * 100 AS return_rate_pct
-        FROM sales JOIN returns ON sales.channel = returns.channel
+        SELECT sales.channel, sales.revenue, rets.return_amt,
+               rets.return_amt / NULLIF(sales.revenue, 0) * 100 AS return_rate_pct
+        FROM sales JOIN rets ON sales.channel = rets.channel
         ORDER BY sales.channel
     """
     search {
@@ -438,8 +438,8 @@ def query buyer_age_profile {
         SELECT ({year} - birth_year) AS buyer_age, COUNT(*) AS order_lines
         FROM by_channel
         WHERE channel = {channel} AND birth_year IS NOT NULL
-        GROUP BY buyer_age
-        ORDER BY buyer_age
+        GROUP BY birth_year
+        ORDER BY birth_year DESC
     """
     search {
         patterns: [
