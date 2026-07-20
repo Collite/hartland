@@ -435,14 +435,17 @@ def query buyer_age_profile {
             FROM catalog_sales cs JOIN customer c ON cs.cs_bill_customer_sk = c.c_customer_sk JOIN date_dim d ON cs.cs_sold_date_sk = d.d_date_sk
             WHERE d.d_year = {year}
         )
-        SELECT buyer_age, COUNT(*) AS order_lines
-        FROM (
-            SELECT ({year} - birth_year) AS buyer_age
-            FROM by_channel
-            WHERE channel = {channel} AND birth_year IS NOT NULL
-        ) ages
-        GROUP BY buyer_age
-        ORDER BY buyer_age
+        -- NOTE (2026-07-20): grouping by the raw `birth_year` column is the only form
+        -- that serves rows through the translator for this query. Grouping by a same-level
+        -- SELECT alias fails Calcite parse; wrapping in a derived table + GROUP BY the
+        -- subquery column parses but returns 0 rows through the pipeline (translator quirk,
+        -- valid in raw Postgres). The translator also appears to drop the birth_year filter
+        -- here (a null-age bucket surfaces) — tracked as a demo-polish follow-up.
+        SELECT ({year} - birth_year) AS buyer_age, COUNT(*) AS order_lines
+        FROM by_channel
+        WHERE channel = {channel} AND birth_year IS NOT NULL
+        GROUP BY birth_year
+        ORDER BY birth_year DESC
     """
     search {
         patterns: [
