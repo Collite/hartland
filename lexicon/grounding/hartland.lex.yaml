@@ -1,0 +1,72 @@
+# RV-P3.2 T5 — hartland's own grounding TRIGGER vocabulary.
+#
+# ADDITIONS ONLY. The RV-P1.6 stdlib already ships cs+en chrono/money/geo slices, and
+# `LexiconBuild` layers stdlib FIRST, estate SECOND — so this file extends that vocabulary
+# and must not restate it. Nothing here appears in
+# `ttr-lexicon-compile/src/main/resources/lexicon-stdlib/grounding/`; a term that did would
+# compile to one row and earn an `RG-LEXC-002` for the privilege.
+#
+# Every term below is a word the demo corpus actually uses — `design/demo-transcript.md`
+# (the beats Maya and Dan speak), `agents/golem/shems/golem-hartland/shem.yaml`
+# (`example_questions`, en + cs) and `data/recon/R0.md` (how the frozen numbers are
+# described). Nothing is invented.
+#
+# ⚑ NO PLACE NAMES in `ground:geo` (RV-42): the place gazetteer is parked and stays
+# geo-side. "Brno", "Memphis" and "Nashville" are all over this estate's corpus and none of
+# them belongs here — a term in this class says *this span is about geography*, not *which
+# place it is*. Category words only, same line the stdlib slice holds.
+schema: ttr-lexicon/v1
+defaults: { lang: cs, method: TYPOS(1) }
+entries:
+  # ── chrono: the half-year and year-over-year wording the demo leads with ──────────────
+  # The incident is always described as an H2/second-half story ("Which categories drove
+  # the H2 2025 drop?", "Které kategorie způsobily propad v 2. pol. 2025?"), and every
+  # headline number is a YoY comparison. The stdlib knows year/month/quarter/week and the
+  # scope words; it knows nothing about halves or about "meziročně".
+  - terms:
+      - { text: "pololetí" }
+      - { text: "pololetích" }
+      - { text: "půlrok" }
+      - { text: "half", lang: en }
+      - { text: "first half", lang: en, method: TOKENS }
+      - { text: "second half", lang: en, method: TOKENS }
+      # H1/H2 are two characters: TYPOS(1) would make each match the other, and both match
+      # Q1..Q4's neighbourhood. EXACT, exactly as the stdlib treats the quarter codes.
+      - { text: "H1", lang: cs|en, method: EXACT }
+      - { text: "H2", lang: cs|en, method: EXACT }
+      # "2. pol." / "1. pol." — TOKENS because the ordinal and the abbreviation are
+      # separate tokens and the matcher folds rather than strips punctuation.
+      - { text: "pol.", method: EXACT }
+      - { text: "meziročně" }
+      - { text: "meziroční" }
+      - { text: "year over year", lang: en, method: TOKENS }
+      - { text: "YoY", lang: cs|en, method: EXACT }
+      # The retail season the forecast beat asks about ("What should we expect for holiday
+      # 2026, by channel?"). A season word is a time trigger, not a promotion.
+      - { text: "sezóna" }
+      - { text: "sezóně" }
+      - { text: "vánoční sezóna", method: TOKENS }
+      - { text: "svátky" }
+      - { text: "holiday", lang: en }
+      - { text: "peak season", lang: en, method: TOKENS }
+    target: ground:chrono
+
+  # ── geo: category words this estate's model actually ranges over ──────────────────────
+  # The US world keys customers by state (`ca_state`) and the CZ mirror by kraj; the
+  # stdlib slice has město/region/kraj/okres/obec + city/region/county/municipality, but
+  # not the state/postal-code axis. Still category words — still no place names.
+  - terms:
+      - { text: "stát" }
+      - { text: "státě" }
+      - { text: "state", lang: en }
+      - { text: "PSČ", method: EXACT }
+      - { text: "zip", lang: en, method: EXACT }
+      - { text: "zip code", lang: en, method: TOKENS }
+      - { text: "postal code", lang: en, method: TOKENS }
+    target: ground:geo
+
+  # ── money: no estate additions. ───────────────────────────────────────────────────────
+  # Recorded as a deliberate empty rather than left out. hartland trades in exactly CZK and
+  # USD, both worlds' currency names, codes, symbols and scale words are already in the
+  # stdlib slice, and the demo's own money wording ("$1,024.8M", "23 mld. Kč") is built
+  # from terms it already carries. An estate slice here would be pure restatement.
