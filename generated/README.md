@@ -12,12 +12,12 @@ area + the `model/lexicon/*.ttrm` sugar), the METADATA layer harvested from the 
 and the shipped operator + grounding stdlib. Regenerate after any change to either surface *or* to
 `model/`; `just check-lexicon` fails when the committed archive is stale.
 
-Committed despite being compressed binary (~6 KB): the drift gate needs something to compare
+Committed despite being compressed binary (~8 KB): the drift gate needs something to compare
 against, and the reviewable part — the archive id and the per-class entry counts — is printed by
 the build and recorded in `lexicon/README.md`. See that file for the full reasoning.
 
 `kustomization.yaml` — renders `lexicon.tar.zst` (and only it) into the `hartland-lexicon`
 ConfigMap that the cluster's readers mount (RV-P3.3). olymp's `lexicon` Application applies this
 directory at the same ref veles serves the model from. Binary ⇒ kustomize emits `binaryData`;
-measured 5,762 B → 7,794 B base64 → 8,333 B of manifest, 0.79% of the ~1 MiB ConfigMap cap.
+measured 7,856 B → 10,626 B base64 → 11,325 B of manifest, 1.08% of the ~1 MiB ConfigMap cap.
 Verify locally with `kustomize build generated/`.

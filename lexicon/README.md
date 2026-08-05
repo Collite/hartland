@@ -30,57 +30,40 @@ It is committed anyway, for two reasons that outweigh it at this size:
 - **`resolved-packages.json` set the precedent**, and the reviewable part of this artifact is not
   its bytes but its **id** and per-class counts, both printed by the build and recorded below.
 
-It measured **5,762 bytes** at the counts below. If it grows past roughly a hundred kilobytes the
+It measured **7,856 bytes** at the counts below. If it grows past roughly a hundred kilobytes the
 trade flips and the archive should move to a CI-built artifact — the drift gate would then be a CI
 step rather than a local recipe.
 
 ## What is in the artifact today
 
-From `just build-lexicon`, 2026-08-06:
+From `just build-lexicon`, 2026-08-06 (rebuilt after RV-P3.4 taught the compiler md targets):
 
 | | |
 |---|---|
-| archive id | `sha256:9422a7bacda4a6e6011bd7845d4b0a32d35c562b50425a2afc978c3d75d82cd5` |
+| archive id | `sha256:e022d94ecb6b7d0acab13146d8978eb6b24000504bb46f7802543e3a328e4632` |
 | model id | `sha256:e434903b86466236149298b49039122ed307e701ba113c93ef46de4a838ddabf` |
-| entries | **212** |
-| — `MODEL_OBJECT` | 79 (22 DECLARED from the channel sugar, 57 METADATA from the model's labels) |
+| entries | **350** |
+| — `MODEL_OBJECT` | 117 (60 DECLARED, 57 METADATA) |
+| — `MEMBER` | **100** (METADATA — every one an md dimension attribute's `valueLabels`) |
 | — `OPERATOR` | 35 (the six stdlib operators' triggers) |
 | — `GROUNDING_TRIGGER` | 98 (72 stdlib + 26 from `grounding/hartland.lex.yaml`) |
-| — `MEMBER` | **0** — see the gap below |
 | operators | 6 |
-| build warnings | 38 |
+| build warnings | **0** |
+| md-targeted rows | 138 (38 DECLARED + 100 members) |
 
 Those numbers are what `p3-3` verifies a pod is actually serving.
 
-## ⚠ The gap: `md.*` targets do not resolve
+**What changed at RV-P3.4** (was: 212 entries, MEMBER 0, 38 warnings): the compiler's reference
+index now covers md, so the estate's measure and dimension vocabulary — *tržba*, *obrat*,
+*revenue*, *turnover*, *reklamace*, *vyprodáno*, *produkt*, *sklad* — resolves instead of dangling,
+and every `valueLabels` entry on an md dimension attribute (the DC names, the 35 return reasons)
+becomes a MEMBER row. All 38 dangling-ref warnings are gone.
 
-**38 of the 38 build warnings are `RG-LEXC-001` (dangling ref), and every one of them is an
-`md.*` target.** Five distinct refs, covering the whole of `model/lexicon/{cs,en}/measures.ttrm`:
+⚑ **The target shape is kinded**: `md.measure.revenue`, `md.dimension.Product`, attribute depth
+`md.dimension.Customer.state`, member depth `md.dimension.DistributionCentre.dcCode.5`. Addressable
+kinds are **measure, dimension (+ attribute/member depth), cubelet**; `domain`, `hierarchy` and
+`map` deliberately are not. A ref in any other shape drops its row with a warning and the build
+still exits 0 — so read the warning count, not just the exit code.
 
-```
-md.measure.revenue   md.measure.returnAmount   md.measure.onHandQty
-md.dimension.Product   md.dimension.DistributionCentre
-```
-
-So the estate's measure and dimension vocabulary — "tržba", "obrat", "revenue", "turnover",
-"reklamace", "vyprodáno", "produkt", "sklad" — **compiles to nothing today**, and every member
-term would too: all of hartland's `valueLabels` live on md dimension attributes
-(`model/md/dimensions.ttrm`, `model/md/product.ttrm`), not on er attributes, which is why the
-`MEMBER` count is 0.
-
-This is **not a content problem in this repo**. The compiler builds its reference index from
-`ttr-metadata`'s `Model`, which has `db`/`er`/`cnc` schemas and no md schema at all — md
-measures, dimensions and cubelets live in a different type (`ttr-semantics`' `MdModel`) that the
-lexicon compiler never sees. Nothing hartland can author changes that.
-
-Consequently `lexicon/aliases/` and `lexicon/values/` are **deliberately not authored yet**
-(RV-P3.2 T4 is left open with this note). Authoring them against `er.*` targets instead would
-point hartland's business vocabulary at the wrong objects and guarantee a duplicate of every term
-the moment md refs start resolving — exactly the churn "content is authored once" exists to
-prevent.
-
-The contract already anticipates md targets: resolving `contracts.md` §2 shows
-`target: md.account.class.expense` as an *"attribute-depth md ref (RV-24 clarification)"*. What is
-missing is the implementation, and a ruling on the ref shapes (`md.measure.revenue` — the shape
-this estate already uses — versus the `md.<Dimension>.<attribute>[.<member>]` form the contract
-example shows).
+`lexicon/aliases/` and `lexicon/values/` are now authorable against md targets. They are still
+empty: authoring them is `p3-2` T4, which this unblocked.
