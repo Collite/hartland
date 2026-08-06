@@ -111,6 +111,46 @@ test('T3.5 — no place names in ground:geo (RV-42: the gazetteer is parked, geo
   assert.deepEqual(offenders, [], offenders.join('; '));
 });
 
+// ── T4's "author once" guard ───────────────────────────────────────────────────────────
+// P1.2 T7's naming decision: `lexicon/` and `model/lexicon/{cs,en}/*.ttrm` are two surfaces
+// of ONE declared layer. A term written on both is that layer saying the same thing twice,
+// and the compiler only catches it (`RG-LEXC-002`) when the target matches too — which is
+// the case this repo is LEAST likely to hit, because the sugar surface and the data area
+// were authored months apart by different stages. So it is caught here instead.
+//
+// Deliberately compares text only, not text+target: the failure worth stopping is "this
+// word is already declared somewhere", and the author needs to see it either way.
+test('T4 — no term is declared on both the data area and the .ttrm sugar surface', () => {
+  const sugar = new Map(); // normalized form -> the file that declares it
+  for (const locale of ['cs', 'en']) {
+    const dir = path.join(repoRoot, 'model', 'lexicon', locale);
+    if (!existsSync(dir)) continue;
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.ttrm'))) {
+      const text = readFileSync(path.join(dir, file), 'utf-8');
+      // `forms: ["a", "b", …]` — the only place the sugar surface spells a matchable term.
+      for (const list of text.matchAll(/^\s*forms:\s*\[([^\]]*)\]/gm)) {
+        for (const m of list[1].matchAll(/"([^"]+)"/g)) {
+          sugar.set(m[1].toLowerCase(), `model/lexicon/${locale}/${file}`);
+        }
+      }
+    }
+  }
+  assert.ok(sugar.size > 0, 'found no forms: in the .ttrm sugar surface — the guard would pass vacuously');
+
+  const offenders = [];
+  for (const file of lexFiles) {
+    const rel = path.relative(repoRoot, file);
+    for (const [i, line] of readFileSync(file, 'utf-8').split('\n').entries()) {
+      // Only real term lines: a `text:` inside a flow mapping. Prose in comments is prose.
+      const m = /^\s*-?\s*\{\s*text:\s*"([^"]+)"/.exec(line);
+      if (!m) continue;
+      const hit = sugar.get(m[1].toLowerCase());
+      if (hit) offenders.push(`${rel}:${i + 1}: "${m[1]}" is already declared in ${hit}`);
+    }
+  }
+  assert.deepEqual(offenders, [], offenders.join('; '));
+});
+
 // ── T5's layering assertion ────────────────────────────────────────────────────────────
 // Needs the Kotlin CLI, which lives in the sibling tatrman checkout the same way
 // model/lexicon/tests/lexicon.test.mjs needs @tatrman/semantics' dist. Skipped with a
