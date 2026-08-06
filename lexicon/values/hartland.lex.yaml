@@ -1,0 +1,91 @@
+# RV-P3.2 T4 — hartland's member vocabulary: the words users type for CODES.
+#
+# Sibling of `../aliases/hartland.lex.yaml`; same sourcing rule, same one mirror
+# allowance, both stated in full there.
+#
+# ── What the METADATA layer already gives, for free ───────────────────────────────────
+# Every `valueLabels` entry in `model/md/{dimensions,product}.ttrm` is harvested into a
+# MEMBER row by the compiler's metadata pass — 100 of them (10 categories, 5 distribution
+# centres, 35 return reasons, each en + cs). So `Memphis DC`, `Brno DC`, `Elektronika` and
+# `Nedorazilo včas` all resolve WITHOUT this file. What it adds is the shorter, blunter
+# handle the corpus shows people actually using, which no label carries.
+#
+# That is also why this file is short. A member row that restates its own label is the
+# duplicate T2 warns about, wearing a different hat.
+#
+# ── EXACT, not TYPOS(1) ───────────────────────────────────────────────────────────────
+# These are proper nouns, and p3-2 T4's own advice applies with force: a one-edit
+# neighbourhood around a short name reaches its siblings. This estate proves it — `Brno`
+# and `Reno` are BOTH distribution centres here (dcCode 5 in the cs world, dcCode 3 in the
+# en world) and they are one substitution apart. `folded` is kept, because typing Czech
+# without diacritics is the norm and `Plzen` must still land on `Plzeň`.
+schema: ttr-lexicon/v1
+defaults:
+  lang: cs
+  match:
+    - { norm: canonical, exact: 1.00 }
+    - { norm: folded,    exact: 0.90 }
+entries:
+  # ── The five distribution centres, by bare name ──────────────────────────────────────
+  # #4 `marketplace_revenue_by_warehouse` puts all five in one table (*"four DCs flat at
+  # $144.2M–$145.6M, Memphis collapses −58.99% in wks 32–48"*), and the demo's amendment
+  # story is chips over exactly that result — *"chip amendments ('only Marketplace') ride
+  # the Filter/Project/Sort STACK over a channel-labeled result"* (q_hartland.ttrm header).
+  # A chip or a follow-up that says `Brno` needs `Brno` to resolve; the label only ever
+  # says `Brno DC`. The cs roster is named outright in demo-transcript.md §CZ: *"pěti DC —
+  # Brno, Praha, Ostrava, Plzeň, Hradec Králové"*; the en world's five are the TPC-DS
+  # warehouse names their `valueLabels` already carry.
+  #
+  # ⚑ `Praha` is genuinely ambiguous inside this estate, and is authored anyway. It is the
+  # DC on dcCode 1, it is the HQ city (*"šest prodejen (HQ Praha)"*), and
+  # `data/localize-cz/geo-map.csv` carries it as a kraj seat besides. A bare place name
+  # with no anchoring word is exactly the RV-P2 H2 hero's `G3_UNATTRIBUTED` case, and the
+  # lattice is where that gets adjudicated. Withholding the member row would not remove
+  # the ambiguity — only the estate's own statement about one of its readings.
+  - terms: [ { text: "Brno" }, { text: "Memphis", lang: en } ]
+    target: md.dimension.DistributionCentre.dcCode.5
+  - terms: [ { text: "Praha" }, { text: "Columbus", lang: en } ]
+    target: md.dimension.DistributionCentre.dcCode.1
+  - terms: [ { text: "Ostrava" }, { text: "Dallas", lang: en } ]
+    target: md.dimension.DistributionCentre.dcCode.2
+  - terms: [ { text: "Plzeň" }, { text: "Reno", lang: en } ]
+    target: md.dimension.DistributionCentre.dcCode.3
+  - terms: [ { text: "Hradec Králové", method: TOKENS }, { text: "Allentown", lang: en } ]
+    target: md.dimension.DistributionCentre.dcCode.4
+
+  # ── The one return reason the demo names out loud ────────────────────────────────────
+  # Reason sk 3 is the isolated late-delivery signal (S3/S-9) and the single strongest
+  # piece of Beat-3 evidence: *"'Did not get it on time' spikes Q3–Q4 — 39.10% of surviving
+  # Memphis returns vs 2.87% baseline"*, mirrored in cs as *"Nedorazilo včas u přeživších
+  # vratek z Brna"*. Both of those exact strings are already MEMBER rows from
+  # `valueLabels`, so they are NOT repeated here.
+  #
+  # What is missing is the short handle the estate uses when it is describing rather than
+  # quoting — `model/md/dimensions.ttrm` calls sk 3 *"the isolated 'Nedorazilo včas' /
+  # 'Did not get it on time' LATE-DELIVERY signal"*. Nobody types a whole sentence at a
+  # chat box; they type the name of the thing.
+  - terms:
+      - { text: "pozdní doručení", method: TOKENS }   # (mirror of "late delivery")
+      - { text: "late delivery", lang: en, method: TOKENS }
+    target: md.dimension.ReturnReason.reasonCode.3
+
+# ── Deliberately empty, and why ────────────────────────────────────────────────────────
+#
+# Product.categoryCode members — all ten already resolve from `valueLabels` in both
+#   languages (`Elektronika`/`Electronics`, `Dětské`/`Children`, …), and those ARE the
+#   words the corpus uses: Beat 2 lists them as *"Ten categories (Books … Women)"*. No
+#   colloquial short form (`elektro`, `knížky`) appears anywhere in this repo, and coining
+#   one here would be the invention the sourcing rule forbids.
+#
+# ReturnReason members other than sk 3 — 34 of the 35 exist to give the reason mix its
+#   shape (`data/recon/results-*/r04_reason_mix.csv`). Only sk 3 is ever named; the rest
+#   are read off a chart, never typed.
+#
+# Channel values (`store` / `web` / `marketplace`) — not md members at all. They are SQL
+#   literals on a channel-labeled CTE (q_hartland.ttrm), and the vocabulary for them is
+#   already declared on the three `er.entity.*_sales` rows in `model/lexicon/*/channels.ttrm`.
+#
+# Product itemCode members — the item catalog is data, not declared: it has no
+#   `valueLabels` and it changes with every regenerate. Item-level lookup is the
+#   lex-matcher member INDEX's job, with its own refresh cadence (RV-38 / p1-9), which is
+#   the layer Beat 3's *"Which items were out of stock at Memphis DC"* actually lands on.

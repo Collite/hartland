@@ -1,0 +1,287 @@
+# RV-P3.2 T4 — hartland's business vocabulary: aliases over the model's OBJECTS.
+#
+# The words this estate's users type for its measures, dimensions, attributes and
+# cubelets. The sibling file `../values/hartland.lex.yaml` does the same for member CODES.
+#
+# ── Sourcing rule ─────────────────────────────────────────────────────────────────────
+# Every term below is attested in this repo's own corpus, and each block names where:
+# `design/demo-transcript.md` (the beats Maya, Dan and Markéta actually speak),
+# `model/queries/q_hartland.ttrm` (the `search { patterns, examples }` blocks on the 15
+# preferred queries — the closest thing this estate has to a query log),
+# `agents/golem/shems/*/shem.yaml` (`example_questions`, en + cs) and `data/recon/R0.md`.
+#
+# ⚑ ONE mirror allowance, stated once so it is never re-argued per line. The cs corpus IS
+# the en corpus translated — demo-transcript.md §CZ: *"Every beat, chip, and machinery note
+# from the English transcript translates directly — only the surface strings and the
+# connection change."* So where a word is attested in one language only, its straight
+# translation is authored in the other, marked `(mirror)`. Nothing else is invented.
+#
+# ── What this file must NOT restate ───────────────────────────────────────────────────
+# `model/lexicon/{cs,en}/*.ttrm` is the OTHER surface of this same DECLARED layer (P1.2 T7,
+# and the naming decision recorded in ../README.md), and it already declares:
+#
+#   md.measure.revenue               tržba tržby obrat utržit · revenue sales turnover
+#   md.measure.returnAmount          reklamace vrácení vratky "míra vrácení" · returns refunds RMA
+#   md.measure.onHandQty             vyprodáno "není skladem" "nulový stav" dostupnost · stockout …
+#   md.dimension.Product             produkt zboží artikl položka · product SKU article item
+#   md.dimension.DistributionCentre  sklad "distribuční centrum" DC · warehouse "distribution center"
+#   er.entity.{store,web,catalog}_sales   the three channel families, cs + en
+#
+# Repeating any of those here is one declared layer saying the same thing twice. The T4
+# guard in `../tests/area.test.mjs` fails if it happens.
+#
+# ── What this file DOES collide with, on purpose ──────────────────────────────────────
+# The METADATA layer harvests every er entity's display label, and this estate models the
+# same real-world nouns twice — `er.entity.customer` beside `md.dimension.Customer`,
+# `er.entity.promotion` beside `md.dimension.Promotion`, `er.entity.reason` beside
+# `md.dimension.ReturnReason`. So `zákazník`, `customer`, `akce`, `promotion`,
+# `return reason` and `důvod reklamace` each end up on two MODEL_OBJECT rows: one
+# DECLARED here, one METADATA off the er label.
+#
+# That is not a duplicate and not an accident — it is the estate's existing shape. The
+# sugar surface already ships four of exactly this pair (`produkt` / `product` →
+# er.entity.item + md.dimension.Product; `distribuční centrum` / `distribution center` →
+# er.entity.warehouse + md.dimension.DistributionCentre), and has since Stage 2.5. The two
+# rows are different assertions: the harvested one says *an entity is labelled this*, the
+# authored one says *and when a user says it, they mean the dimension they can group by*.
+# `RG-LEXC-002` does not fire (it keys on term + lang + TARGET) and should not.
+#
+# ── `defaults.match` rather than `method: TYPOS(1)` — a recorded deviation ────────────
+# p3-2 T4 asks for `defaults: { lang: cs, method: TYPOS(1) }`; it was written before RV-44
+# ratified declared matching profiles. The profile below IS that, plus one rule:
+#
+#     { norm: folded, exact: 0.90 }
+#
+# Diacritic-free typing is this estate's most common input variance — Czech users type
+# `trzby`, `zakazniku`, `Plzen` — and `folded` is what turns *"a dropped accent costs
+# exactly one edit"* into an authored fact with its own score rather than an accident
+# (lex-matcher-core `MatchProfile.kt`). It costs nothing at runtime: folding is a local
+# string operation, unlike `norm: lemma` — see the ⚑ at the foot of this file.
+schema: ttr-lexicon/v1
+defaults:
+  lang: cs
+  match:
+    - { norm: canonical, exact: 1.00, typos: { distance: 1, penalty: 0.05 } }
+    - { norm: folded,    exact: 0.90 }
+entries:
+  # ── md.measure.orderCount ────────────────────────────────────────────────────────────
+  # The AOV beat is the estate's one free-SQL question and it is entirely about orders:
+  # *"What was the average order value on Marketplace vs Web in December 2025?"* →
+  # `$22,863/order`, and the line BORA lands off it is *"AOV isn't the story — order
+  # VOLUME on Marketplace is"* (Beat 2). R0's cs table carries the same row as
+  # `~526 tis. Kč/objednávka`, and the seed itself is described in orders (*"~60 %
+  # objednávek Marketplace expedovaných z Brna ztraceno"*).
+  - terms:
+      - { text: "objednávka" }
+      - { text: "objednávky" }
+      - { text: "objednávek" }                        # genitive — 2 edits out, past TYPOS(1)
+      - { text: "počet objednávek", method: TOKENS }
+      - { text: "order", lang: en }
+      - { text: "orders", lang: en }
+      - { text: "order count", lang: en, method: TOKENS }
+      - { text: "order volume", lang: en, method: TOKENS }
+    target: md.measure.orderCount
+
+  # ── md.measure.quantity ──────────────────────────────────────────────────────────────
+  # Named by the gap answer itself: when Maya asks what the slump cost in profit, the agent
+  # *"offers revenue, quantities, returns instead"* (Beat 2) — the three things this model
+  # does measure, and the only place the estate says out loud what its measure set is.
+  # #6 `returns_by_reason` and every returns cubelet carry it.
+  - terms:
+      - { text: "množství" }
+      - { text: "počet kusů", method: TOKENS }        # (mirror of "units")
+      - { text: "quantity", lang: en }
+      - { text: "quantities", lang: en }
+      - { text: "units", lang: en }
+    target: md.measure.quantity
+
+  # ── md.dimension.Customer ────────────────────────────────────────────────────────────
+  # #10 `customer_channel_overlap` (*"Překryv zákazníků mezi kanály"*, *"kteri zakaznici
+  # nakupuji napric kanaly"*), #12 `buyer_age_profile` (*"customer age demographics"*,
+  # *"demografie zakazniku"*, *"vekovy profil kupujicich"*), #15 `customer_running_total`
+  # (*"Kumulativní útrata zákazníka"*). Beat 3 kills an entire hypothesis on this axis:
+  # *"Customers shifted to Web"* — dies, overlap constant.
+  - terms:
+      - { text: "zákazník" }
+      - { text: "zákazníci" }
+      - { text: "zákazníků" }
+      - { text: "kupující" }
+      - { text: "customer", lang: en }
+      - { text: "customers", lang: en }
+      - { text: "buyer", lang: en }
+      - { text: "buyers", lang: en }
+    target: md.dimension.Customer
+
+  # ── md.dimension.Promotion ───────────────────────────────────────────────────────────
+  # #13 `promo_share` — *"Podíl akčních tržeb"*, *"akcni (vs|versus) neakcni trzby"*,
+  # *"promoted (vs|versus) unpromoted (revenue|sales)"*. Beat 3 runs it as a hypothesis
+  # (*"Promotions starved the channel"* — dies, linkage 97.7–100%) and Beat 5's what-if
+  # turns one on (*"we run a win-back promotion on Marketplace in November"*).
+  - terms:
+      - { text: "akce" }
+      - { text: "akční" }
+      - { text: "akčních" }
+      - { text: "promo", lang: cs|en }
+      - { text: "promotion", lang: en }
+      - { text: "promotions", lang: en }
+    target: md.dimension.Promotion
+
+  # ── md.dimension.ReturnReason ────────────────────────────────────────────────────────
+  # #6 `returns_by_reason` — *"Reklamace podle důvodu"*, *"(reklamace|vraceni) (podle|dle)
+  # duvodu"*, *"returns by reason"*, *"why (are|were) (products|items) returned"* — and the
+  # Beat-3 evidence row that survives (*"'Did not get it on time' spikes Q3–Q4"*).
+  #
+  # The DIMENSION, not the measure: `reklamace` / `vrácení` / `returns` are already declared
+  # on `md.measure.returnAmount`, and what these add is the axis those are sliced BY.
+  - terms:
+      - { text: "důvod" }
+      - { text: "důvodu" }
+      - { text: "důvody" }
+      - { text: "důvod vrácení", method: TOKENS }
+      - { text: "důvod reklamace", method: TOKENS }
+      - { text: "reason", lang: en }
+      - { text: "reasons", lang: en }
+      - { text: "return reason", lang: en, method: TOKENS }
+    target: md.dimension.ReturnReason
+
+  # ── md.cubelet.inventory ─────────────────────────────────────────────────────────────
+  # The subject noun, deliberately distinct from the measure: `md.measure.onHandQty`
+  # already declares what is COUNTED (`vyprodáno`, `nulový stav`, `out of stock`, `zero on
+  # hand`); these are the words for the thing being asked about. #9
+  # `inventory_on_hand_series` — *"Stav zásob v Brno DC"*, *"vyvoj zasob"*, *"on hand
+  # (quantity|stock) series"* — and #8's *"17-week zero-on-hand streak"* / *"nulový stav
+  # zásob"*, the smoking gun.
+  - terms:
+      - { text: "zásoby" }
+      - { text: "zásob" }
+      - { text: "stav zásob", method: TOKENS }
+      - { text: "inventory", lang: en }
+      - { text: "stock", lang: en }
+      - { text: "on hand", lang: en, method: TOKENS }
+    target: md.cubelet.inventory
+
+  # ── md.dimension.Product.categoryCode — attribute depth ──────────────────────────────
+  # The estate's most-asked axis. Maya IS a category manager (*"her reflex is 'which of my
+  # categories broke?'"*), the Beat-1 briefing's first chip is *by category*, and Beat 2's
+  # pivot question is *"Which categories drove the H2 2025 drop?"* / *"Které kategorie
+  # způsobily propad v 2. pol. 2025?"* — #3 `category_revenue`, *"trzby (podle|dle)
+  # kategorie"*.
+  - terms:
+      - { text: "kategorie" }
+      - { text: "kategorii" }
+      - { text: "kategorií" }
+      - { text: "category", lang: en }
+      - { text: "categories", lang: en }
+    target: md.dimension.Product.categoryCode
+
+  # ── md.dimension.Customer.state — attribute depth ────────────────────────────────────
+  # #11 `revenue_by_customer_state` — *"Tržby podle státu"*, *"trzby (podle|dle)
+  # (statu|kraje)"*, *"revenue by (customer |billing |)state"* — and Beat 3's regional
+  # branch (*"It's regional"* — dies, drop even across states). The CZ mirror keys on kraj
+  # (`data/localize-cz/geo-map.csv`), the US world on `ca_state`.
+  #
+  # ⚑ `stát` / `state` / `kraj` are ALSO `ground:geo` triggers — `kraj` from the P1.6 stdlib
+  # slice, `stát`/`state` from this estate's own `../grounding/hartland.lex.yaml`. The
+  # overlap is deliberate and cross-CLASS, so it is not an `RG-LEXC-002` (that fires on
+  # term + lang + TARGET). The two rows say different things and the resolver needs both:
+  # the grounding trigger says *this span is about geography*, this row says *and the axis
+  # it names is this attribute*. Dropping the alias to avoid the overlap would leave
+  # *"Tržby podle státu"* with a geo hint and nothing to group by.
+  - terms:
+      - { text: "stát" }
+      - { text: "státu" }
+      - { text: "kraj" }
+      - { text: "kraje" }
+      - { text: "kraji" }
+      - { text: "state", lang: en }
+      - { text: "states", lang: en }
+    target: md.dimension.Customer.state
+
+  # ── md.dimension.Customer.birthYear — attribute depth ────────────────────────────────
+  # #12 `buyer_age_profile` — *"buyer age (profile|distribution)"*, *"vekovy profil
+  # (kupujicich|zakazniku)"*, *"demografie zakazniku (podle|dle) veku"* — and Beat 3's
+  # demographic branch (*"buyer age flat at ~45.0, every channel every year"*).
+  #
+  # The attribute is `birthYear`, not age: age is derived at query time. Aliasing the age
+  # words onto it is deliberate, and it is exactly what the query does — #12 projects
+  # `({year} - birth_year) AS buyer_age` while GROUPing BY the raw `birth_year` column.
+  # A user asking about age wants that grouping; there is no other attribute to want.
+  #
+  # `věk` and `age` are three characters, and ⚑M-4's short-term guard means `typos` never
+  # fires at or below three however it is declared. Inheriting the file's TYPOS(1) would
+  # earn an `RG-LEX-101` build warning and change no behaviour, so both drop it.
+  #
+  # `věk` drops it via an explicit `match:` rather than `method: EXACT`, and the difference
+  # matters: a term that states its own `method` inherits NO default profile
+  # (LexiconValidator, and deliberately — the file default must not outrank what the author
+  # wrote on the term). `method: EXACT` would therefore have silently dropped `folded` too,
+  # and `vek` — the way it is actually typed — would stop resolving. `age` has no
+  # diacritics, so for it `folded` is the same string and plain EXACT says it more clearly.
+  - terms:
+      - { text: "věk", match: [ { norm: canonical, exact: 1.00 }, { norm: folded, exact: 0.90 } ] }
+      - { text: "věku" }
+      - { text: "rok narození", method: TOKENS }
+      - { text: "age", lang: en, method: EXACT }
+      - { text: "buyer age", lang: en, method: TOKENS }
+      - { text: "birth year", lang: en, method: TOKENS }
+    target: md.dimension.Customer.birthYear
+
+  # ── Inflections the sugar surface's nominatives cannot reach ─────────────────────────
+  # `model/lexicon/cs/measures.ttrm` declares Czech NOMINATIVES (`tržby`, `vratky`). Czech
+  # questions inflect, and the corpus's own genitives sit TWO edits out — past TYPOS(1):
+  #
+  #   tržby  → tržeb   #5 *"top … (podle|dle) trzeb"*, #13 *"Podíl akčních tržeb"*,
+  #                    #1 *"vyvoj trzeb (podle|dle) kanalu"*
+  #   vratky → vratek  demo-transcript.md §CZ: *"včetně odpovídajících vratek"*
+  #
+  # Not duplicates — different text, same target, complementing the sugar rather than
+  # restating it. The structural fix for the whole class is the ⚑ below.
+  - terms: [ { text: "tržeb" } ]
+    target: md.measure.revenue
+  - terms: [ { text: "vratek" } ]
+    target: md.measure.returnAmount
+
+# ── Deliberately empty, and why ────────────────────────────────────────────────────────
+# A deliberate empty is a result (the T6 precedent), so these are written down rather than
+# left as absences someone later reads as an oversight.
+#
+# md.dimension.Store — every word this estate uses for a shop (`prodejny`, `kamenné
+#   prodejny`, `obchody`, `stores`, `brick and mortar`, `retail stores`) is already declared
+#   on `er.entity.store_sales`, the CHANNEL — and the channel is what the corpus means by
+#   them every single time: *"prodejny nedotčeny"*, *"Stores channel"*, *"šest prodejen
+#   (HQ Praha)"*. Aliasing the same words onto the dimension would put two declared
+#   candidates behind the estate's most common noun in order to serve an axis no rehearsed
+#   question slices by: #14 `store_sales_by_month` groups by month, and the only per-store
+#   cut in the repo is a recon CSV. The first beat that asks *"which store"* fills this in.
+#
+# md.measure.lineCount — appears in exactly one place in the whole repo, as the column
+#   label `order_lines` inside #12's SQL. No question asks for it by any name, and
+#   inventing one is precisely what this file's sourcing rule exists to prevent.
+#
+# md.dimension.Product.{classCode,brandCode,manufacturerCode} — the `productDrill`
+#   hierarchy's middle levels. `data/catalog/taxonomy.yaml` names every brand and
+#   manufacturer, so the DATA is there; the corpus drills category → item and never stops
+#   in between. First beat that says *"which brand"* fills this in.
+#
+# md.cubelet.{store,web,marketplace}Sales, md.cubelet.*Returns — the channel words belong
+#   to the `er.entity.*` rows and reach the same three fact families. A second declared row
+#   per channel word, pointed at a cubelet, would be same-text ambiguity bought for nothing.
+#
+# ⚑ FOR BORA — the structural fix for Czech inflection, costed but NOT taken here.
+#
+# Four blocks above enumerate inflected forms by hand (`objednávek`, `zákazníků`,
+# `kategorií`, `státu`, `tržeb`, `vratek`) because Czech case endings routinely land two
+# edits from the nominative while TYPOS(1) reaches one. Hand-enumeration is brittle: it
+# covers the cases the corpus happens to attest, and nothing else.
+#
+# RV-44 already ships the structural answer — one rule on this file's `defaults.match`:
+#
+#     - { norm: lemma, exact: 0.80 }
+#
+# — and every inflection of every term here collapses onto its lemma at once. It is not
+# taken now for an operational reason, not a design one: a `lemma` rule anywhere in the
+# archive switches on a lemmatiser gRPC round per matcher call
+# (`FuzzyMatcher.lemmaQuery`), and hartland's next event is p3-3's live drill, on a code
+# path that was only just fixed at the 2026-08-06 review. That switch should be thrown
+# WITH the drill's latency numbers in hand, not days before it. The rehearsed beats do not
+# need it — they type `kategorie` and `Brno DC`, both of which resolve exactly as authored.
