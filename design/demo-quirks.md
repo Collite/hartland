@@ -121,6 +121,37 @@ pass (ttr-translator). Fix implemented: a RESOLVE-stage pass (`CaseFoldingParams
 + ttr-translate repoint + redeploy** (tag-driven publish). Until then, phrase demo
 utterances with the lowercase channel token.
 
+### 3.4 Locale picks golem's PROMPT bundle — it sets the answer's language, not the UI's
+Hit 2026-07-27. An English session, English question, English routing chips — then the answer
+bubble came back with a **Czech** caption ("Vývoj tržeb Marketplace v roce 2025…") and Czech
+follow-up chips, over US warehouse data (Reno DC, Allentown DC…).
+
+Nothing was mistranslating. Golem selects its prompt bundle by locale —
+`/etc/golem/shem/prompts/<locale>/intent.yaml` — so the locale on the request decides the
+language the **plan-composer prompt** is written in, and therefore the language of the caption
+and the LLM-topped-up chips. The gateway's `prompt_logs` shows it plainly: golem's composer
+prompt began `Jsi plánovač domény Hartland Analytics`.
+
+Three layers each did something reasonable and the combination was wrong:
+- the SPA's language picker was **UI-only** by design (`useAgentSession.ts`: *"locale is a UI
+  concern now"*) and never sent anything to the BFF;
+- `ChatTurnRequestDto` had **no locale field** to send it in;
+- `ChatDispatcher` and the golem client each carried a hardcoded Kotlin default `"cs"`, read
+  from no config — correct for a Czech-first estate, wrong for this one.
+
+Fixed by making locale a real per-turn value: the SPA sends the picker's language on every
+turn, the BFF falls back to `iris.locale` / **`IRIS_LOCALE`** (set to `en` on hartland), and it
+flows to both Themis's `ResolveContext` and golem's `GolemContext`. Blank is treated as absent
+so golem falls back to its Shem's own default rather than being handed `""`.
+
+Reflex: if an agent answers in the wrong language, look at the *prompt bundle it loaded*, not
+at the model. `SELECT prompt_text FROM prompt_logs ORDER BY created_at DESC LIMIT 1` in the
+`llm_gateway` DB tells you in one query.
+
+Still hardcoded Czech (functional, not display): the row-select verb the FE sends,
+`Vyber řádek N` — golem parses it as an instruction, so localising it needs a typed row-select
+verb agreed with golem first.
+
 ---
 
 ## 4. Governance — the validator (ttr-validate / Argos)
@@ -179,6 +210,108 @@ The hartland apps auto-sync from olymp `master` (HEAD) + tatrman-server master. 
 re-read with
 `kubectl annotate application <app> -n argocd argocd.argoproj.io/refresh=hard --overwrite`.
 A `extraEnv` change is a Deployment-spec change, so ArgoCD rolls the pod automatically.
+
+### 5.4b Stale personal-registry images are the demo's likeliest "config" bug
+Hit 2026-07-27 on the Iris SPA: every POST answered **403** (`/bff/v1/session`,
+`/bff/v1/chat/stream`) and `/bff/v1/inbox` + `/bff/v1/discover` answered **404**, while the
+identical curl to the same pod returned 201. Nothing in the current source can emit 403 on
+those routes, and the FE config (`/env.js`) was correct.
+
+Cause: `ghcr.io/boraperusic/iris-bff:0.1.0` — a laptop-built image older than the v0.5.0
+snapshot import — still installed a Ktor **CORS** plugin whose allow-list was the Vite dev
+server (`http://localhost:5173`). Browsers attach `Origin` to **every non-GET request,
+including same-origin ones**, so each SPA POST tripped CORS → 403; curl sent no `Origin` and
+sailed through. The 404s were the same image simply lacking DiscoverRoutes/InboxRoutes.
+The FE's `:testing` bundle was stale in step (polled a malformed `//bff/ready` →
+`ERR_NAME_NOT_RESOLVED`, still called the retired golem `/bff/v2/agent/graph`).
+
+Reflexes:
+- **A 403 that curl can't reproduce is a CORS allow-list, not authz.** Add
+  `-H "Origin: https://<the-app-host>"` to the curl — that one header reproduces it.
+- **Check the image before the config.** `kubectl get deploy <x> -o jsonpath=…image` — a
+  `boraperusic/*` repository or a `:testing` tag means the running code is unidentifiable and
+  is the first suspect. The release lane is `ghcr.io/collite/<module>:<version>` (olymp#19).
+- Envoy's access log is the fastest way to attribute a status code:
+  `kubectl -n gateway logs -l gateway.envoyproxy.io/owning-gateway-name=eg | grep 403`
+  gives `x-envoy-origin-path`, `response_code_details` (`via_upstream` = the app answered,
+  not the gateway), and `upstream_host`.
+- Verify a package is pullable **before** rolling: mint a GHCR token from the cluster's own
+  `ghcr-pull` secret and HEAD the manifest — visibility on ghcr is per-package, so one
+  working `collite/*` image proves nothing about the next.
+
+Fixed by repointing both to `ghcr.io/collite/{iris,iris-bff}:0.6.0` (olymp branch
+`iris-release-images`).
+
+### 5.4c A healthy estate can still have a dead LLM path — check the key AND the tier
+Hit 2026-07-27. Iris answered, but with a contentless clarification ("Which interpretation did
+you mean?" + chips labelled " (0%)"). Every pod Healthy, no restarts, HTTP 200 throughout.
+
+Themis's LLM calls were all returning **empty**. `LlmGatewayClient.complete` returns
+`Result.failure` rather than throwing, so the graph nodes got `""`, every JSON parse died on
+`Expected start of the object '{', but had 'EOF'`, and routing fell through to a blank
+clarification. Two independent causes, either sufficient:
+
+1. **No ttrk key.** Gateway 2.0 gates `/v1` per consumer. `themis` existed as a governance
+   *team* but had no row in `virtual_keys` — missed in the LG-P6·S1 migration that keyed
+   kleio/kallimachos/pinakes/golem.
+2. **Wrong tier.** Themis asked for `haiku`/`sonnet`. Those are real catalog aliases, but they
+   pin **Anthropic** models — and hartland's `llm-gateway-secrets` holds only
+   `azure-openai-key`. The generic tiers `mini`/`fast`/`deep` are the ones the catalog routes
+   to the Azure deployment, and are what `LlmGatewayPromptExecutor` emits.
+
+The decisive probe — run it from inside `ttr-server` with a *known-good* key (golem's), one
+model per line, and read the status codes side by side:
+
+```
+MODEL=haiku    HTTP=401  {"code":"invalid_api_key"}        ← upstream Anthropic, not your ttrk key
+MODEL=sonnet   HTTP=502  {"code":"upstream_error"}         ← Anthropic again
+MODEL=gpt-4.1  HTTP=200                                    ← Azure works
+```
+Using a key you know works separates "my key is bad" (401 at the gateway edge) from "the
+provider behind that alias has no credentials" (401/502 forwarded from upstream). They look
+identical in a consumer's logs.
+
+Reflexes:
+- `SELECT id FROM teams` vs `SELECT team_id FROM virtual_keys` in the `llm_gateway` DB — a team
+  with no key is the signature of a missed consumer migration.
+- `kubectl -n ttr-server get secret llm-gateway-secrets` — which providers actually have
+  credentials on THIS cluster. Only pick tiers that resolve to those.
+- A gateway failure never surfaces as an exception in a consumer. Grep consumer logs for
+  `had 'EOF'` — an empty LLM response is the tell.
+
+### 5.4d Iris→Golem dispatch spoke /v2; kantheon's Golem serves /v1 (fixed 2026-07-28)
+Hit 2026-07-27, the last hop of the Beat-2 chain. Themis routed correctly, Iris offered the
+agent chips, `golem-hartland` was picked — and the bubble came back **empty**. iris-bff logged
+a 404 from `http://golem-hartland:7420/v2/session` and a `NoTransformationFoundException`.
+
+Not a misconfiguration. iris-bff's only dispatch client was `GolemV2HttpClient`, which speaks
+the **pre-fork** new-golem API (`/v2/session`, `/v2/chat/stream`). The kantheon Kotlin Golem
+implements none of it — its whole route surface is:
+
+```
+POST /v1/answer/sync   POST /v1/answer  (SSE)   POST /v1/resume   POST /v1/refresh
+```
+
+`AgentClient`'s own KDoc said as much ("the map is the seam native Golem/Pythia clients plug
+into **in their own arcs**") — the arc simply hadn't run. A native `GolemV1AgentClient` now
+ships in iris-bff (`dispatch/golem/`), and `iris.dispatch.agent-endpoints` binds to it; the
+`golem-v2` key keeps the transitional client. **No olymp change** — the endpoints are already
+configured; it takes effect on the next iris-bff image.
+
+Three things that surface only at this seam, worth knowing when reading its logs:
+- Golem's terminal SSE frame is a whole **`ConversationalResponse`**, not one envelope — a turn
+  can be several bubbles, and `status` is stated rather than inferred. (That matters: golem's
+  param-fill clarification envelope *also* carries an `error_code`, so shape-inference reads a
+  pending question as a failed turn.)
+- Golem answers admission failures with a **Rule-6 JSON body, not SSE**. Deserialising that as
+  the success shape is what produced the silent empty bubble. Non-2xx now maps to
+  `GOLEM_UNAUTHORIZED` / `GOLEM_FORBIDDEN` / `GOLEM_ENDPOINT_NOT_FOUND` with golem's own
+  `humanMessage`.
+- Golem runs the graph to completion *before* emitting the terminal frame (pinging every 5s
+  meanwhile), so the dispatch client must have **no request timeout** — only a socket-idle one.
+
+Still v2-only, deliberately: typed actions (drilldowns/refetch) and artifact refresh, which
+golem has no `/v1` counterpart for at all.
 
 ### 5.5 Namespaces
 Spine (veles, query, validate, translate, dispatch, workers, query-mcp) → `ttr-server`.
