@@ -79,7 +79,9 @@
   Wire `just demo-check hartland` to run the `hartland-query` set for **both** worlds (US oracle in USD, CZ oracle in
   CZK) against the standing cluster, plus the **E-5 item-5 probes per world**: Themis routes the scripted beats incl.
   the **gap question**; Pythia RCA finds the meltdown DC unaided in ≤ rehearsed budget; **Metis forecast** renders
-  with intervals. This recipe is the freeze-window daily smoke.
+  with intervals; **Themis SPLIT** decomposes the compound question into Golem+Pythia in one turn (satellite S /
+  PD-13 — Stage 3.0 fold: SPLIT otherwise had no verification before the dry run). This recipe is the
+  freeze-window daily smoke.
 
 - [ ] **T7 — Run-set test gate (oracle self-check + context template render).**
   Per the conventions: the "test" is a **golden/oracle self-check + template render**, not a mocked unit —

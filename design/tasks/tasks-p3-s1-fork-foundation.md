@@ -54,6 +54,18 @@
   metis (+mcp), iris, iris-bff, themis (+mcp), pythia, hebe, golem (the chart for the golems ApplicationSet).
   `landing` is optional/cosmetic — decide at 3.3, zero-risk either way. Trim the golems appset input:
   `clusters/hartland/golems/` **starts empty** (filled in Stage 3.3); **do NOT** copy bp-dsk's `golem-ucetnictvi`.
+  - **⚠ NAMES RECONCILED (Stage 3.0 X-roster, resolved 2026-07-18 — see `p3-completeness-matrix.md`).**
+    The keep-list above is pre-rename (read spine extracted to `tatrman-server` + renamed). **Trim
+    against the CURRENT app names:** keep **`query`(+mcp)** (theseus), **`translate`** (proteus),
+    **`validate`** (argos), **`dispatch`** (kyklop), **`postgres`** (arges — the PG worker),
+    **`veles`(+mcp)** (ariadne), **`fuzzy`** (echo), **`nlp`** (kadmos), **`llm-gateway`**
+    (prometheus/LLM — *not* the monitoring prometheus), **`polars`** (steropes — Metis needs it),
+    `capabilities-mcp`, `charon`(+mcp), `metis`(+mcp), `iris`, `iris-bff`, `pythia`, `golem`, `hebe`,
+    and the Themis routing app (`resolver` + `themis-mcp` — confirm at S3.3). **Remove** (not in the
+    demo E-3): `kallimachos`/`pinakes`/`kleio` (DocWH), `grounding-mcp`/`chrono`/`geo`/`money`,
+    `mssql` (brontes), `midas-core`/`midas-excel-loader`, `sysifos`/`sysifos-bff`, `report-renderer`.
+    **Trim stays deferred** as a footprint optimization only (the estate is green on the full
+    roster; 64 GB fits it) — no longer a correctness/gate blocker.
 
 - [ ] **T6 — Set the image policy = pinned (H1.2 T2, D12 per-cluster).**
   NO `hartland` entry in any ImageUpdater CR / disable `sys-image-updater` for this cluster. Every `config.json`

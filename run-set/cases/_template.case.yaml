@@ -1,0 +1,19 @@
+# Template — copy to <query-slug>-<world>.case.yaml and fill the five marked fields.
+# Full schema + comparison semantics: olymp nightly/design/contracts.md N-C3.
+id: qNN-example-slug-cz               # == filename stem
+tier: data
+world: cz                             # FILL: cz | us
+owner: "@your-github-handle"          # FILL: a red case pings this human
+title: "One line: what regression this catches"
+source:
+  query: channel_revenue_monthly      # FILL: name from model/queries/q_hartland.ttrm
+  params: { year: 2025 }              # FILL: every declared param, no extras
+target:
+  db: hartland_cz                     # standing fixture (read-only) | hartland_cz_nightly (writes)
+  via: sql
+expect:
+  oracle: oracle/cz/channel_revenue_monthly.csv   # FILL: frozen from R0/recon
+  key: [channel, month]               # FILL: row-identity columns
+  tolerance: { money: 0.01, ratio: 0.0001, counts: 0 }
+notes: |
+  R0 anchor: data/recon/R0.md rNN · recon CSV data/recon/results-cz/rNN_*.csv

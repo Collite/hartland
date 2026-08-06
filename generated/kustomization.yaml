@@ -1,0 +1,27 @@
+# RV-P3.3 T5 — renders the compiled lexicon archive into the `hartland-lexicon` ConfigMap for
+# GitOps deploy. olymp's `lexicon` Application applies this as its only source, and the four
+# readers of the artifact (lex-matcher + chrono/money/geo) mount it by name through the
+# tatrman-service chart's `lexicon.configMapName`.
+#
+# ⚑ The archive is BINARY (zstd), so kustomize emits it under `binaryData` (base64) rather than
+# `data`. That is what makes the ~1 MiB ConfigMap cap the real limit: 5,762 bytes of archive is
+# ~7.7 KB encoded, ~136x under it. `lexicon/README.md` records where that trade flips.
+#
+# ⚑ Deliberately scoped to the ONE file. `resolved-packages.json` also lives in this directory and
+# is a build artifact of a different consumer (the TS Modeler CLI); it is not deployed, and naming
+# it here would put it in a ConfigMap nobody mounts.
+#
+# The ArgoCD source pins the same branch veles serves the model from (METADATA_GIT_BRANCH in
+# olymp's hartland veles values) — the archive carries `resolvedFrom.modelSnapshotId`, so lexicon
+# and model must move together or the artifact describes a model the estate is not serving.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configMapGenerator:
+  - name: hartland-lexicon
+    files:
+      - lexicon.tar.zst
+generatorOptions:
+  # Stable name — the charts reference `hartland-lexicon` by a fixed `lexicon.configMapName`,
+  # exactly as the golem chart references `<shem>-shem`.
+  disableNameSuffixHash: true

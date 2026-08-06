@@ -1,0 +1,19 @@
+# Reference case #1 (authored in N2 as the worked example for the catalog).
+id: q01-channel-revenue-monthly-cz
+tier: data
+world: cz
+owner: "@boraperusic"                 # reassign when the catalog is distributed (owners.yaml note)
+title: "Monthly channel revenue, CZ world — catches revenue/channel/redate drift incl. the H2-2025 Marketplace dip"
+source:
+  query: channel_revenue_monthly
+  params: { year: 2025 }
+target:
+  db: hartland_cz
+  via: sql
+expect:
+  oracle: oracle/cz/q01_channel_revenue_monthly.csv   # freeze from data/recon/results-cz/r02_channel_month.csv (year 2025 slice)
+  key: [channel, month]
+  tolerance: { money: 0.01, ratio: 0.0001, counts: 0 }
+notes: |
+  R0 anchors: data/recon/R0.md r01/r02 · demo-transcript.md App. B (Marketplace −10..12% H2-2025).
+  CZ = US ×FX(23) — Q-BM-1a; FX constant pinned in data/localize-cz/fx.conf + dump-manifest.md.
