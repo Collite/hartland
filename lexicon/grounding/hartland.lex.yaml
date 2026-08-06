@@ -34,8 +34,8 @@ entries:
       # Q1..Q4's neighbourhood. EXACT, exactly as the stdlib treats the quarter codes.
       - { text: "H1", lang: cs|en, method: EXACT }
       - { text: "H2", lang: cs|en, method: EXACT }
-      # "2. pol." / "1. pol." — TOKENS because the ordinal and the abbreviation are
-      # separate tokens and the matcher folds rather than strips punctuation.
+      # "2. pol." — the abbreviation ALONE: ordinal and abbreviation tokenize separately, so
+      # the phrase never arrives as one term. EXACT, or TYPOS(1) reaches "pole"/"půl"/"polo".
       - { text: "pol.", method: EXACT }
       - { text: "meziročně" }
       - { text: "meziroční" }
