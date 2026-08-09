@@ -19,7 +19,7 @@ def term return_term {
 def term stockout_term {
     description: "stockout synonyms"
     for: md.measure.onHandQty
-    forms: ["out of stock", "zero on hand", "stockout", "availability"]
+    forms: ["out of stock", "zero on hand", "stockout", "unavailable"]
 }
 
 def term product_term {

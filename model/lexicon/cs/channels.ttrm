@@ -8,7 +8,7 @@ model lexicon locale cs
 def term marketplace_channel_cs {
     description: "tržiště synonyma"
     for: er.entity.catalog_sales
-    forms: ["tržiště", "třetí strana", "3P"]
+    forms: ["tržiště", "e=market", "market"]
 }
 
 def term web_channel_cs {
@@ -20,5 +20,5 @@ def term web_channel_cs {
 def term store_channel_cs {
     description: "prodejny synonyma"
     for: er.entity.store_sales
-    forms: ["prodejny", "kamenné prodejny", "obchody"]
+    forms: ["prodejna", "kamenná prodejna", "obchod"]
 }
