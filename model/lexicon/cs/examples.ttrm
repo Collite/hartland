@@ -11,10 +11,10 @@ def example ex_marketplace_yoy_cs {
 
 def example ex_stockout_cs {
     for: md.cubelet.inventory
-    text: "Které položky nebyly skladem v Brno DC v říjnu 2025?"
+    text: "Které položky nebyly skladem v DC Brno v říjnu 2025?"
 }
 
 def example ex_returns_by_reason_cs {
     for: md.cubelet.catalogReturns
-    text: "Jaká je naše míra vrácení podle kanálu?"
+    text: "Jaká je naše míra reklamací podle kanálu?"
 }
