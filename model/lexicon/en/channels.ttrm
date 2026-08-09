@@ -11,7 +11,7 @@ model lexicon locale en
 def term marketplace_channel {
     description: "Marketplace channel synonyms"
     for: er.entity.catalog_sales
-    forms: ["marketplace", "3P", "third-party", "marketplace sellers", "fulfilled by Hartland"]
+    forms: ["marketplace", "3P", "third-party", "marketplace sellers", "sellers"]
 }
 
 def term web_channel {

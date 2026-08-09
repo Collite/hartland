@@ -8,25 +8,25 @@ model lexicon locale cs
 def term revenue_term_cs {
     description: "tržba synonyma"
     for: md.measure.revenue
-    forms: ["tržba", "tržby", "obrat", "utržit"]
+    forms: ["tržba", "obrat", "utržit"]
 }
 
 def term return_term_cs {
     description: "reklamace synonyma"
     for: md.measure.returnAmount
-    forms: ["reklamace", "vrácení", "vratky", "míra vrácení"]
+    forms: ["reklamace", "vrácení", "vratka"]
 }
 
 def term stockout_term_cs {
     description: "vyprodáno synonyma"
     for: md.measure.onHandQty
-    forms: ["vyprodáno", "není skladem", "nulový stav", "dostupnost"]
+    forms: ["vyprodáno", "není skladem", "nulový stav", "nedostupné"]
 }
 
 def term product_term_cs {
     description: "produkt synonyma"
     for: md.dimension.Product
-    forms: ["produkt", "zboží", "artikl", "položka"]
+    forms: ["produkt", "zboží", "artikl", "položka", "výrobek"]
 }
 
 def term dc_term_cs {
