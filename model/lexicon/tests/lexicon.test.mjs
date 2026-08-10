@@ -14,9 +14,14 @@ const { desugarLexicon, foldId } = await import(tatrmanSemantics);
 
 const project = await loadHartlandProject();
 
+// ⚑ RV-P6.5 (2026-08-10, Bora): the md-targeted sugar files — `measures.ttrm` (md.measure.*,
+// md.dimension.*) and `examples.ttrm` (md.cubelet.*) — were REMOVED in both locales. md is
+// unusable in its current form (the merged Golem's query door cannot render an `md.` ref: a
+// measure names no object and no aggregation, and the Veles ModelBundle carries no md layer to
+// ask), and md gets its own exercise. `channels.ttrm` stays — its targets are `er.entity.*`.
 const LEXICON_FILES = [
-  'model/lexicon/en/channels.ttrm', 'model/lexicon/en/measures.ttrm', 'model/lexicon/en/examples.ttrm',
-  'model/lexicon/cs/channels.ttrm', 'model/lexicon/cs/measures.ttrm', 'model/lexicon/cs/examples.ttrm',
+  'model/lexicon/en/channels.ttrm',
+  'model/lexicon/cs/channels.ttrm',
 ];
 
 // All canonical lexicon entries across every lexicon file, tagged with their real
@@ -53,13 +58,15 @@ test('T6.2 — no unresolved `for:` anywhere (zero unexpected diagnostics projec
     for (const code of codes) if (!ACCEPTED_RESIDUAL_CODES.has(code)) offenders.push(`${file}: ${code}`);
   }
   assert.deepEqual(offenders, [], `unexpected diagnostics: ${offenders.join('; ')}`);
-  assert.ok(allEntries.length >= 11, `expected >=11 lexicon entries, got ${allEntries.length}`);
+  // Was >=11 when measures.ttrm + examples.ttrm were here; the three channel families in
+  // each locale are what survives the md removal.
+  assert.ok(allEntries.length >= 6, `expected >=6 lexicon entries, got ${allEntries.length}`);
 });
 
 test('T6.3 — en/cs twin parity: every measure/channel family has BOTH an en and a cs term resolving to the SAME target', () => {
+  // md families removed with their files (see the ⚑ above); the twin-parity invariant is
+  // what the channel families still assert, and it is the half that never depended on md.
   const FAMILIES = [
-    'md.measure.revenue', 'md.measure.returnAmount', 'md.measure.onHandQty',
-    'md.dimension.Product', 'md.dimension.DistributionCentre',
     'er.entity.catalog_sales', 'er.entity.web_sales', 'er.entity.store_sales',
   ];
   const terms = allEntries.filter((e) => e.entryKind === 'term');
