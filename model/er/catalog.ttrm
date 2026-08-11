@@ -12,42 +12,40 @@ def entity item {
     roles: [dimension]
     displayLabel: { en: "Product", cs: "Produkt" }
     attributes: [
-        def attribute sk           { type: int, isKey: true },
-        def attribute item_id      { type: text },
-        def attribute product_name { type: text },
-        def attribute brand        { type: text },
-        def attribute class        { type: text },
-        def attribute category     { type: text },
-        def attribute manufact     { type: text },
-        def attribute size         { type: text },
-        def attribute container    { type: text }
+        def attribute sk           { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute item_id      { type: text, description: "Unique product identifier. Code. One SKU." },
+        def attribute product_name { type: text, description: "Product name, the human-readable label." },
+        def attribute brand        { type: text, description: "Product brand of this item" },
+        def attribute class        { type: text, description: "Product class of this item" },
+        def attribute category     { type: text, description: "Product category of this item" },
+        def attribute manufact     { type: text, description: "The manufacturer of this item" },
+        def attribute size         { type: text, description: "The size of this item's SKU" },
+        def attribute container    { type: text, description: "The packaging of this item's SKU" }
     ]
 }
 
 def entity promotion {
     description: "Promotions — the promo-dying branch (promo participation stays dense every year)."
-    labelPlural: "Promotions"
     nameAttribute: promo_name
     codeAttribute: promo_id
     roles: [dimension]
     displayLabel: { en: "Promotion", cs: "Akce" }
     attributes: [
-        def attribute sk         { type: int, isKey: true },
-        def attribute promo_id   { type: text },
-        def attribute promo_name { type: text }
+        def attribute sk         { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute promo_id   { type: text, description: "Promotion indentifier (code)" },
+        def attribute promo_name { type: text, description: "Promotion name, the human-readable label." }
     ]
 }
 
 def entity call_center {
-    description: "Seller support centers — Marketplace lore, light labeling only (D-5)."
-    labelPlural: "Seller Support Centers"
+    description: "Seller support centers — Marketplace lore."
     nameAttribute: name
     codeAttribute: call_center_id
     roles: [dimension]
     displayLabel: { en: "Seller Support Center", cs: "Centrum podpory prodejců" }
     attributes: [
-        def attribute sk             { type: int, isKey: true },
-        def attribute call_center_id { type: text },
-        def attribute name           { type: text }
+        def attribute sk             { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute call_center_id { type: text, description: "Call center identifier (code)" },
+        def attribute name           { type: text, description: "Call center name, the human-readable label." }
     ]
 }

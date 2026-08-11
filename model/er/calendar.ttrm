@@ -9,19 +9,19 @@ model er
 
 def entity date_dim {
     description: "Calendar."
-    labelPlural: "Calendar"
+    codeAttribute: sk
     nameAttribute: cal_date
     roles: [dimension]
     displayLabel: { en: "Calendar", cs: "Kalendář" }
     attributes: [
-        def attribute sk        { type: int, isKey: true },
-        def attribute cal_date  { type: date },
-        def attribute year      { type: int },
-        def attribute month     { type: int },
-        def attribute quarter   { type: int },
-        def attribute week_seq  { type: int },
-        def attribute day_name  { type: text },
-        def attribute holiday   { type: { type: char, length: 1 } },
-        def attribute weekend   { type: { type: char, length: 1 } }
+        def attribute sk        { type: int, isKey: true, description: "Sequence key; the primary key for this entity, not bearing any meaning." },
+        def attribute cal_date  { type: date, description: "Calendar date. The primary grain of the calendar." },
+        def attribute year      { type: int, description: "Derived Year of the calendar date." },
+        def attribute month     { type: int, description: "Derived Month of the calendar date." },
+        def attribute quarter   { type: int, description: "Derived Quarter of the calendar date." },
+        def attribute week_seq  { type: int, description: "Absolute  week number from the beginning of this calendar." },
+        def attribute day_name  { type: text, description: "Name of the day of the week. English only" },
+        def attribute holiday   { type: { type: char, length: 1 }, description: "Is this a holiday? Y/N" },
+        def attribute weekend   { type: { type: char, length: 1 }, description: "Is this a weekend? Y/N" }
     ]
 }
