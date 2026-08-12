@@ -1,13 +1,45 @@
-# intent — plan-composer prompt pro golem-hartland (Hartland Analytics), česky.
+# intent — prompt plánovače dotazů pro golem-hartland (Hartland Analytics), česky.
 #
-# Stage 3.3 T6. Nahrazuje původní `system.yaml` (starý ai-models kontrakt
-# `{pattern_id,confidence,args}` bez `user:` části). golem PlanComposer načítá
-# `intent` (PROMPT_NAMES) a dekóduje odpověď přes MiniPlanCodec → výstup MUSÍ mít
-# tvar MiniPlanu `{source, nodes:[…]}` níže. Placeholdery {{ }} a JSON kontrakt jsou
-# nosné — anglická dvojče: prompts/en/intent.yaml. Zachovej je beze změny.
+# Stage 3.3 T6, přepracováno v GX / NLS-P6.2 do osmi slotů podle anglického dvojčete
+# (prompts/en/intent.yaml), které je referenčním tvarem.
 #
-# Placeholdery (PlanComposer.buildVars): {{ question }} {{ patterns }} {{ bindings }}
-#   {{ prior_view }} {{ locale }}. Hodnoty source/enumy a klíče JSON se NEPŘEKLÁDAJÍ.
+#
+# Producent: PlanComposer.buildVars. Tento blok je JEDINÁ dokumentace autora promptu.
+# „Legacy“ = co je ve slotu, když tah neměl k dispozici mřížku (lattice) rozpoznávání.
+#
+#   {{ question }}            otázka uživatele, doslovně.                       | legacy: totéž
+#   {{ locale }}              jazyk požadavku ("cs" | "en").                    | legacy: totéž
+#   {{ prior_view }}          nápověda pro AMEND/DRILL; u nové otázky prázdné.  | legacy: totéž
+#   {{ annotated_question }}  otázka s anotacemi vloženými přímo na místo:
+#                             [úsek -> role: ref], kandidáti jako `a | b ?`,
+#                             nerozpoznaný termín jako ∅, ukotvené hodnoty
+#                             jako jejich normalizace.                          | legacy: PRÁZDNÉ
+#   {{ lexicon_hints }}       uspořádaná próza: těla operátorových dovedností,
+#                             vysvětlení termínů pro každý navázaný ref I pro
+#                             každého přeživšího kandidáta, poznámky k
+#                             nejednoznačnosti a ∅ úsekům, řádek s evidencí
+#                             z rozpoznání záměru.                              | legacy: jen řádek s evidencí
+#   {{ normalized_question }} otázka s aliasy nahrazenými kanonickými názvy a
+#                             s normalizovanými ukotvenými hodnotami.           | legacy: PRÁZDNÉ
+#   {{ queries }}             dostupné dotazy, `id(název:typ, …)` a k tomu
+#                             jeden řádek popisu.                               | legacy: totéž
+#   {{ entities }}            dostupné entity, `localName: popis`.              | legacy: totéž
+#
+# NORMALIZOVANÝ TEXT NENÍ GRAMATICKÝ — JE TO SOUČÁST KONTRAKTU. Kanonická náhrada rozbíjí
+# skloňování („kol“ -> „Bikes“ uprostřed věty) a nic to neopravuje; čti přes to. Když je
+# {{ normalized_question }} prázdné, vrať se k {{ question }}.
+#
+# Vysvětlení termínů se vykreslují v AUTORSKÉM jazyce modelu, nikoli v jazyce požadavku:
+# ObjectDescriptor.description je dnes jediný řetězec. (⚑GXP-D7 / NLS-P10 z něj udělá
+# lokalizovaný řetězec; tento odstavec pak smaž.)
+#
+# Zastaralé aliasy, po jedno přechodné období stále dodávané (⚑GXP-D3): {{ patterns }} =
+# {{ queries }}, {{ schema }} = {{ entities }}, {{ bindings }} = řádek s evidencí, který je
+# nyní uvnitř {{ lexicon_hints }}. Jejich použití zaloguje WARN. V nových promptech je nepoužívej.
+#
+# Odpověď MUSÍ být MiniPlan JSON, který dekóduje MiniPlanCodec — tvar je v `system:` níže.
+# Zápis {{ }} i onen JSON kontrakt jsou nosné; obojí zachovej beze změny. Hodnoty source,
+# enumy a klíče JSON se NEPŘEKLÁDAJÍ.
 
 system: |
   Jsi plánovač domény Hartland Analytics — analýza tržeb, reklamací, zásob a
@@ -59,10 +91,24 @@ system: |
   uzly), FREE_SQL vždy compile_first=true.
 
 user: |
-  Otázka: {{ question }}
-  Jazyk: {{ locale }}
-  Vazby (bindings): {{ bindings }}
-  Předchozí pohled: {{ prior_view }}
+  Předchozí pohled (kontext uživatele): {{ prior_view }}
 
-  Dostupné vzory:
-  {{ patterns }}
+  Otázka (na co se uživatel právě zeptal): {{ question }}
+  Jazyk (jazyk komunikace): {{ locale }}
+
+  Anotovaná otázka (otázka uživatele s vyznačenými záznamy lexikonu): {{ annotated_question }}
+
+  ---
+  Nápovědy a pravidla vyplývající z anotací:
+  {{ lexicon_hints }}
+
+  ---
+  Normalizovaná otázka (otázka po normalizaci - POUŽIJ JI PRO ROZPOZNÁNÍ VZORU A / NEBO PRO GENEROVÁNÍ SQL): {{ normalized_question }}
+
+  ---
+  Dostupné dotazy (někdy dosažitelné přes „vzory“ / patterns):
+  {{ queries }}
+
+  ---
+  Dostupné entity:
+  {{ entities }}
