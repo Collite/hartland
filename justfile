@@ -12,6 +12,13 @@
 verify-model:
     node --test $(find model agents lexicon -name '*.test.mjs')
 
+# GX (NLS-P6.2) — check every mounted `intent.yaml` against the plan-composer placeholder
+# contract. The kantheon sibling is `IntentPromptContractSpec`; this repo has no CI lane, and
+# an uncontracted placeholder renders EMPTY with nothing anywhere saying so — which is exactly
+# how five of six kantheon shem prompts were found serving a question-less prompt.
+verify-prompts:
+    python3 scripts/verify-intent-prompts.py
+
 # Emit the deterministic resolved-packages.json artifact (packages, entities, areas) via
 # the tatrman Modeler CLI — the same tool ai-models uses (`just resolve-packages`).
 resolve-packages cli="node ../tatrman/packages/migrate/dist/cli.js":
