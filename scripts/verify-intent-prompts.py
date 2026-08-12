@@ -31,8 +31,13 @@ CONTRACT_KEYS = {
     "entities",
 }
 
-# The three GX-5 slots. Present in the `user:` half is what makes a file actually GX-shaped.
-GX_SLOTS = {"annotated_question", "lexicon_hints", "normalized_question"}
+# What the `user:` half must name. The three GX-5 slots are what make a file actually GX-shaped
+# — and `question` is here because it is the failure this check exists for: the pre-v2 prompts the
+# kantheon sibling found were handing the composer a prompt WITH NO QUESTION IN IT, and every other
+# check here would have passed a file that still did that. `annotated_question` and
+# `normalized_question` both render the question, but both are EMPTY on the legacy route, so
+# `question` is the only slot that is never blank.
+GX_SLOTS = {"annotated_question", "lexicon_hints", "normalized_question", "question"}
 
 # ⚑GXP-D3 — supplied for one deprecation window, WARNed by the composer. Legal in a mounted
 # estate prompt, and a finding here anyway: these files are edited alongside the contract.
