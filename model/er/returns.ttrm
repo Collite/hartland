@@ -14,14 +14,14 @@ def entity store_returns {
     roles: [fact]
     displayLabel: { en: "Store Returns", cs: "Reklamace z prodejen" }
     attributes: [
-        def attribute item            { type: int, isKey: true },
-        def attribute ticket_number   { type: int, isKey: true },
-        def attribute returned_date   { type: int },
-        def attribute customer        { type: int },
-        def attribute store           { type: int },
-        def attribute reason          { type: int },
-        def attribute return_quantity { type: int },
-        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 } }
+        def attribute item            { type: int, isKey: true, description: "Returned product — FK to the 'sk' attribute of the Product (item) entity." },
+        def attribute ticket_number   { type: int, isKey: true, description: "Original sales ticket number — pairs this return with its sale." },
+        def attribute returned_date   { type: int, description: "Return date — FK to the 'sk' attribute of the Calendar (date_dim) entity." },
+        def attribute customer        { type: int, description: "Returning customer — FK to the 'sk' attribute of the Customer entity." },
+        def attribute store           { type: int, description: "Store accepting the return — FK to the 'sk' attribute of the Store entity." },
+        def attribute reason          { type: int, description: "Return reason — FK to the 'sk' attribute of the Return Reason entity." },
+        def attribute return_quantity { type: int, description: "Units returned on this line." },
+        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 }, description: "Refunded amount of the line — SUM this for the return value; ratio against ext_sales_price gives the return rate." }
     ]
 }
 
@@ -31,13 +31,13 @@ def entity web_returns {
     roles: [fact]
     displayLabel: { en: "Web Returns", cs: "Reklamace z webu" }
     attributes: [
-        def attribute item            { type: int, isKey: true },
-        def attribute order_number    { type: int, isKey: true },
-        def attribute returned_date   { type: int },
-        def attribute customer        { type: int },
-        def attribute reason          { type: int },
-        def attribute return_quantity { type: int },
-        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 } }
+        def attribute item            { type: int, isKey: true, description: "Returned product — FK to the 'sk' attribute of the Product (item) entity." },
+        def attribute order_number    { type: int, isKey: true, description: "Original web order number — pairs this return with its sale." },
+        def attribute returned_date   { type: int, description: "Return date — FK to the 'sk' attribute of the Calendar (date_dim) entity." },
+        def attribute customer        { type: int, description: "Returning customer — FK to the 'sk' attribute of the Customer entity." },
+        def attribute reason          { type: int, description: "Return reason — FK to the 'sk' attribute of the Return Reason entity." },
+        def attribute return_quantity { type: int, description: "Units returned on this line." },
+        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 }, description: "Refunded amount of the line — SUM this for the return value; ratio against ext_sales_price gives the return rate." }
     ]
 }
 
@@ -47,14 +47,14 @@ def entity catalog_returns {
     roles: [fact]
     displayLabel: { en: "Marketplace Returns", cs: "Reklamace z tržiště" }
     attributes: [
-        def attribute item            { type: int, isKey: true },
-        def attribute order_number    { type: int, isKey: true },
-        def attribute returned_date   { type: int },
-        def attribute customer        { type: int },
-        def attribute reason          { type: int },
-        def attribute warehouse       { type: int },
-        def attribute return_quantity { type: int },
-        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 } }
+        def attribute item            { type: int, isKey: true, description: "Returned product — FK to the 'sk' attribute of the Product (item) entity." },
+        def attribute order_number    { type: int, isKey: true, description: "Original marketplace order number — pairs this return with its sale." },
+        def attribute returned_date   { type: int, description: "Return date — FK to the 'sk' attribute of the Calendar (date_dim) entity." },
+        def attribute customer        { type: int, description: "Returning customer — FK to the 'sk' attribute of the Customer entity." },
+        def attribute reason          { type: int, description: "Return reason — FK to the 'sk' attribute of the Return Reason entity." },
+        def attribute warehouse       { type: int, description: "Distribution center processing the return — FK to the 'sk' attribute of the Distribution Center (warehouse) entity." },
+        def attribute return_quantity { type: int, description: "Units returned on this line." },
+        def attribute return_amt      { type: { type: decimal, length: 10, precision: 2 }, description: "Refunded amount of the line — SUM this for the return value; ratio against ext_sales_price gives the return rate." }
     ]
 }
 
@@ -66,8 +66,8 @@ def entity reason {
     roles: [dimension]
     displayLabel: { en: "Return Reason", cs: "Důvod reklamace" }
     attributes: [
-        def attribute sk          { type: int, isKey: true },
-        def attribute reason_id   { type: text },
-        def attribute reason_desc { type: text }
+        def attribute sk          { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute reason_id   { type: text, description: "Return reason identifier (code)." },
+        def attribute reason_desc { type: text, description: "Return reason text, the human-readable label — e.g. 'Did not get it on time'." }
     ]
 }

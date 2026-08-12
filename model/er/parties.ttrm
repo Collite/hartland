@@ -11,12 +11,12 @@ def entity customer {
     roles: [master, dimension]
     displayLabel: { en: "Customer", cs: "Zákazník" }
     attributes: [
-        def attribute sk          { type: int, isKey: true },
-        def attribute customer_id { type: text },
-        def attribute addr        { type: int },
-        def attribute cdemo       { type: int },
-        def attribute hdemo       { type: int },
-        def attribute birth_year  { type: int }
+        def attribute sk          { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute customer_id { type: text, description: "Unique customer identifier (code)." },
+        def attribute addr        { type: int, description: "Current address — FK to the 'sk' attribute of the Customer Address entity." },
+        def attribute cdemo       { type: int, description: "Customer demographics — FK to the 'sk' attribute of the Customer Demographics entity." },
+        def attribute hdemo       { type: int, description: "Household demographics — FK to the 'sk' attribute of the Household Demographics entity." },
+        def attribute birth_year  { type: int, description: "Customer's year of birth — buyer-age analyses derive age from this." }
     ]
 }
 
@@ -28,11 +28,11 @@ def entity customer_address {
     roles: [dimension]
     displayLabel: { en: "Customer Address", cs: "Adresa zákazníka" }
     attributes: [
-        def attribute sk         { type: int, isKey: true },
-        def attribute address_id { type: text },
-        def attribute city       { type: text },
-        def attribute county     { type: text },
-        def attribute state      { type: { type: char, length: 2 } }
+        def attribute sk         { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute address_id { type: text, description: "Unique address identifier (code)." },
+        def attribute city       { type: text, description: "City of the address." },
+        def attribute county     { type: text, description: "County of the address." },
+        def attribute state      { type: { type: char, length: 2 }, description: "Two-letter US state code of the address — revenue-by-state slices use this." }
     ]
 }
 
@@ -42,9 +42,9 @@ def entity customer_demographics {
     roles: [dimension]
     displayLabel: { en: "Customer Demographics", cs: "Demografie zákazníka" }
     attributes: [
-        def attribute sk             { type: int, isKey: true },
-        def attribute gender         { type: { type: char, length: 1 } },
-        def attribute marital_status { type: { type: char, length: 1 } }
+        def attribute sk             { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute gender         { type: { type: char, length: 1 }, description: "Gender code (M/F)." },
+        def attribute marital_status { type: { type: char, length: 1 }, description: "Marital status code (single letter, e.g. S/M/D)." }
     ]
 }
 
@@ -54,9 +54,9 @@ def entity household_demographics {
     roles: [dimension]
     displayLabel: { en: "Household Demographics", cs: "Demografie domácnosti" }
     attributes: [
-        def attribute sk            { type: int, isKey: true },
-        def attribute income_band   { type: int },
-        def attribute buy_potential { type: text }
+        def attribute sk            { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute income_band   { type: int, description: "Income band — FK to the 'sk' attribute of the Income Band entity." },
+        def attribute buy_potential { type: text, description: "Household buying-potential label (e.g. '>10000', 'Unknown')." }
     ]
 }
 
@@ -66,9 +66,9 @@ def entity income_band {
     roles: [dimension]
     displayLabel: { en: "Income Band", cs: "Příjmové pásmo" }
     attributes: [
-        def attribute sk          { type: int, isKey: true },
-        def attribute lower_bound { type: int },
-        def attribute upper_bound { type: int }
+        def attribute sk          { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute lower_bound { type: int, description: "Lower bound of the household's yearly income range (USD)." },
+        def attribute upper_bound { type: int, description: "Upper bound of the household's yearly income range (USD)." }
     ]
 }
 
@@ -80,10 +80,10 @@ def entity store {
     roles: [dimension]
     displayLabel: { en: "Store", cs: "Prodejna" }
     attributes: [
-        def attribute sk         { type: int, isKey: true },
-        def attribute store_id   { type: text },
-        def attribute store_name { type: text },
-        def attribute city       { type: text },
-        def attribute state      { type: { type: char, length: 2 } }
+        def attribute sk         { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
+        def attribute store_id   { type: text, description: "Unique store identifier (code)." },
+        def attribute store_name { type: text, description: "Store name, the human-readable label." },
+        def attribute city       { type: text, description: "The city the store is located in." },
+        def attribute state      { type: { type: char, length: 2 }, description: "The state the store is located in." }
     ]
 }

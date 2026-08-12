@@ -9,55 +9,55 @@ model er
 // ttr/lexicon-legacy-aliases, "declare a lexicon `term`" instead) are Stage 2.5's lexicon.
 
 def entity store_sales {
-    description: "Stores-channel sales lines — store / brick-and-mortar revenue (sales, tržby) = SUM(ext_sales_price), units sold = quantity, dated by sold_date."
+    description: "Stores-channel sales lines — store / brick-and-mortar revenue (sales) = SUM(ext_sales_price), units sold = quantity, dated by sold_date."
     labelPlural: "Store Sales"
     roles: [fact]
     displayLabel: { en: "Store Sales", cs: "Tržby z prodejen" }
     attributes: [
-        def attribute item           { type: int, isKey: true },
-        def attribute ticket_number  { type: int, isKey: true },
-        def attribute sold_date      { type: int },
-        def attribute customer       { type: int },
-        def attribute addr           { type: int },
-        def attribute store          { type: int },
-        def attribute promo          { type: int },
-        def attribute quantity       { type: int },
-        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 } }
+        def attribute item           { type: int, isKey: true, description: "Sold product — FK to the 'sk' attribute of the Product (item) entity." },
+        def attribute ticket_number  { type: int, isKey: true, description: "Sales ticket number; one ticket = one basket. Part of the primary key." },
+        def attribute sold_date      { type: int, description: "Sale date — FK to the 'sk' attribute of the Calendar (date_dim) entity." },
+        def attribute customer       { type: int, description: "Buying customer — FK to the 'sk' attribute of the Customer entity." },
+        def attribute addr           { type: int, description: "Customer address at sale time — FK to the 'sk' attribute of the Customer Address entity." },
+        def attribute store          { type: int, description: "Selling store — FK to the 'sk' attribute of the Store entity." },
+        def attribute promo          { type: int, description: "Promotion applied to this line, if any — FK to the 'sk' attribute of the Promotion entity." },
+        def attribute quantity       { type: int, description: "Units sold on this line." },
+        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 }, description: "Extended sales price of the line (unit price × quantity) — the revenue amount; SUM this for revenue/sales." }
     ]
 }
 
 def entity web_sales {
-    description: "Web-channel sales lines — web / online / e-shop revenue (sales, tržby) = SUM(ext_sales_price), units sold = quantity, dated by sold_date."
+    description: "Web-channel sales lines — web / online / e-shop revenue (sales) = SUM(ext_sales_price), units sold = quantity, dated by sold_date."
     labelPlural: "Web Orders"
     roles: [fact]
     displayLabel: { en: "Web Orders", cs: "Webové objednávky" }
     attributes: [
-        def attribute item           { type: int, isKey: true },
-        def attribute order_number   { type: int, isKey: true },
-        def attribute sold_date      { type: int },
-        def attribute customer       { type: int },
-        def attribute addr           { type: int },
-        def attribute promo          { type: int },
-        def attribute quantity       { type: int },
-        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 } }
+        def attribute item           { type: int, isKey: true, description: "Sold product — FK to the 'sk' attribute of the Product (item) entity." },
+        def attribute order_number   { type: int, isKey: true, description: "Web order number; one order = one basket. Part of the primary key." },
+        def attribute sold_date      { type: int, description: "Sale date — FK to the 'sk' attribute of the Calendar (date_dim) entity." },
+        def attribute customer       { type: int, description: "Buying customer — FK to the 'sk' attribute of the Customer entity." },
+        def attribute addr           { type: int, description: "Customer address at sale time — FK to the 'sk' attribute of the Customer Address entity." },
+        def attribute promo          { type: int, description: "Promotion applied to this line, if any — FK to the 'sk' attribute of the Promotion entity." },
+        def attribute quantity       { type: int, description: "Units sold on this line." },
+        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 }, description: "Extended sales price of the line (unit price × quantity) — the revenue amount; SUM this for revenue/sales." }
     ]
 }
 
 def entity catalog_sales {
-    description: "Marketplace (third-party / 3P) sales lines — marketplace revenue (sales, tržby) = SUM(ext_sales_price), units sold = quantity, dated by sold_date; the channel of the incident."
+    description: "Marketplace (third-party / 3P) sales lines — marketplace revenue (sales) = SUM(ext_sales_price), units sold = quantity, dated by sold_date; the channel of the incident."
     labelPlural: "Marketplace Orders"
     roles: [fact]
     displayLabel: { en: "Marketplace Orders", cs: "Objednávky z tržiště" }
     attributes: [
-        def attribute item           { type: int, isKey: true },
-        def attribute order_number   { type: int, isKey: true },
-        def attribute sold_date      { type: int },
-        def attribute customer       { type: int },
-        def attribute addr           { type: int },
-        def attribute call_center    { type: int },
-        def attribute warehouse      { type: int },
-        def attribute promo          { type: int },
-        def attribute quantity       { type: int },
-        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 } }
+        def attribute item           { type: int, isKey: true, description: "Sold product — FK to the 'sk' attribute of the Product (item) entity." },
+        def attribute order_number   { type: int, isKey: true, description: "Marketplace order number; one order = one basket. Part of the primary key." },
+        def attribute sold_date      { type: int, description: "Sale date — FK to the 'sk' attribute of the Calendar (date_dim) entity." },
+        def attribute customer       { type: int, description: "Buying customer — FK to the 'sk' attribute of the Customer entity." },
+        def attribute addr           { type: int, description: "Customer address at sale time — FK to the 'sk' attribute of the Customer Address entity." },
+        def attribute call_center    { type: int, description: "Seller support center handling the order — FK to the 'sk' attribute of the Seller Support Center (call_center) entity." },
+        def attribute warehouse      { type: int, description: "Fulfilling distribution center — FK to the 'sk' attribute of the Distribution Center (warehouse) entity." },
+        def attribute promo          { type: int, description: "Promotion applied to this line, if any — FK to the 'sk' attribute of the Promotion entity." },
+        def attribute quantity       { type: int, description: "Units sold on this line." },
+        def attribute ext_sales_price { type: { type: decimal, length: 10, precision: 2 }, description: "Extended sales price of the line (unit price × quantity) — the revenue amount; SUM this for revenue/sales." }
     ]
 }
