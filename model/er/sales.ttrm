@@ -9,7 +9,7 @@ model er
 // ttr/lexicon-legacy-aliases, "declare a lexicon `term`" instead) are Stage 2.5's lexicon.
 
 def entity store_sales {
-    description: "Stores-channel sales lines."
+    description: "Stores-channel sales lines — store / brick-and-mortar revenue (sales, tržby) = SUM(ext_sales_price), units sold = quantity, dated by sold_date."
     labelPlural: "Store Sales"
     roles: [fact]
     displayLabel: { en: "Store Sales", cs: "Tržby z prodejen" }
@@ -27,7 +27,7 @@ def entity store_sales {
 }
 
 def entity web_sales {
-    description: "Web-channel sales lines."
+    description: "Web-channel sales lines — web / online / e-shop revenue (sales, tržby) = SUM(ext_sales_price), units sold = quantity, dated by sold_date."
     labelPlural: "Web Orders"
     roles: [fact]
     displayLabel: { en: "Web Orders", cs: "Webové objednávky" }
@@ -44,7 +44,7 @@ def entity web_sales {
 }
 
 def entity catalog_sales {
-    description: "Marketplace (third-party / fulfilled-by-Hartland) sales lines — the channel of the incident."
+    description: "Marketplace (third-party / 3P) sales lines — marketplace revenue (sales, tržby) = SUM(ext_sales_price), units sold = quantity, dated by sold_date; the channel of the incident."
     labelPlural: "Marketplace Orders"
     roles: [fact]
     displayLabel: { en: "Marketplace Orders", cs: "Objednávky z tržiště" }
