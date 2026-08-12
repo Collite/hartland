@@ -54,12 +54,18 @@ def check(path: pathlib.Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     findings: list[str] = []
 
-    first = text.splitlines()[0]
-    if not HEADER_FIRST_LINE.match(first):
-        findings.append(f"header: first line is not `# intent — …` (got: {first!r})")
+    lines = text.splitlines()
+    if not lines:
+        return ["structure: the file is empty"]
+    if not HEADER_FIRST_LINE.match(lines[0]):
+        findings.append(f"header: first line is not `# intent — …` (got: {lines[0]!r})")
 
-    header = "\n".join(line for line in text.splitlines() if line.startswith("#"))
-    undocumented = sorted(k for k in CONTRACT_KEYS if k not in header)
+    # ⛑ Match `{{ name }}`, not the bare word. A substring test passes `annotated_question` off
+    # as documentation for `question` — so a header that never mentioned `question` at all would
+    # look complete, which is the one thing this check exists to notice.
+    header = "\n".join(line for line in lines if line.startswith("#"))
+    documented = set(PLACEHOLDER.findall(header))
+    undocumented = sorted(CONTRACT_KEYS - documented)
     if undocumented:
         findings.append(f"header: does not document {undocumented} (S-3: it is the only docs)")
 
