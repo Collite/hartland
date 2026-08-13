@@ -10,6 +10,7 @@ gets renamed.
 
 ```
 lexicon/
+├── aliases/hartland.lex.yaml     the estate's MEASURE vocabulary, er-targeted
 ├── grounding/hartland.lex.yaml   estate additions to the chrono/money/geo trigger vocabulary
 ├── tests/area.test.mjs           structural guards (node --test, no dependencies)
 └── README.md
@@ -24,6 +25,25 @@ lexicon/
 > rather than answered (kantheon RV-P6.5, ruling B). **md gets its own exercise**; when it lands,
 > this vocabulary comes back with a binding behind it. Nothing about the `model/md/` model itself
 > changed — only the words pointed at it.
+>
+> ⛑ **`aliases/` came back 2026-08-13 — er-targeted, not md.** The removal above was right and
+> is not undone; what it left behind was an estate with **no measure vocabulary at all**, which
+> the hartland demo hit head-on: *"What are the marketplace revenues for 2025 by month?"* answered
+> `I don't recognise "the marketplace revenues"`, because `marketplace` and `month` both resolved
+> and `revenue` matched nothing in any form. The new file declares the same words against
+> **`er.entity.<entity>.<attribute>`** — the shape `TransDslRenderer` can address without a
+> metadata lookup, and which it SUMs for a `FRAME_ROLE_MEASURE`. `values/` is **not** restored:
+> its rows were md members, and the er-side equivalent is a filter story, not a vocabulary one.
+>
+> ⚠ **Bare measure words are deliberately absent, and the compiler is why.** On the er layer
+> `revenue` is three attributes on three entities. Declaring it three times — the honest shape,
+> meant to raise a `G2_AMBIGUOUS` "which channel?" — is rejected: `RG-LEX-006`, *"Two targets for
+> one term in one file have no defined winner"*, 38 violations and no archive written. The
+> declared layer is single-target-per-term by construction, so bare words stay undeclared rather
+> than being pointed at an arbitrary channel. Every corpus question that uses one is cross-channel
+> anyway, which the door refuses regardless ("spans more than one object"), so those stay on the
+> pattern path in `model/queries/q_hartland.ttrm` exactly as before. Restoring them on the fast
+> path is an md exercise or a channel-labelled-view modelling exercise — not a lexicon change.
 
 Each data file's own header carries its sourcing — which line of `design/demo-transcript.md`,
 which `search { patterns }` block in `model/queries/q_hartland.ttrm`, which
@@ -51,7 +71,48 @@ step rather than a local recipe.
 
 ## What is in the artifact today
 
-From `just build-lexicon`, **2026-08-10** (rebuilt after the md removal above):
+From `just build-lexicon`, **2026-08-13** (rebuilt after `aliases/` returned, er-targeted):
+
+| | |
+|---|---|
+| archive id | `sha256:15fb55aeb2615b2a505e57bafc5d475fe4df7f60b0d1343d9d09a16c320a594c` |
+| model id | `sha256:07cfb8bf74cc7f62b7c034e4034517c96c1c217250cb6cc6b1f5c8e5377d0e68` |
+| entries | **351** |
+| — `MODEL_OBJECT` | 118 (66 DECLARED, 52 METADATA) |
+| — `MEMBER` | **100** (0 DECLARED, 100 METADATA `valueLabels`) |
+| — `OPERATOR` | 35 (the six stdlib operators' triggers) |
+| — `GROUNDING_TRIGGER` | 98 (72 stdlib + 26 from `grounding/hartland.lex.yaml`) |
+| operators | 6 |
+| build warnings | **0** |
+| md-targeted rows | **100, all `METADATA`** |
+
+**What changed on 2026-08-13**: `aliases/hartland.lex.yaml` returned with **44 DECLARED rows** at
+`er.` attribute depth — **13** revenue forms across the three channel entities (cs + en,
+channel-qualified), **12** stock-on-hand forms on `er.entity.inventory`, and **19** calendar-grain
+forms on `er.entity.date_dim.{month,year,quarter,week_seq}`. Nothing md-targeted came back; the
+100 harvested `MEMBER` rows are untouched.
+
+The calendar rows are the RV-P6.6 half. Before them, *"…by month"* stopped at a `ground:chrono`
+trigger, which names no column — so the query door had nothing to group by and refused every
+dated question. They are **grain phrases** (`by month`, `měsíčně`, `monthly`), not the bare nouns:
+declaring bare `month` alongside its chrono trigger would be legal but would put two classes in
+competition on one span. Verified in the artifact — no term lands in both `ground:chrono` and a
+`date_dim` column.
+
+⚑ Grouping by a calendar column means a question now spans **two entities**, which the door
+refused outright until RV-P6.6 taught it to check the model for a direct relation
+(`rel_catalog_sales_date` and siblings) and let `EXPAND_JOINS-logical` insert the join.
+
+> ⚠ **This table had drifted, and the drift is worth reading before the numbers.** Both the
+> `312`/`79` row and the model id above described 2026-08-10; the artifact actually committed and
+> deployed since `492f892` (*"queries back and descriptions v02"*) carried **307 entries,
+> `MODEL_OBJECT` 74, model id `07cfb8bf…`** — that commit changed the model and rebuilt the
+> archive without re-recording either here. So this change's real delta is **307 → 332** and
+> `MODEL_OBJECT` **74 → 99**, and the model id moved before this edit, not because of it. Read
+> the archive id as the drift gate; `just check-lexicon` is what enforces it, and it is the gate
+> that would have caught the stale table had it been run.
+
+### Previously (2026-08-10, after the md removal)
 
 | | |
 |---|---|
