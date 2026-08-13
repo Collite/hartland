@@ -1,0 +1,221 @@
+# hartland's MEASURE vocabulary — er-targeted (re-authored 2026-08-13).
+#
+# ── Why this file exists again ────────────────────────────────────────────────────────
+# RV-P3.2 T4 authored an `aliases/` + `values/` area whose measure rows pointed at `md.`.
+# All of it was removed on 2026-08-10 ("Remove the md-targeted lexicon vocabulary") for a
+# correct reason: the merged Golem's query door renders a bound ref into a TransDSL data
+# object, and an `md.` ref names neither an object nor an aggregation, so a question that
+# bound one was refused BY NAME (kantheon RV-P6.5, ruling B). The removal was right; what
+# it left behind was an estate with **no measure vocabulary at all**.
+#
+# The cost showed up on the demo box on 2026-08-13. *"What are the marketplace revenues
+# for 2025 by month?"* answered `I don't recognise "the marketplace revenues"` — because
+# `marketplace` resolved (`er.entity.catalog_sales`), `month` resolved (`ground:chrono`),
+# and `revenue` matched nothing in any form: not `revenue`, not `turnover`, not `obrat`,
+# not `tržb*`. Four of the six `example_questions` each Shem advertises are measure
+# questions, so the Shem's own headline beat could not resolve.
+#
+# This file is the removal's other half, deferred until there was a binding behind it:
+# **the same words, pointed at `er.` attributes instead of `md.` measures.** That is the
+# shape the door can actually read — `TransDslRenderer.address()` maps
+# `er.entity.<entity>.<attribute>` onto `plan.v1.QualifiedName`'s four parts with no
+# metadata lookup, and a `FRAME_ROLE_MEASURE` attribute is SUMmed. Verified against the
+# compiler rather than assumed: an attribute-depth `er.` target compiles to a DECLARED
+# `MODEL_OBJECT` row, and a misspelt attribute earns `RG-LEXC-001` and is dropped.
+#
+# `model/md/` is untouched. When Veles publishes an md binding, md vocabulary comes back
+# on top of this — it does not replace it.
+#
+# ── ⚑⚑ Why there are no BARE measure words here, and why that is the toolchain's call ──
+# On the md layer `revenue` was ONE measure and the channel was a dimension. On the er
+# layer it is three attributes on three entities, so a bare *"revenue"* genuinely names
+# three things. The first draft of this file said so — three entries, same term, one target
+# each — on the theory that three equal candidates is the textbook `G2_AMBIGUOUS` and the
+# user should be asked *which channel*.
+#
+# **The compiler refuses that shape**, and the message is the ruling:
+#
+#     RG-LEX-006 term "revenue" (en) is declared twice in this file —
+#                Two targets for one term in one file have no defined winner.
+#
+# 38 violations, no archive written. The declared layer is single-target-per-term by
+# construction: it is a mapping, and expressing ambiguity in it is not an authoring choice
+# the schema offers. So bare measure words stay UNDECLARED rather than being pointed at an
+# arbitrarily chosen channel — pointing them at one would be the guess this whole design
+# exists to refuse, and it would answer *"revenue by channel"* with one channel's number.
+#
+# The practical cost is small and bounded: every corpus question that uses a bare measure
+# word (`channel_revenue_monthly`, `category_revenue`, `top_items_by_revenue`) is a
+# CROSS-channel or cross-entity question, which `TransDslRenderer` refuses anyway ("the
+# question spans more than one object — joining them is a modelling decision this door will
+# not make"). Those are answered by their `search { patterns }` blocks in
+# `model/queries/q_hartland.ttrm`, on the legacy pattern path, exactly as before this file.
+# What this file restores is the single-channel half — which is where the fast path lives.
+#
+# ⚑ If bare measure words are wanted on the fast path, that is an md exercise (one measure,
+# channel as a dimension) or a modelling one (a channel-labelled sales view, so that one
+# object carries all three). It is not a lexicon change, and it should not be forced into
+# one.
+#
+# ── Sourcing ─────────────────────────────────────────────────────────────────────────
+# Every term is attested. The `search { patterns }` blocks in
+# `model/queries/q_hartland.ttrm` are the densest source and are cited per entry; the rest
+# come from `design/demo-transcript.md` and both Shems' `example_questions`.
+#
+# ── What this file deliberately does NOT declare ─────────────────────────────────────
+# `tržby z prodejen` — the exact string is already a METADATA row (harvested from
+#   `store_sales.displayLabel.cs`, "Tržby z prodejen") pointing at the ENTITY. Declaring it
+#   here at attribute depth would make the estate's clearest Czech revenue phrase ambiguous
+#   between an entity and its column. `tržba z prodejen` (singular) and `store revenue`
+#   carry the measure instead. ⚑ The clean fix is a `displayLabel.cs` that is a label
+#   ("Prodejny") rather than a measure phrase; that is a model change, not a lexicon one.
+# Bare channel words (`marketplace`, `web`, `prodejna`, …) — declared once already, on the
+#   `.ttrm` sugar surface (`model/lexicon/{cs,en}/channels.ttrm`). Restating one here is
+#   the same declared layer speaking twice, and `tests/area.test.mjs`'s T4 guard fails it.
+# UNITS SOLD and RETURNED AMOUNT — same three-entity shape as revenue, and unlike revenue
+#   they have no attested channel-qualified surface: the corpus says "units sold" and
+#   "returns", never "marketplace units". Inventing one to dodge RG-LEX-006 would put words
+#   in users' mouths, which is the one thing this area's discipline forbids. They wait for
+#   the same md/modelling exercise as the bare words above.
+# `return rate` / `míra vrácení` — a RATIO of `return_amt` to `ext_sales_price`, which live
+#   on two different entities. The door refuses a two-object question, so a word for it
+#   would resolve into a refusal. It belongs to a pattern query, not to this layer.
+# Member codes (DC names, return reasons, channel literals) — `values/` territory, removed
+#   with this file and NOT restored here: those rows targeted `md.` members, and the er-side
+#   equivalents are `warehouse_name`/`reason_desc` text columns, which is a filter story
+#   rather than a vocabulary one. Separate exercise, deliberately not bundled in.
+#
+# ── Matching ─────────────────────────────────────────────────────────────────────────
+# `defaults.match` carries RV-44's declared profile: exact canonical, one-edit typos, and a
+# `folded` rule at 0.90 because diacritic-free typing (`trzby`, `trziste`) is this estate's
+# most common input variance — and the q_hartland patterns are themselves written unfolded.
+# Every multiword phrase takes `method: TOKENS`.
+schema: ttr-lexicon/v1
+defaults:
+  lang: cs
+  match:
+    - { norm: canonical, exact: 1.00, typos: { distance: 1, penalty: 0.05 } }
+    - { norm: folded,    exact: 0.90 }
+entries:
+  # ══ REVENUE — channel-qualified ═══════════════════════════════════════════════════
+  # One object, one column, SUM — the shape the fast path renders.
+
+  # ── Marketplace revenue → er.entity.catalog_sales.ext_sales_price ────────────────────
+  # q_hartland `channel_revenue_yoy`: "how did (marketplace |web |store |)revenue develop
+  # in {year}", "jak se vyvijela trzba (z trziste |z webu |z prodejen |)(v roce|za rok)
+  # {year}"; `marketplace_revenue_by_warehouse`: "marketplace revenue by
+  # (warehouse|distribution center|DC)", "trzby z trziste (podle|dle) (skladu|…)".
+  # Both Shems lead with "How did Marketplace revenue develop in 2025?" / "Jak se vyvíjela
+  # tržba z tržiště v roce 2025?" — and the failing question of 2026-08-13 is this row.
+  - terms:
+      - { text: "tržby z tržiště", method: TOKENS }
+      - { text: "tržba z tržiště", method: TOKENS }
+      - { text: "tržeb z tržiště", method: TOKENS }
+      - { text: "marketplace revenue", lang: en, method: TOKENS }
+      - { text: "marketplace sales", lang: en, method: TOKENS }
+    target: er.entity.catalog_sales.ext_sales_price
+
+  # ── Web revenue → er.entity.web_sales.ext_sales_price ────────────────────────────────
+  # `channel_revenue_yoy` example: "Compare Web and Marketplace revenue, 2024 vs 2025" /
+  # "Porovnej tržby z webu a tržiště, 2024 vs 2025"; `category_revenue` example: "Revenue
+  # by category for Web". ⚑ That comparison names TWO channels and therefore two objects —
+  # it is a two-object question the door refuses by design, and it is answered by the
+  # `channel_revenue_yoy` PATTERN, not by the fast path. These rows still earn their place:
+  # they are what makes the single-channel half of the same vocabulary resolve.
+  - terms:
+      - { text: "tržby z webu", method: TOKENS }
+      - { text: "tržba z webu", method: TOKENS }
+      - { text: "tržby z e-shopu", method: TOKENS }
+      - { text: "web revenue", lang: en, method: TOKENS }
+      - { text: "online revenue", lang: en, method: TOKENS }
+    target: er.entity.web_sales.ext_sales_price
+
+  # ── Store revenue → er.entity.store_sales.ext_sales_price ────────────────────────────
+  # Same two patterns, the "store |"/"z prodejen " arm. See the header for why the plural
+  # `tržby z prodejen` is NOT declared here.
+  - terms:
+      - { text: "tržba z prodejen", method: TOKENS }
+      - { text: "store revenue", lang: en, method: TOKENS }
+      - { text: "retail revenue", lang: en, method: TOKENS }
+    target: er.entity.store_sales.ext_sales_price
+
+  # ══ CALENDAR GRAIN → er.entity.date_dim.{month,year,quarter,week_seq} ═════════════
+  # RV-P6.6. These are what make *"…by month"* and *"…for 2025"* land on a COLUMN instead of
+  # stopping at a grounding trigger.
+  #
+  # ⚑ **GRAIN PHRASES, not the bare nouns — and the choice is deliberate.** `month`, `měsíc`,
+  # `rok`, `quarter` are already `ground:chrono` GROUNDING_TRIGGER rows (stdlib +
+  # `../grounding/hartland.lex.yaml`). Declaring them again here would be LEGAL — `RG-LEXC-002`
+  # keys on term + lang + TARGET, and cross-CLASS overlap is this estate's existing shape
+  # (`stát`/`state` is `ground:geo` AND an attribute). It is still not done, because a bare
+  # `month` carrying both a chrono trigger and a column binding puts two classes in competition
+  # on one span, and that tie-break is the gate's to make rather than the author's to provoke.
+  #
+  # The phrases carry no such tension: *"by month"*, *"měsíčně"*, *"monthly"* are unambiguously a
+  # GRAIN — the user asking to be grouped — and they are what the corpus says
+  # (`channel_revenue_monthly`: "(monthly|month by month) revenue (per|by) channel",
+  # "(mesicni|měsíční) trzby (podle|dle) kanalu"). Checked in the built artifact rather than
+  # assumed: no term lands in both `ground:chrono` and a `date_dim` column.
+  #
+  # ⚑ Why the calendar is worth binding at all: `er.entity.date_dim` is a separate entity from
+  # the sales facts, so a question grouped by month spans TWO objects. That used to be an
+  # automatic refusal; since RV-P6.6 the door checks the model for a direct relation and
+  # hartland declares exactly one per fact (`rel_catalog_sales_date` and its siblings, each
+  # bound to a named FK), so `EXPAND_JOINS-logical` resolves the join downstream.
+  #
+  # ⚠ `week_seq` is an ABSOLUTE week counter from the start of the calendar, not a week-of-year
+  # — the demo's "weeks 31–47" language reads off it directly (`data/recon/R0.md`), so the word
+  # points there rather than at a derived week-of-year the model does not carry.
+  - terms:
+      - { text: "měsíčně" }
+      - { text: "po měsících", method: TOKENS }
+      - { text: "monthly", lang: en }
+      - { text: "by month", lang: en, method: TOKENS }
+      - { text: "month by month", lang: en, method: TOKENS }
+    target: er.entity.date_dim.month
+  - terms:
+      - { text: "ročně" }
+      - { text: "po letech", method: TOKENS }
+      - { text: "za rok", method: TOKENS }
+      - { text: "yearly", lang: en }
+      - { text: "annual", lang: en }
+      - { text: "by year", lang: en, method: TOKENS }
+    target: er.entity.date_dim.year
+  - terms:
+      - { text: "čtvrtletně" }
+      - { text: "po čtvrtletích", method: TOKENS }
+      - { text: "quarterly", lang: en }
+      - { text: "by quarter", lang: en, method: TOKENS }
+    target: er.entity.date_dim.quarter
+  - terms:
+      - { text: "týdně" }
+      - { text: "po týdnech", method: TOKENS }
+      - { text: "weekly", lang: en }
+      - { text: "by week", lang: en, method: TOKENS }
+    target: er.entity.date_dim.week_seq
+
+  # ══ STOCK ON HAND → er.entity.inventory.quantity_on_hand ══════════════════════════
+  # The one measure with no channel split — inventory is one entity, so bare words are
+  # unambiguous here and RG-LEX-006 does not arise. Beat 3's corroborating finding is the
+  # 17-week zero-on-hand streak at Memphis, and both Shems advertise "Which items were out
+  # of stock at Memphis DC in October 2025?" / "Které položky byly vyprodané v Brno DC v
+  # říjnu 2025?".
+  #
+  # ⚑ `vyprodáno` / `out of stock` name the ZERO CASE, not the quantity — strictly they are
+  # a restriction (`quantity_on_hand = 0`) riding a measure word. The er layer has no
+  # separate stockout attribute to point them at, and the removed md file made exactly the
+  # same choice against `md.measure.onHandQty`. Recorded rather than silently smoothed.
+  - terms:
+      - { text: "zásoby" }
+      - { text: "stav zásob", method: TOKENS }
+      - { text: "skladem" }
+      - { text: "vyprodáno" }
+      - { text: "není skladem", method: TOKENS }
+      - { text: "nulový stav", method: TOKENS }
+      - { text: "on hand", lang: en, method: TOKENS }
+      - { text: "stock on hand", lang: en, method: TOKENS }
+      - { text: "inventory on hand", lang: en, method: TOKENS }
+      - { text: "out of stock", lang: en, method: TOKENS }
+      - { text: "zero on hand", lang: en, method: TOKENS }
+      - { text: "stockout", lang: en }
+    target: er.entity.inventory.quantity_on_hand
