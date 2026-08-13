@@ -30,10 +30,6 @@
 # ("kol" -> "Bikes" mid-sentence) and nothing repairs it — read through it. When
 # {{ normalized_question }} is empty, fall back to {{ question }}.
 #
-# Term explanations render in the model's AUTHORED locale, not the request locale:
-# ObjectDescriptor.description is a single string today. (⚑GXP-D7 / NLS-P10 makes it a
-# localized string; delete this paragraph when that lands.)
-#
 # Deprecated aliases, still supplied for one window (⚑GXP-D3): {{ patterns }} = {{ queries }},
 # {{ schema }} = {{ entities }}, {{ bindings }} = the evidence line now inside
 # {{ lexicon_hints }}. Naming one logs a WARN. Do not use them in new prompts.

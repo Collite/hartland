@@ -35,7 +35,10 @@ export const ACCEPTED_RESIDUAL_CODES = new Set([
   // Stage 2.3: Product's 4 table-backed maps have no md2db_map yet — that's Stage 2.4.
   'md/table-map-no-binding',
 ]);
-const tatrmanPackages = path.resolve(hartlandRoot, '../tatrman/packages');
+// The sibling checkout by default. `TATRMAN_PACKAGES` overrides it so this suite can be
+// run against a tatrman WORKTREE — needed whenever the model uses grammar the sibling's
+// built dist does not have yet (NLS-P10: the localised `description:` form is 0.13).
+const tatrmanPackages = process.env.TATRMAN_PACKAGES ?? path.resolve(hartlandRoot, '../tatrman/packages');
 
 const { parseString } = await import(path.join(tatrmanPackages, 'parser/dist/index.js'));
 const semantics = await import(path.join(tatrmanPackages, 'semantics/dist/index.js'));
