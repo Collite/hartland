@@ -25,7 +25,11 @@
 #                             s normalizovanými ukotvenými hodnotami.           | legacy: PRÁZDNÉ
 #   {{ queries }}             dostupné dotazy, `id(název:typ, …)` a k tomu
 #                             jeden řádek popisu.                               | legacy: totéž
-#   {{ entities }}            dostupné entity, `localName: popis`.              | legacy: totéž
+#   {{ entities }}            dostupné entity, `localName: popis`, a pod každou z nich
+#                             její ATRIBUTY, odsazené, ve tvaru
+#                             `název (typ[, key][, optional]): popis`.
+#                             Tyto sloupce jmenuj ve volném SQL — jsou skutečné
+#                             (NLS-P11).                                         | legacy: totéž
 #
 # NORMALIZOVANÝ TEXT NENÍ GRAMATICKÝ — JE TO SOUČÁST KONTRAKTU. Kanonická náhrada rozbíjí
 # skloňování („kol“ -> „Bikes“ uprostřed věty) a nic to neopravuje; čti přes to. Když je

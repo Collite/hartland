@@ -24,7 +24,11 @@
 #                             canonical names and grounded values normalized.   | legacy: EMPTY
 #   {{ queries }}             available queries, `id(name:type, …)` plus one
 #                             description line each.                            | legacy: same
-#   {{ entities }}            available entities, `localName: description`.     | legacy: same
+#   {{ entities }}            available entities, `localName: description`, and under
+#                             each one its ATTRIBUTES, indented, as
+#                             `name (type[, key][, optional]): description`.
+#                             Name these columns in free SQL — they are the real
+#                             ones (NLS-P11).                                    | legacy: same
 #
 # NORMALIZED TEXT IS NOT GRAMMATICAL, BY CONTRACT. Canonical replacement breaks inflection
 # ("kol" -> "Bikes" mid-sentence) and nothing repairs it — read through it. When
