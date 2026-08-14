@@ -23,15 +23,15 @@
 #                             s normalizovanými ukotvenými hodnotami.           | legacy: PRÁZDNÉ
 #   {{ queries }}             dostupné dotazy, `id(název:typ, …)` a k tomu
 #                             jeden řádek popisu.                               | legacy: totéž
-#   {{ entities }}            dostupné entity, `localName: popis`.              | legacy: totéž
+#   {{ entities }}            dostupné entity, `localName: popis`, a pod každou z nich
+#                             její ATRIBUTY, odsazené, ve tvaru
+#                             `název (typ[, key][, optional]): popis`.
+#                             Tyto sloupce jmenuj ve volném SQL — jsou skutečné
+#                             (NLS-P11).                                         | legacy: totéž
 #
 # NORMALIZOVANÝ TEXT NENÍ GRAMATICKÝ — JE TO SOUČÁST KONTRAKTU. Kanonická náhrada rozbíjí
 # skloňování („kol“ -> „Bikes“ uprostřed věty) a nic to neopravuje; čti přes to. Když je
 # {{ normalized_question }} prázdné, vrať se k {{ question }}.
-#
-# Vysvětlení termínů se vykreslují v AUTORSKÉM jazyce modelu, nikoli v jazyce požadavku:
-# ObjectDescriptor.description je dnes jediný řetězec. (⚑GXP-D7 / NLS-P10 z něj udělá
-# lokalizovaný řetězec; tento odstavec pak smaž.)
 #
 # Zastaralé aliasy, po jedno přechodné období stále dodávané (⚑GXP-D3): {{ patterns }} =
 # {{ queries }}, {{ schema }} = {{ entities }}, {{ bindings }} = řádek s evidencí, který je

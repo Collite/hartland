@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { loadHartlandProject, ACCEPTED_RESIDUAL_CODES, hartlandRoot } from '../../tests/project-harness.mjs';
 
-const tatrmanSemantics = path.resolve(hartlandRoot, '../tatrman/packages/semantics/dist/index.js');
+const tatrmanPackages = process.env.TATRMAN_PACKAGES ?? path.resolve(hartlandRoot, '../tatrman/packages');
+const tatrmanSemantics = path.join(tatrmanPackages, 'semantics/dist/index.js');
 const { desugarLexicon, foldId } = await import(tatrmanSemantics);
 
 const project = await loadHartlandProject();

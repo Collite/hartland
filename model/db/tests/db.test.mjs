@@ -15,7 +15,8 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const hartlandRoot = path.resolve(here, '../../..');
 const dbDir = path.resolve(hartlandRoot, 'model/db');
-const tatrmanParserDist = path.resolve(hartlandRoot, '../tatrman/packages/parser/dist/index.js');
+const tatrmanPackages = process.env.TATRMAN_PACKAGES ?? path.resolve(hartlandRoot, '../tatrman/packages');
+const tatrmanParserDist = path.join(tatrmanPackages, 'parser/dist/index.js');
 
 const { parseString } = await import(tatrmanParserDist);
 
