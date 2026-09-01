@@ -34,6 +34,18 @@ export const ACCEPTED_RESIDUAL_CODES = new Set([
   // this diagnostic.
   // Stage 2.3: Product's 4 table-backed maps have no md2db_map yet — that's Stage 2.4.
   'md/table-map-no-binding',
+  // MS (mention semantics, vocabulary v3): TTR-SEM-218 `SemLegacyMentionDeprecated` — the
+  // model declares `nameAttribute:`/`codeAttribute:`, whose replacement is the entity
+  // `semantics { name:, code: }` mention facet. Warning-level by ruling (MS-D2): a
+  // deprecation is advice about style, not a defect. It fires on five files here and is
+  // ACCEPTED rather than fixed, deliberately — READERS BEFORE PRODUCERS. Veles reads the
+  // semantics mention keys only from MS-P2 on; dropping the legacy properties while the
+  // serving estate still runs an older veles would blank EntityDetail.name_attribute for
+  // every dimension at once, silently. `store` (model/er/parties.ttrm) declares BOTH, which
+  // is the intended migration step and is itself one of the five 218s ("both, agreeing").
+  // Remove this entry — and the legacy properties — once hartland's veles is on an MS-P2
+  // image and the chain has been seen serving name/code from the semantics block.
+  'TTR-SEM-218',
 ]);
 // The sibling checkout by default. `TATRMAN_PACKAGES` overrides it so this suite can be
 // run against a tatrman WORKTREE — needed whenever the model uses grammar the sibling's

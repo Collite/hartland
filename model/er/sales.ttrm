@@ -13,6 +13,13 @@ def entity store_sales {
     labelPlural: "Store Sales"
     roles: [fact]
     displayLabel: { en: "Store Sales", cs: "Tržby z prodejen" }
+    // MS (mention semantics, vocabulary v3): the MENTION facet — what a human is asking
+    // for when they mention this entity. Declared order is load-bearing: ext_sales_price
+    // is FIRST, so revenue is the default measure of a bare "tržby z prodejen". Both are
+    // `sum`, which is the bare-id default, so neither needs an item object. This is what
+    // makes store_sales resolve as `entity_with_measures` rather than a plain `entity`,
+    // which is what wakes FrameRoles R2 and the R3–R6 `podle`/"by" exemptions.
+    semantics { measures: [ ext_sales_price, quantity ] }
     attributes: [
         def attribute item           { type: int, isKey: true, description: "Sold product — FK to the 'sk' attribute of the Product (item) entity." },
         def attribute ticket_number  { type: int, isKey: true, description: "Sales ticket number; one ticket = one basket. Part of the primary key." },
