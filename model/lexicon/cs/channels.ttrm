@@ -20,5 +20,14 @@ def term web_channel_cs {
 def term store_channel_cs {
     description: "prodejny synonyma"
     for: er.entity.store_sales
+    // ✅MH-D6 (2026-09-02): the bare word STAYS, deliberately. `prodejna` is also
+    // `er.entity.store`'s `displayLabel.cs`, so two refs claim it — a dimension (six rows) and
+    // the fact this channel term is pinned to. That is the collision the MH effort exists for,
+    // and an MH resolver decides it from the sentence: `kolik prodejen` counts the dimension,
+    // `srovnej prodejny a web` compares channels, `tržby z prodejen` binds the dimension and
+    // records the channel as an equal reading, `prodejna` alone still asks. Dropping the word
+    // would erase the channel meaning instead of differentiating it (design.md T1 §4).
+    // See project/server/features/mention-homonymy/.
+    // ttr-disable-next-line lexicon-form-collides-with-name
     forms: ["prodejna", "kamenná prodejna", "obchod"]
 }
