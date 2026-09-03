@@ -23,5 +23,9 @@ def term web_channel {
 def term store_channel {
     description: "Stores channel synonyms"
     for: er.entity.store_sales
+    // ✅MH-D6 (2026-09-02): the bare word STAYS — see the cs twin. `stores` is also
+    // `er.entity.store`'s `labelPlural`, so the same two refs claim it, and the MH resolver
+    // decides by slot. See project/server/features/mention-homonymy/.
+    // ttr-disable-next-line lexicon-form-collides-with-name
     forms: ["stores", "brick and mortar", "retail stores", "TN stores"]
 }
