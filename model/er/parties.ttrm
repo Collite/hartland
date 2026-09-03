@@ -75,6 +75,14 @@ def entity income_band {
 def entity store {
     description: "Stores — the six TN stores (Stores-channel dim)."
     labelPlural: "Stores"
+    // MS: the same two pointers in the vocabulary-v3 mention facet. The legacy properties
+    // below are deliberately KEPT, which is why this entity raises TTR-SEM-218 ("both,
+    // agreeing" — see model/tests/project-harness.mjs). Readers before producers: veles
+    // reads `semantics { name:, code: }` only from MS-P2 on, and dropping the legacy
+    // properties before the serving estate runs that build would blank
+    // EntityDetail.name_attribute for this dimension. Delete them once hartland's veles
+    // is on an MS-P2 image, not before.
+    semantics { name: store_name, code: store_id }
     nameAttribute: store_name
     codeAttribute: store_id
     roles: [dimension]
