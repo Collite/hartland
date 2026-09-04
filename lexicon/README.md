@@ -71,7 +71,53 @@ step rather than a local recipe.
 
 ## What is in the artifact today
 
-From `just build-lexicon`, **2026-08-13** (rebuilt after `aliases/` returned, er-targeted):
+From `just build-lexicon`, **2026-09-04** (rebuilt on the toolchain's provenance-path fix):
+
+| | |
+|---|---|
+| archive id | `sha256:1f5466535cd161f799d39853a5313544ebd39dfe58207753b287ad0113b643ec` |
+| model id | `sha256:588f17662890d74e5c6ed594834a7889588af86badc62fa3ebe7414f5776378f` |
+| entries | **351** |
+| — `MODEL_OBJECT` | 118 (66 DECLARED, 52 METADATA) |
+| — `MEMBER` | **100** (0 DECLARED, 100 METADATA `valueLabels`) |
+| — `OPERATOR` | 35 (the six stdlib operators' triggers) |
+| — `GROUNDING_TRIGGER` | 98 (72 stdlib + 26 from `grounding/hartland.lex.yaml`) |
+| operators | 6 |
+| build warnings | **2** (both `RG-LEXC-004`, MH T1 — see below) |
+| md-targeted rows | **100, all `METADATA`** |
+
+**No vocabulary changed.** The entry table is byte-identical to the previous archive once
+`provenance` is set aside; 52 rows — every `METADATA` row harvested from `model/er/*.ttrm` —
+recorded the **builder's absolute path** and now record a repo-relative one:
+
+```
+- { "file": "/Users/…/collite-gh/hartland-mh/model/er/parties.ttrm", "line": 0 }
++ { "file": "model/er/parties.ttrm",                                 "line": 0 }
+```
+
+That path is inside the entry table, inside `sourceHashes.metadata`, and inside the compiler's
+merge precedence, so the archive id depended on **where the repo was checked out**. Measured on
+this commit with the pre-fix toolchain: `2d570ada…` from `collite-gh/hartland`, `4610e831…` from
+a second worktree of the same SHA — and the committed archive still carried `hartland-mh/` paths
+from whichever worktree last rebuilt it. `just check-lexicon` therefore failed on a clean master
+for anyone whose clone sat anywhere else, which is the drift gate reporting the filesystem rather
+than the vocabulary. With the fix both paths compile to the id above. Toolchain side:
+`Collite/tatrman` — `MetadataExtractor` now spells the model tier's provenance relative to the
+estate root, the way every other layer already did.
+
+⚑ **The two `RG-LEXC-004` warnings are not new here** and are not a regression: `prodejna` and
+`stores` are each claimed by both `er.entity.store_sales` (declared) and `er.entity.store`
+(metadata anchor). MH T1 added the warning; the collision predates it, and it is the MH resolver's
+business to decide, not the compiler's. The table below recorded `0` because it was written
+before that code existed.
+
+### Previously (2026-08-13, after `aliases/` returned, er-targeted)
+
+> ⚠ Neither id below matches what was actually committed on master: the archive in the tree at
+> that point was `a2617910…` over model `588f1766…`. Two causes, and the first is why this file
+> keeps drifting — the recorded id was path-dependent, so it described the machine that ran the
+> build as much as the vocabulary; MH-P2 then rebuilt the archive without re-recording here.
+> With the path out of the id, an entry in this table is finally a fact about the estate.
 
 | | |
 |---|---|
