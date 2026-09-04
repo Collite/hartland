@@ -32,7 +32,10 @@ def entity customer_address {
         def attribute address_id { type: text, description: "Unique address identifier (code)." },
         def attribute city       { type: text, description: "City of the address." },
         def attribute county     { type: text, description: "County of the address." },
-        def attribute state      { type: { type: char, length: 2 }, description: "Two-letter US state code of the address — revenue-by-state slices use this." }
+        // MH-P3 tier M — the `customers in TN` case: `customer` holds no state, this does, and
+        // `customer_address` declares a relation TO `customer`, so the governor reaches it in
+        // one hop. EXACT: two-character codes are all one edit apart.
+        def attribute state      { type: { type: char, length: 2 }, description: "Two-letter US state code of the address — revenue-by-state slices use this.", search { searchable method: EXACT } }
     ]
 }
 
@@ -90,8 +93,12 @@ def entity store {
     attributes: [
         def attribute sk         { type: int, isKey: true, description: "Sequence key. Internal primary key only." },
         def attribute store_id   { type: text, description: "Unique store identifier (code)." },
-        def attribute store_name { type: text, description: "Store name, the human-readable label." },
+        // MH-P3 tier M (E4) — `Nashville` is a store NAME, and a governed value has to be in
+        // the member vocabulary before the governor can be asked about it. TYPOS(1) here: a
+        // typed store name is a real word, not a two-letter code.
+        def attribute store_name { type: text, description: "Store name, the human-readable label.", search { searchable method: TYPOS(1) } },
         def attribute city       { type: text, description: "The city the store is located in." },
-        def attribute state      { type: { type: char, length: 2 }, description: "The state the store is located in." }
+        // MH-P3 tier M — the `stores in TN` case, and the one the drill leads with.
+        def attribute state      { type: { type: char, length: 2 }, description: "The state the store is located in.", search { searchable method: EXACT } }
     ]
 }
