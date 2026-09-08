@@ -50,9 +50,12 @@ for (const a of anchors) {
   }
 }
 
-// A deterministic batchId, so a re-run REPLACES its own batches rather than journalling a second
-// copy of the same history beside the first. The estate's `start over` is not the only way this
-// script gets run twice.
+// A deterministic batchId, so a re-run is the SAME batch rather than a second copy of the same
+// history beside the first. The journal is immutable and answers `409 BATCH_ALREADY_SUBMITTED` to a
+// repeat — which is not an error here but the resume signal: that month-end is already journalled,
+// so skip to its commit (an idempotent upsert) and carry on. That makes this script resumable,
+// which it needed to be the first time it was run for real: a trial had already journalled one
+// month-end, and without this the seed died 19 batches in.
 const batches = buildBatches({ anchors, from, batchId: (date) => `sim-prices-${date}` });
 
 const rows = batches.reduce((n, b) => n + b.proposals.length, 0);
@@ -71,30 +74,49 @@ if (!submit) {
 if (!bearer) fail('ENTRY_BEARER is required to submit (the substrate is on jwks; see apps/investment-door/README.md)');
 
 let journalled = 0;
+let resumed = 0;
 let committed = 0;
 for (const batch of batches) {
   const body = JSON.stringify(batch);
   // AUTOCOMMIT is two calls, exactly as the door does it: journal first so the batch exists to
   // replay from, then apply. A commit whose journal write failed would be a row with no provenance.
-  await post(`${entryUrl}/v1/batches?intent=auto`, body, `journal ${batch.batchId}`);
-  journalled++;
+  const already = await post(`${entryUrl}/v1/batches?intent=auto`, body, `journal ${batch.batchId}`, [
+    'BATCH_ALREADY_SUBMITTED',
+  ]);
+  if (already) resumed++;
+  else journalled++;
+  // Committed unconditionally, INCLUDING on the resume path: a batch can be journalled and not yet
+  // applied (a crash between the two calls), and the apply is an idempotent upsert keyed on
+  // (isin, price_date), so re-committing an already-applied batch costs a no-op rather than a
+  // duplicate row.
   await post(`${entryUrl}/v1/apply/commit`, body, `commit ${batch.batchId}`);
   committed++;
   process.stdout.write(`\r  submitted ${committed}/${batches.length}`);
 }
-console.log(`\n✅ ${journalled} journalled, ${committed} committed, ${rows} price rows under sourcePluginId=sim-prices`);
+console.log(
+  `\n✅ ${journalled} journalled${resumed ? ` (+${resumed} already journalled, resumed)` : ''}, ` +
+    `${committed} committed, ${rows} price rows under sourcePluginId=sim-prices`,
+);
 
-async function post(url, body, what) {
+/** POSTs; returns the tolerated error code if the substrate answered with one, else null. */
+async function post(url, body, what, tolerate = []) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${bearer}` },
     body,
   });
-  if (!res.ok) {
-    // Print the substrate's own code — it is the one sentence that says what to fix.
-    fail(`${what} → ${res.status} ${await res.text()}`);
-  }
-  return res;
+  if (res.ok) return null;
+  const text = await res.text();
+  const code = (() => {
+    try {
+      return JSON.parse(text).code;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (code && tolerate.includes(code)) return code;
+  // Print the substrate's own code — it is the one sentence that says what to fix.
+  fail(`${what} → ${res.status} ${text}`);
 }
 
 function fail(msg) {

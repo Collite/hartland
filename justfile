@@ -63,7 +63,14 @@ price-anchors:
     @kubectl --context {{CTX}} -n {{NS}} exec {{PGPOD}} -c postgres -- \
         psql -U postgres -d entry -tAc "$(cat scripts/anchors.sql)"
 
-# Generate + (optionally) submit. DRY RUN by default: `just seed-price-history submit=true` writes.
+# Generate + (optionally) submit. DRY RUN by default; the argument is POSITIONAL:
+#
+#     just seed-price-history          # dry run — prints what it would write
+#     just seed-price-history true     # writes
+#
+# ⚑ NOT `submit=true`. In just, `name=value` before the recipe sets a VARIABLE; after it, it is
+# passed as the positional argument's literal text — so `just seed-price-history submit=true` runs
+# a DRY RUN and says so, which is a quiet way to believe you have seeded an estate you have not.
 # Needs a bearer for the substrate, which is on `jwks` — the door's service token carries the right
 # audience and role (olymp apps/investment-door/README.md), and a port-forward to reach it:
 #
