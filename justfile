@@ -45,3 +45,49 @@ build-lexicon cli="../tatrman/packages/kotlin/ttr-lexicon-cli/build/install/ttr-
 # (a fresh clone has none) — CI runs `build-lexicon` first.
 check-lexicon cli="../tatrman/packages/kotlin/ttr-lexicon-cli/build/install/ttr-lexicon/bin/ttr-lexicon":
     {{cli}} build "$(pwd)" --check --out generated/lexicon.tar.zst
+
+# ── the simulated price history (IE-P1·S1.5·T0c, IE-C64) ──────────────────────
+# ⚑IE-12, ruled by Bora 2026-09-07: *simulate it, with some evolution*. DistrInfo's `Prices` is
+# CURRENT market data — one row per ISIN, no series — so IE-C30 values every PAST quarter with
+# nothing to read. These two recipes generate the history and write it through the door.
+#
+# DEMO CONTENT, and it says so: every row is labelled `sourcePluginId: sim-prices` in the journal,
+# and the runbook's "what is dummy" list names it (IE-P5·S5.1). The most recent point of every
+# series is the provider's real number at its real date — only history is ours.
+CTX := "hartland"
+NS := "data"
+PGPOD := "postgres-1"
+
+# The real anchors: one `Prices` row per instrument the estate has ever held. See scripts/anchors.sql.
+price-anchors:
+    @kubectl --context {{CTX}} -n {{NS}} exec {{PGPOD}} -c postgres -- \
+        psql -U postgres -d entry -tAc "$(cat scripts/anchors.sql)"
+
+# Generate + (optionally) submit. DRY RUN by default; the argument is POSITIONAL:
+#
+#     just seed-price-history          # dry run — prints what it would write
+#     just seed-price-history true     # writes
+#
+# ⚑ NOT `submit=true`. In just, `name=value` before the recipe sets a VARIABLE; after it, it is
+# passed as the positional argument's literal text — so `just seed-price-history submit=true` runs
+# a DRY RUN and says so, which is a quiet way to believe you have seeded an estate you have not.
+# Needs a bearer for the substrate, which is on `jwks` — the door's service token carries the right
+# audience and role (olymp apps/investment-door/README.md), and a port-forward to reach it:
+#
+#   kubectl --context hartland -n kantheon port-forward svc/entry-substrate 18080:8080 &
+#   export ENTRY_BEARER=$(kubectl --context hartland -n kantheon get secret investment-door-entry-token \
+#                          -o jsonpath='{.data.DOOR_ENTRY_TOKEN}' | base64 -d)
+#   just seed-price-history submit=true
+seed-price-history submit="false" from="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just price-anchors > /tmp/sim-price-anchors.json
+    n=$(python3 -c "import json;print(len(json.load(open('/tmp/sim-price-anchors.json'))))")
+    echo "anchors: $n instruments"
+    node scripts/seed-price-history.mjs --anchors /tmp/sim-price-anchors.json \
+        {{ if from != "" { "--from " + from } else { "" } }} \
+        {{ if submit == "true" { "--submit" } else { "" } }}
+
+# The T0c property tests (IE-C64's three, plus the two that make them meaningful). No DB, no network.
+verify-price-history:
+    node --test scripts/tests/price-history.test.mjs
