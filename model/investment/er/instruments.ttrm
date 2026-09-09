@@ -1,0 +1,99 @@
+package investment
+
+model er
+
+// The interpreted face: WHAT. Instruments and their prices.
+//
+// ⚑ ONE COLUMN, ONE ATTRIBUTE. Contracts §3.3 lists the asset's key as `asset_id = isin` and also
+// lists `isin` among its attributes; that would be two er names for one physical column, which the
+// duplicate-mapping lint refuses and which would give the Golem two ways to say the same thing and
+// no way to know they are the same. `asset_id` is the one name, and its description says in both
+// languages that it IS the ISIN — which is what a reader needed from the second name (S2.1·D3).
+
+def entity asset {
+    description: {
+        en: "Investment instruments — funds, bonds and shares the portfolios hold. Identified worldwide by ISIN.",
+        cs: "Investiční nástroje — fondy, dluhopisy a akcie držené v portfoliích. Celosvětově identifikované pomocí ISIN."
+    }
+    labelPlural: "Instruments"
+    nameAttribute: name
+    codeAttribute: asset_id
+    roles: [dimension]
+    displayLabel: { en: "Instrument", cs: "Nástroj" }
+    attributes: [
+        def attribute asset_id {
+            type: text, isKey: true,
+            description: {
+                en: "The instrument's ISIN — the twelve-character international identifier, for example `CZ0008474103`. This is the code a person means by \"the fund\" once they are being precise.",
+                cs: "ISIN nástroje — dvanáctiznakový mezinárodní identifikátor, například `CZ0008474103`. Tento kód má člověk na mysli pod pojmem „fond“, jakmile mluví přesně."
+            }
+        },
+        def attribute name {
+            type: text,
+            description: {
+                en: "The instrument's name as the distributor publishes it — what appears on a statement.",
+                cs: "Název nástroje tak, jak jej zveřejňuje distributor — to, co je vidět na výpisu."
+            }
+        },
+        def attribute kind {
+            type: text,
+            description: {
+                en: "The instrument's class as the distributor classifies it — the coarse grouping (fund, bond, share) a portfolio is broken down by.",
+                cs: "Třída nástroje podle klasifikace distributora — hrubé členění (fond, dluhopis, akcie), podle kterého se portfolio rozpadá."
+            }
+        },
+        def attribute currency {
+            type: text,
+            description: {
+                en: "The currency the instrument is denominated in, ISO 4217. It need NOT be the portfolio's base currency.",
+                cs: "Měna, ve které je nástroj denominován, ISO 4217. NEMUSÍ jít o základní měnu portfolia."
+            }
+        }
+    ]
+}
+
+def entity price {
+    description: {
+        en: "Instrument prices by day. One row is one instrument's price on one date — the series a valuation is computed against.",
+        cs: "Ceny nástrojů po dnech. Jeden řádek je cena jednoho nástroje k jednomu datu — řada, proti které se počítá ocenění."
+    }
+    labelPlural: "Prices"
+    codeAttribute: asset
+    roles: [fact]
+    displayLabel: { en: "Price", cs: "Cena" }
+    attributes: [
+        def attribute asset {
+            type: text, isKey: true,
+            description: {
+                en: "The instrument this price is for, held as its ISIN.",
+                cs: "Nástroj, ke kterému se cena vztahuje, vedený svým ISIN."
+            }
+        },
+        def attribute price_date {
+            type: date, isKey: true,
+            description: {
+                en: "The day the price is FOR. Not the day it was fetched: the daily feed answers with each instrument's latest price, so one delivery legitimately carries several dates.",
+                cs: "Den, ke kterému cena PLATÍ. Nikoli den stažení: denní feed vrací u každého nástroje jeho poslední cenu, takže jedna dodávka legitimně nese několik dat."
+            }
+        },
+        def attribute price {
+            type: decimal,
+            description: {
+                en: "Price of one unit of the instrument on that day, in `currency`.",
+                cs: "Cena jedné jednotky nástroje k danému dni, v měně `currency`."
+            }
+        },
+        def attribute currency {
+            type: text,
+            description: {
+                en: "The currency the price is quoted in, ISO 4217 — the instrument's currency, not the portfolio's.",
+                cs: "Měna, ve které je cena kótována, ISO 4217 — měna nástroje, nikoli portfolia."
+            }
+        }
+    ]
+}
+
+def relation rel_price_asset {
+    from: er.entity.price, to: er.entity.asset,
+    cardinality: { from: "0..*", to: "1" }
+}

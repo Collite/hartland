@@ -9,8 +9,19 @@
 # files are discovered automatically, no glob list to maintain here. (`lexicon/` joined at
 # RV-P3.2: the root data area is a third authored surface, and its guards belong in the
 # same command as the model's.)
+#
+# `check-investment-model` runs FIRST and this is the repo's CI lane for it (IE-P2·S2.3·T3):
+# `model/investment/` is written by `sync-investment-model` out of kantheon, so a hand-edit there
+# is a change to a model whose source of truth is another repository. Nothing else can see one.
 verify-model:
+    just check-investment-model
     node --test $(find model agents lexicon -name '*.test.mjs')
+
+# The sync's own suite (IE-P2·S2.3·T2) — idempotency, the stamp, and the interpreted-face-only
+# rule. Separate from `verify-model` for the same reason `verify-price-history` is: it drives
+# `just` in a temp checkout and needs a kantheon beside this one (IE_KANTHEON_DIR overrides).
+verify-investment-sync:
+    node --test scripts/tests/sync-investment-model.test.mjs
 
 # GX (NLS-P6.2) — check every mounted `intent.yaml` against the plan-composer placeholder
 # contract. The kantheon sibling is `IntentPromptContractSpec`; this repo has no CI lane, and
@@ -91,3 +102,93 @@ seed-price-history submit="false" from="":
 # The T0c property tests (IE-C64's three, plus the two that make them meaningful). No DB, no network.
 verify-price-history:
     node --test scripts/tests/price-history.test.mjs
+
+# ── the interpreted investment model, synced from kantheon (IE-P2·S2.3, IE-C27) ───────────────
+# Source of truth is `kantheon/packages/investment/model/` — one package, two faces (FO-12). Veles
+# on hartland serves THIS repo's `model/` and nothing else, so the interpreted face is copied here
+# and never hand-edited. `check-investment-model` is what makes "never hand-edited" checkable.
+#
+# ⛔ FOUR DIRECTORIES, AND NOT ONE MORE. kantheon's package also holds `model/book.ttrm`,
+# `model/parties.ttrm`, `model/instruments.ttrm` (the entry face) and `model/entry/` (DDL + apply
+# programs). Those three .ttrm files DO NOT PARSE — `model book` is not one of the grammar's model
+# codes — and S2.1·D1 measured what a rejected file still costs: the parser recovers past the bad
+# directive, keeps the `def entity` declarations underneath under a GUESSED `er` code, and
+# `book.ttrm` sorts before `er/book.ttrm`, so `transaction` and `position` resolved to the wrong
+# file. Alphabetical order decided which model a consumer was served. Whatever veles's own Kotlin
+# loader does with a parse error, it is never handed one from here.
+#
+# ⛔ AND NO `tests/`. Each of the four directories has one in kantheon, importing a harness that is
+# not synced — and `just verify-model` above runs `find model -name '*.test.mjs'`, so a copied test
+# tree does not sit inertly, it turns this repo's own model gate red.
+INVESTMENT_KINDS := "db er binding queries"
+
+sync-investment-model kantheon="../kantheon" allow_dirty="false":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    src="{{kantheon}}/packages/investment/model"
+    [ -d "$src" ] || { echo "no investment package at $src" >&2; exit 2; }
+    for kind in {{INVESTMENT_KINDS}}; do
+        [ -d "$src/$kind" ] || { echo "$src/$kind is missing — refusing a partial sync" >&2; exit 2; }
+    done
+    mkdir -p model/investment
+    # --delete so a file DELETED in kantheon disappears here; --exclude tests/ per the note above.
+    for kind in {{INVESTMENT_KINDS}}; do
+        rsync -a --delete --exclude 'tests/' "$src/$kind" model/investment/
+    done
+    commit=$(git -C "{{kantheon}}" rev-parse HEAD)
+    # ⛔ A STAMP THAT NAMES A COMMIT THE CONTENT IS NOT IS WORSE THAN NO STAMP. Caught on this
+    # recipe's own first real run: kantheon's working tree carried the S2.3 query rewrites, so the
+    # sync copied them and wrote the sha of the commit BEFORE them. `check-investment-model` would
+    # then be green over a tree nobody can reproduce from the named commit — the drift check
+    # confirming a lie. Refuse, unless the caller says out loud that they mean it.
+    dirty=$(git -C "{{kantheon}}" status --porcelain -- packages/investment/model)
+    if [ -n "$dirty" ] && [ "{{allow_dirty}}" != "true" ]; then
+        echo "kantheon's investment model has uncommitted changes; the stamp would name $commit and carry something else:" >&2
+        echo "$dirty" | sed 's|^|  |' >&2
+        echo "Commit them there first, or re-run with: just sync-investment-model {{kantheon}} true" >&2
+        exit 2
+    fi
+    [ -n "$dirty" ] && commit="$commit+dirty"
+    tree=$(just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-tree-sha)
+    printf 'source-repo: kantheon\nsource-path: packages/investment/model/{%s}\nsource-commit: %s\nsynced-at: %s\ntree-sha256: %s\n' \
+        "$(echo {{INVESTMENT_KINDS}} | tr ' ' ',')" "$commit" "$(date -u +%Y-%m-%d)" "$tree" > model/investment/SYNCED-FROM
+    echo "synced $(find model/investment -type f ! -name SYNCED-FROM | wc -l | tr -d ' ') files from kantheon $commit"
+
+# The tree hash the stamp records and `check-investment-model` recomputes. Content AND path, so a
+# rename is a change; the stamp itself is excluded or the hash could never match what it contains.
+_investment-tree-sha:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd model/investment
+    find . -type f ! -name SYNCED-FROM -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1
+
+# Drift check: fail when `model/investment/` no longer matches its stamp. Runs in `verify-model`'s
+# lane (this repo has no CI job for the model beyond that recipe).
+check-investment-model:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    stamp=model/investment/SYNCED-FROM
+    [ -f "$stamp" ] || { echo "$stamp is missing — run \`just sync-investment-model <kantheon>\`" >&2; exit 3; }
+    want=$(grep '^tree-sha256: ' "$stamp" | cut -d' ' -f2)
+    have=$(just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-tree-sha)
+    if [ "$want" = "$have" ]; then
+        echo "model/investment is in sync with $(grep '^source-commit: ' "$stamp" | cut -d' ' -f2)"
+        exit 0
+    fi
+    echo "model/investment has drifted from its stamp (want $want, have $have)." >&2
+    echo "The source of truth is kantheon; edit it THERE and re-sync. Files that differ:" >&2
+    # Name the files, not just the tree — a bare hash mismatch tells an operator nothing about what
+    # to put back. Re-sync into a scratch copy and diff against it.
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    src=$(grep '^source-commit: ' "$stamp" | cut -d' ' -f2)
+    if [ -d "${IE_KANTHEON_DIR:-../kantheon}/packages/investment/model" ]; then
+        mkdir -p "$tmp/model"
+        just --justfile "{{justfile()}}" --working-directory "$tmp" sync-investment-model "$(cd "${IE_KANTHEON_DIR:-../kantheon}" && pwd)" >/dev/null
+        diff -rq model/investment "$tmp/model/investment" 2>&1 | grep -v SYNCED-FROM | sed 's|^|  |' >&2 || true
+    else
+        (cd model/investment && find . -type f ! -name SYNCED-FROM | sed 's|^\./|  |') >&2
+        echo "  (no kantheon checkout at ${IE_KANTHEON_DIR:-../kantheon} — listing the whole tree instead of the diff)" >&2
+    fi
+    echo "stamped source commit: $src" >&2
+    exit 3

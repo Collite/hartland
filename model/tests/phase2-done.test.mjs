@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { loadHartlandProject, ACCEPTED_RESIDUAL_CODES, hartlandRoot } from './project-harness.mjs';
+import { loadHartlandProject, ACCEPTED_RESIDUAL_CODES, hartlandRoot, isOwnModelFile } from './project-harness.mjs';
 
 const project = await loadHartlandProject();
 
@@ -20,10 +20,20 @@ test('DONE 1 — the model loads clean: zero parse errors anywhere under model/'
 test('DONE 2 — resolves against both connection descriptors (schema-identical, one physical model)', async () => {
   const toml = await readFile(path.join(hartlandRoot, 'model/connections.toml'), 'utf-8');
   const connections = [...toml.matchAll(/id\s*=\s*"([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(connections, ['pg-hartland-us', 'pg-hartland-cz']);
-  // "Schema-identical" = both declare schema="dbo", the modeler.toml handle everything above resolved against.
+  // The two WORLDS are still exactly two and still first — BM-8's "one world per delivery" is what
+  // this line has always been about. IE-P2·S2.3 added a third descriptor, `pg-entry`, and it is not
+  // a world: it is a different DATABASE holding a different package's tables (`db.dbo.investment_*`,
+  // synced into model/investment/), routed to by qname prefix, and live at the same time as
+  // whichever world is delivered.
+  assert.deepEqual(connections.filter((c) => c.startsWith('pg-hartland-')), ['pg-hartland-us', 'pg-hartland-cz']);
+  assert.ok(connections.includes('pg-entry'), 'the investment book has no connection descriptor (IE-C26)');
+  assert.deepEqual(connections, ['pg-hartland-us', 'pg-hartland-cz', 'pg-entry'], 'an undeclared connection appeared');
+  // "Schema-identical" = every descriptor declares schema="dbo", the modeler.toml handle everything
+  // above resolved against — including pg-entry, whose tables are physically in `public` and whose
+  // db layer says `dbo` anyway, because the query door resolves unqualified DB identifiers there
+  // (S2.3·D1b). The handle is a catalog label, not a database schema.
   const schemas = [...toml.matchAll(/schema\s*=\s*"([^"]+)"/g)].map((m) => m[1]);
-  assert.ok(schemas.every((s) => s === 'dbo'), `both connections must target the same schema handle: ${schemas.join(', ')}`);
+  assert.ok(schemas.every((s) => s === 'dbo'), `every connection must target the same schema handle: ${schemas.join(', ')}`);
 });
 
 test('DONE 3 — ResolveArea("hartland") is green', () => {
@@ -33,11 +43,20 @@ test('DONE 3 — ResolveArea("hartland") is green', () => {
 });
 
 test('DONE 4 — ListQueries returns exactly 15 q.hartland.* with params', () => {
-  let count = 0;
-  for (const [, ast] of project.asts) {
-    for (const def of ast.definitions ?? []) if (def.kind === 'query') count++;
+  // ⛔ IE-P2·S2.3: this counted EVERY query in the project while its name promised
+  // `q.hartland.*`, so the synced investment package pushed it to 22 and the failure read as a
+  // regression in a roster nobody had touched. Scoped to the files this repo authors; the seven
+  // that arrived with the sync are asserted in model/queries/tests/queries.test.mjs T6.7.
+  let own = 0;
+  let synced = 0;
+  for (const [uri, ast] of project.asts) {
+    for (const def of ast.definitions ?? []) {
+      if (def.kind !== 'query') continue;
+      if (isOwnModelFile(uri)) own++; else synced++;
+    }
   }
-  assert.equal(count, 15);
+  assert.equal(own, 15, 'the D-2 roster');
+  assert.equal(synced, 7, 'IE-C25\'s seven, synced from kantheon');
 });
 
 test('DONE 5 — cs + en lexicon resolves (zero unresolved for:, project-wide)', () => {

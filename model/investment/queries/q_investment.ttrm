@@ -1,0 +1,546 @@
+package investment
+
+model query
+
+// IE-C25 — the seven `q.investment.*` pattern queries. Shape and precedent:
+// `Collite/hartland/model/queries/q_hartland.ttrm`.
+//
+// ## What these are, and what they are not
+//
+// SQL over the PHYSICAL `investment_*` tables, PostgreSQL dialect, `{param}` placeholders — the
+// same thing hartland's queries do when they name `store_sales`. The `er` layer beside this file
+// (S2.1) is what the Golem READS to understand the estate; these are what the query door RUNS.
+// TTR-P-authored patterns over the er star are the aspiration; `def query` with `language: SQL` is
+// what the door and the Golem consume today, and the demo does not wait for the aspiration.
+//
+// ## The CTE is repeated verbatim, on purpose
+//
+// `def query` has no include directive. The effective-ledger CTE below therefore appears in full in
+// every query that touches the ledger, and `tests/effective-ledger.cte.sql` holds the one true copy
+// with `tests/queries.test.mjs` T1.6 asserting the verbatim match. Editing a copy in place without
+// editing the file is the one mistake this arrangement is built to catch — five near-identical
+// queries is exactly the shape where a fix lands in four of them.
+//
+// Read `tests/effective-ledger.cte.sql`'s header before changing any sign or any operation name.
+// It records why the two numeric columns follow OPPOSITE conventions and why the book has two
+// unrelated reversal mechanisms.
+//
+// ## SCD2 lives here too
+//
+// `investment_client`, `investment_portfolio` and `investment_position` are effective-dated, and
+// the binding cannot say so (IE-P0 V9 — `whereFilter` parses and is then dropped by ttr-metadata
+// and veles, so writing it would claim a rule nothing enforces). `valid_to IS NULL` in the query
+// text is therefore not a duplicate of a binding rule: it is the ONLY place the rule exists. Drop
+// it from one query and that query silently returns every historical version of every row.
+
+def query portfolios_of_client {
+    description: "Every portfolio a client currently holds, with its base currency, its state and the date the client's first version of it opened."
+    language: SQL
+    sourceText: """
+        SELECT p.external_id   AS portfolio_id,
+               p.label         AS name,
+               p.base_currency,
+               p.state,
+               (SELECT min(v.valid_from)
+                  FROM investment_portfolio v
+                 WHERE v.external_id = p.external_id) AS since
+        FROM investment_portfolio p
+        JOIN investment_client c
+          ON c.external_id = p.client_ref
+         AND c.valid_to IS NULL
+        WHERE p.valid_to IS NULL
+          AND c.external_id = {client_id}
+        ORDER BY p.external_id
+    """
+    search {
+        patterns: [
+            "(which |what )?portfolios (of|for|belonging to) (the )?client",
+            "(list|show) (the )?client'?s? portfolios",
+            "portfolia klienta",
+            "(jaka|ktera) portfolio (ma|drzi) klient"
+        ],
+        examples: [
+            "Which portfolios does this client hold?",
+            "Která portfolia má tento klient?"
+        ]
+    }
+    parameters: [
+        { name: client_id, type: text, label: "Client id (conseq:<CsqClientId>)" }
+    ]
+}
+
+def query positions_current {
+    description: "The latest valued position per instrument in a portfolio, joined to the instrument and to the last price known on that valuation date."
+    language: SQL
+    sourceText: """
+        WITH open_position AS (
+          SELECT p.portfolio_ref,
+                 p.asset_ref,
+                 p.valuation_date,
+                 p.quantity,
+                 p.market_value,
+                 MAX(p.valuation_date) OVER (PARTITION BY p.asset_ref) AS latest_valuation
+          FROM investment_position p
+          WHERE p.valid_to IS NULL
+            AND p.portfolio_ref = {portfolio_id}
+        )
+        SELECT pos.portfolio_ref AS portfolio_id,
+               pos.asset_ref     AS isin,
+               a.name            AS asset_name,
+               a.asset_class     AS kind,
+               pos.valuation_date,
+               pos.quantity,
+               pos.market_value,
+               pr.price          AS last_price,
+               pr.price_date     AS last_price_date
+        FROM open_position pos
+        JOIN investment_asset a
+          ON a.isin = pos.asset_ref
+        LEFT JOIN investment_asset_price pr
+          ON pr.isin = pos.asset_ref
+         AND pr.price_date = (SELECT MAX(p2.price_date)
+                                FROM investment_asset_price p2
+                               WHERE p2.isin = pos.asset_ref
+                                 AND p2.price_date <= pos.valuation_date)
+        WHERE pos.valuation_date = pos.latest_valuation
+        ORDER BY pos.asset_ref
+    """
+    search {
+        patterns: [
+            "(current|latest) positions (in|of|for) (the )?portfolio",
+            "what (do|does) (i|the portfolio) (own|hold) (now|currently)?",
+            "aktualni pozice v portfoliu",
+            "co je (nyni|ted) v portfoliu"
+        ],
+        examples: [
+            "What are the current positions in the portfolio?",
+            "Jaké jsou aktuální pozice v portfoliu?"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" }
+    ]
+}
+
+def query cash_balance {
+    description: "The cash sitting in a portfolio on a given day, per currency — the signed sum of the cash leg only, never the external-flow leg beside it."
+    language: SQL
+    sourceText: """
+        WITH effective_ledger AS (
+          SELECT t.*,
+                 CASE
+                   WHEN t.leg = 'security' AND t.operation IN ('buy', 'transfer-in', 'reversal-of-sell')
+                     THEN  COALESCE(abs(t.quantity), 0)
+                   WHEN t.leg = 'security' AND t.operation IN ('sell', 'transfer-out', 'payout', 'reversal-of-buy')
+                     THEN -COALESCE(abs(t.quantity), 0)
+                   ELSE 0
+                 END AS qty_signed,
+                 CASE
+                   WHEN t.leg = 'cash'          AND t.operation = 'credit'     THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'cash'          AND t.operation = 'debit'      THEN -COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'deposit'    THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'withdrawal' THEN -COALESCE(abs(t.amount), 0)
+                   ELSE 0
+                 END AS amt_signed
+          FROM investment_transaction t
+          WHERE t.reversal_of IS NULL
+            AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)
+        )
+        SELECT {portfolio_id} AS portfolio_id,
+               currency,
+               SUM(amt_signed) AS cash_balance
+        FROM effective_ledger
+        WHERE portfolio_ref = {portfolio_id}
+          AND leg = 'cash'
+          AND trade_date <= {as_of}
+        GROUP BY currency
+        ORDER BY currency
+    """
+    search {
+        patterns: [
+            "(how much |what is the )?cash (balance|position) (in|of|on)",
+            "(free|available|uninvested) cash",
+            "hotovost v portfoliu",
+            "zustatek hotovosti k datu"
+        ],
+        examples: [
+            "How much cash is in the portfolio?",
+            "Kolik hotovosti je v portfoliu k dnešnímu dni?"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
+        { name: as_of, type: date, label: "As of date" }
+    ]
+}
+
+def query transactions_recent {
+    description: "The portfolio's effective movements since a date, newest first — reversed movements and the rows that reversed them are already gone."
+    language: SQL
+    sourceText: """
+        WITH effective_ledger AS (
+          SELECT t.*,
+                 CASE
+                   WHEN t.leg = 'security' AND t.operation IN ('buy', 'transfer-in', 'reversal-of-sell')
+                     THEN  COALESCE(abs(t.quantity), 0)
+                   WHEN t.leg = 'security' AND t.operation IN ('sell', 'transfer-out', 'payout', 'reversal-of-buy')
+                     THEN -COALESCE(abs(t.quantity), 0)
+                   ELSE 0
+                 END AS qty_signed,
+                 CASE
+                   WHEN t.leg = 'cash'          AND t.operation = 'credit'     THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'cash'          AND t.operation = 'debit'      THEN -COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'deposit'    THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'withdrawal' THEN -COALESCE(abs(t.amount), 0)
+                   ELSE 0
+                 END AS amt_signed
+          FROM investment_transaction t
+          WHERE t.reversal_of IS NULL
+            AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)
+        )
+        SELECT external_id AS transaction_id,
+               trade_date,
+               leg,
+               operation,
+               asset_ref AS isin,
+               quantity,
+               qty_signed,
+               amount,
+               amt_signed,
+               currency
+        FROM effective_ledger
+        WHERE portfolio_ref = {portfolio_id}
+          AND trade_date >= {since}
+        ORDER BY trade_date DESC, external_id DESC
+    """
+    search {
+        patterns: [
+            "(recent|latest|last) transactions",
+            "(what|which) (movements|trades|transactions) since",
+            "posledni transakce",
+            "obchody od (data|ledna|dubna)"
+        ],
+        examples: [
+            "Show the recent transactions since April",
+            "Ukaž poslední transakce od dubna"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
+        { name: since, type: date, label: "Since date (inclusive)" }
+    ]
+}
+
+def query transactions_between {
+    description: "The portfolio's effective movements in a closed date window, oldest first — the report's Transactions sheet."
+    language: SQL
+    sourceText: """
+        WITH effective_ledger AS (
+          SELECT t.*,
+                 CASE
+                   WHEN t.leg = 'security' AND t.operation IN ('buy', 'transfer-in', 'reversal-of-sell')
+                     THEN  COALESCE(abs(t.quantity), 0)
+                   WHEN t.leg = 'security' AND t.operation IN ('sell', 'transfer-out', 'payout', 'reversal-of-buy')
+                     THEN -COALESCE(abs(t.quantity), 0)
+                   ELSE 0
+                 END AS qty_signed,
+                 CASE
+                   WHEN t.leg = 'cash'          AND t.operation = 'credit'     THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'cash'          AND t.operation = 'debit'      THEN -COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'deposit'    THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'withdrawal' THEN -COALESCE(abs(t.amount), 0)
+                   ELSE 0
+                 END AS amt_signed
+          FROM investment_transaction t
+          WHERE t.reversal_of IS NULL
+            AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)
+        )
+        SELECT external_id AS transaction_id,
+               trade_date,
+               leg,
+               operation,
+               asset_ref AS isin,
+               quantity,
+               qty_signed,
+               amount,
+               amt_signed,
+               currency
+        FROM effective_ledger
+        WHERE portfolio_ref = {portfolio_id}
+          AND trade_date >= {from_date}
+          AND trade_date <= {to_date}
+        ORDER BY trade_date, external_id
+    """
+    search {
+        patterns: [
+            "transactions between .* and",
+            "(movements|trades) (in|during|for) (the )?(period|quarter|window)",
+            "transakce mezi (daty|obdobim)",
+            "obchody za obdobi"
+        ],
+        examples: [
+            "Transactions between January and June",
+            "Transakce mezi lednem a červnem"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
+        { name: from_date, type: date, label: "From date (inclusive)" },
+        { name: to_date, type: date, label: "To date (inclusive)" }
+    ]
+}
+
+def query positions_at {
+    description: "What the portfolio held on a given day, valued at the last price known by then, with the cash balance as a final line."
+    language: SQL
+    sourceText: """
+        WITH effective_ledger AS (
+          SELECT t.*,
+                 CASE
+                   WHEN t.leg = 'security' AND t.operation IN ('buy', 'transfer-in', 'reversal-of-sell')
+                     THEN  COALESCE(abs(t.quantity), 0)
+                   WHEN t.leg = 'security' AND t.operation IN ('sell', 'transfer-out', 'payout', 'reversal-of-buy')
+                     THEN -COALESCE(abs(t.quantity), 0)
+                   ELSE 0
+                 END AS qty_signed,
+                 CASE
+                   WHEN t.leg = 'cash'          AND t.operation = 'credit'     THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'cash'          AND t.operation = 'debit'      THEN -COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'deposit'    THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'withdrawal' THEN -COALESCE(abs(t.amount), 0)
+                   ELSE 0
+                 END AS amt_signed
+          FROM investment_transaction t
+          WHERE t.reversal_of IS NULL
+            AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)
+        )
+        , holdings AS (
+          SELECT asset_ref, SUM(qty_signed) AS quantity
+          FROM effective_ledger
+          WHERE portfolio_ref = {portfolio_id}
+            AND leg = 'security'
+            AND trade_date <= {as_of}
+          GROUP BY asset_ref
+          HAVING SUM(qty_signed) <> 0
+        ), cash AS (
+          SELECT currency, SUM(amt_signed) AS balance
+          FROM effective_ledger
+          WHERE portfolio_ref = {portfolio_id}
+            AND leg = 'cash'
+            AND trade_date <= {as_of}
+          GROUP BY currency
+        ), latest_price AS (
+          -- The last price known for each instrument on or before the as-of day. Written as a
+          -- grouped MAX joined back, rather than the LATERAL ... ORDER BY ... LIMIT 1 it replaces:
+          -- the query door lowers a LATERAL-with-LIMIT to FIRST_VALUE, and ranking window functions
+          -- are not in the plan.v1 wire format (S2.3·D1). Written as an explicit join and not as a
+          -- CORRELATED `price_date = (SELECT MAX(...) WHERE p2.isin = ap.isin)`, which reads better
+          -- and which the door also refuses: decorrelating it emits `IS NOT DISTINCT FROM` on the
+          -- nullable join key, and that operator is not in the wire format either. An instrument
+          -- that has never been priced is absent here and reaches the outer LEFT JOIN as NULL,
+          -- which is the point.
+          SELECT ap.isin, ap.price, ap.price_date
+          FROM investment_asset_price ap
+          JOIN (SELECT p2.isin AS isin, MAX(p2.price_date) AS as_of_price_date
+                  FROM investment_asset_price p2
+                 WHERE p2.price_date <= {as_of}
+                 GROUP BY p2.isin) m
+            ON m.isin = ap.isin
+           AND m.as_of_price_date = ap.price_date
+        )
+        SELECT x.line_id, x.line_name, x.quantity, x.last_price, x.last_price_date, x.market_value
+        FROM (
+          SELECT h.asset_ref        AS line_id,
+                 a.name             AS line_name,
+                 h.quantity,
+                 pr.price           AS last_price,
+                 pr.price_date      AS last_price_date,
+                 round(h.quantity * pr.price, 2) AS market_value
+          FROM holdings h
+          JOIN investment_asset a
+            ON a.isin = h.asset_ref
+          LEFT JOIN latest_price pr
+            ON pr.isin = h.asset_ref
+          UNION ALL
+          SELECT 'CASH:' || c.currency,
+                 'Cash (' || c.currency || ')',
+                 CAST(NULL AS DECIMAL(18,6)),
+                 CAST(NULL AS DECIMAL(18,6)),
+                 CAST(NULL AS DATE),
+                 round(c.balance, 2)
+          FROM cash c
+        ) x
+        -- The UNION is wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION
+        -- over its output columns — only by a column name or position. The cash line sorts last,
+        -- ordered by a CASE rather than by the boolean `line_id LIKE 'CASH:%'` the wrapper used to
+        -- carry: a bare boolean sort key is PostgreSQL's, and the door's ORDER BY takes an integer.
+        ORDER BY CASE WHEN x.line_id LIKE 'CASH:%' THEN 1 ELSE 0 END, x.line_id
+    """
+    search {
+        patterns: [
+            "positions (at|as of|on) (the end of )?",
+            "what did (the portfolio|i) hold (at|on|in)",
+            "pozice k datu",
+            "co bylo v portfoliu ke konci"
+        ],
+        examples: [
+            "What did the portfolio hold at the end of June?",
+            "Co bylo v portfoliu ke konci června?"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
+        { name: as_of, type: date, label: "As of date" }
+    ]
+}
+
+// ⛔⛔ THE ONE QUERY THE DOOR CANNOT COMPILE (S2.3·D1c). Everything above was rewritten at S2.3 into
+// the intersection of what Calcite parses and what PostgreSQL executes, and measured through the
+// door's own translator. This one cannot be: it needs a quarter-end GRID derived from `as_of`, and
+// the plan.v1 wire format has no date arithmetic (`INTERVAL` literals are refused outright), no
+// `LAG` (window ranking/navigation functions are refused — the format's `Over` carries SUM, COUNT,
+// AVG, MIN, MAX and nothing else), no `FILTER (WHERE …)`, and Calcite knows neither `date_trunc`
+// nor `generate_series`. The T-SQL `DATEADD` the parser DOES accept is unparsed VERBATIM to
+// PostgreSQL, which cannot run it — so even the one date function that compiles does not execute.
+//
+// It is left as authored, in PostgreSQL, because it is the report's query (IE-C30) and the report
+// is P3's: the choice is Bora's between (a) the report renderer computing the quarter ends and
+// calling a per-period query — the recommendation, since it puts date arithmetic in the caller
+// where both dialects agree it belongs — and (b) rewriting it over `period_start`/`period_end`, the
+// two platform grounding functions that DO lower per dialect, which then makes the psql conformance
+// runner untrue because the text it executes is no longer the text the estate runs. Filed as ⚑IE-15.
+//
+// Until then this program runs where S2.2 proved it — `just conform-investment-queries`, directly on
+// PostgreSQL — and NOT through `POST /api/query/run`. `queries.test.mjs` T1.14 is what keeps that
+// statement honest: it is the only query allowed to carry a PostgreSQL-only construct.
+def query quarterly_evolution {
+    description: "The portfolio quarter by quarter: what it was worth, what the client put in or took out, what that left as profit, and how well the prices behind the number were known."
+    language: SQL
+    sourceText: """
+        WITH effective_ledger AS (
+          SELECT t.*,
+                 CASE
+                   WHEN t.leg = 'security' AND t.operation IN ('buy', 'transfer-in', 'reversal-of-sell')
+                     THEN  COALESCE(abs(t.quantity), 0)
+                   WHEN t.leg = 'security' AND t.operation IN ('sell', 'transfer-out', 'payout', 'reversal-of-buy')
+                     THEN -COALESCE(abs(t.quantity), 0)
+                   ELSE 0
+                 END AS qty_signed,
+                 CASE
+                   WHEN t.leg = 'cash'          AND t.operation = 'credit'     THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'cash'          AND t.operation = 'debit'      THEN -COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'deposit'    THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'withdrawal' THEN -COALESCE(abs(t.amount), 0)
+                   ELSE 0
+                 END AS amt_signed
+          FROM investment_transaction t
+          WHERE t.reversal_of IS NULL
+            AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)
+        )
+        , period AS (
+          SELECT (date_trunc('quarter', ({as_of})::date)
+                  - make_interval(months => 3 * g.i)
+                  - interval '1 day')::date AS period_end,
+                 FALSE AS partial
+          FROM generate_series(0, ({quarters})::int) AS g(i)
+          UNION ALL
+          SELECT ({as_of})::date, TRUE
+        ), holdings AS (
+          SELECT p.period_end, e.asset_ref, SUM(e.qty_signed) AS quantity
+          FROM period p
+          JOIN effective_ledger e
+            ON e.portfolio_ref = {portfolio_id}
+           AND e.leg = 'security'
+           AND e.trade_date <= p.period_end
+          GROUP BY p.period_end, e.asset_ref
+          HAVING SUM(e.qty_signed) <> 0
+        ), valued AS (
+          SELECT h.period_end, h.asset_ref, h.quantity, pr.price, pr.price_date
+          FROM holdings h
+          LEFT JOIN LATERAL (
+            SELECT p2.price, p2.price_date
+            FROM investment_asset_price p2
+            WHERE p2.isin = h.asset_ref
+              AND p2.price_date <= h.period_end
+            ORDER BY p2.price_date DESC
+            LIMIT 1
+          ) pr ON TRUE
+        ), market AS (
+          SELECT period_end,
+                 COALESCE(SUM(round(quantity * price, 2)) FILTER (WHERE price IS NOT NULL), 0) AS market_value,
+                 COUNT(*) FILTER (WHERE price IS NULL) AS missing_assets,
+                 MIN(price_date) FILTER (WHERE price IS NOT NULL) AS oldest_price_date
+          FROM valued
+          GROUP BY period_end
+        ), cash AS (
+          SELECT p.period_end, COALESCE(SUM(e.amt_signed), 0) AS cash_balance
+          FROM period p
+          LEFT JOIN effective_ledger e
+            ON e.portfolio_ref = {portfolio_id}
+           AND e.leg = 'cash'
+           AND e.trade_date <= p.period_end
+          GROUP BY p.period_end
+        ), flows AS (
+          SELECT p.period_end, COALESCE(SUM(e.amt_signed), 0) AS net_flow_q
+          FROM period p
+          LEFT JOIN effective_ledger e
+            ON e.portfolio_ref = {portfolio_id}
+           AND e.leg = 'external-flow'
+           AND e.trade_date <= p.period_end
+           AND e.trade_date > COALESCE((SELECT max(pp.period_end)
+                                          FROM period pp
+                                         WHERE pp.period_end < p.period_end), '-infinity'::date)
+          GROUP BY p.period_end
+        ), per_q AS (
+          SELECT p.period_end,
+                 p.partial,
+                 COALESCE(m.market_value, 0) AS market_value,
+                 COALESCE(m.missing_assets, 0) AS missing_assets,
+                 m.oldest_price_date,
+                 c.cash_balance,
+                 COALESCE(m.market_value, 0) + c.cash_balance AS total_value,
+                 f.net_flow_q
+          FROM period p
+          LEFT JOIN market m ON m.period_end = p.period_end
+          LEFT JOIN cash   c ON c.period_end = p.period_end
+          LEFT JOIN flows  f ON f.period_end = p.period_end
+        ), windowed AS (
+          SELECT per_q.*, LAG(total_value) OVER (ORDER BY period_end) AS prev_total
+          FROM per_q
+        )
+        SELECT {portfolio_id} AS portfolio_id,
+               period_end,
+               partial,
+               market_value,
+               cash_balance,
+               total_value,
+               net_flow_q,
+               total_value - prev_total - net_flow_q AS pnl_q,
+               CASE WHEN prev_total > 0
+                    THEN round((total_value - prev_total - net_flow_q) / prev_total * 100, 6)
+                    ELSE NULL END AS return_q_pct,
+               CASE WHEN missing_assets > 0 THEN 'missing:' || missing_assets
+                    WHEN oldest_price_date < period_end THEN 'stale:' || oldest_price_date
+                    ELSE 'full' END AS price_coverage
+        FROM windowed
+        WHERE prev_total IS NOT NULL
+        ORDER BY period_end
+    """
+    search {
+        patterns: [
+            "(quarterly|quarter by quarter) (evolution|performance|development)",
+            "how (has|did) the portfolio (developed|performed|done) (over|in) (the last )?(quarters|year)",
+            "ctvrtletni vyvoj portfolia",
+            "jak si portfolio vedlo po ctvrtletich"
+        ],
+        examples: [
+            "How has the portfolio developed over the last four quarters?",
+            "Jak se portfolio vyvíjelo za poslední čtyři čtvrtletí?"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
+        { name: as_of, type: date, label: "As of date (the partial final period)" },
+        { name: quarters, type: int, label: "Completed quarters before the as-of row" }
+    ]
+}
