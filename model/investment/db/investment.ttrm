@@ -49,11 +49,11 @@ def table investment_client {
     columns: [
         def column sk          { type: int, isKey: true, description: "Generated surrogate. Minted by the database (BIGSERIAL); a version's identity, never a business key." },
         def column external_id { type: text, description: "Business key — `conseq:{CsqClientId}`. NON-unique across versions; unique among open ones." },
-        def column name        { type: text, description: "Client name." },
-        def column email       { type: text, description: "Contact e-mail." },
-        def column tax_country { type: { type: char, length: 3 }, description: "Tax residence, ISO 3166-1 alpha-3 (`CZE`)." },
-        def column valid_from  { type: date, description: "md `valid-from` role — the day this version became true." },
-        def column valid_to    { type: date, description: "md `valid-to` role — NULL on the open version. Every query over this table filters on it (IE-C25)." }
+        def column name        { type: text, optional: true, description: "Client name." },
+        def column email       { type: text, optional: true, description: "Contact e-mail." },
+        def column tax_country { type: { type: char, length: 3 }, optional: true, description: "Tax residence, ISO 3166-1 alpha-3 (`CZE`)." },
+        def column valid_from  { type: date, optional: true, description: "md `valid-from` role — the day this version became true." },
+        def column valid_to    { type: date, optional: true, description: "md `valid-to` role — NULL on the open version. Every query over this table filters on it (IE-C25)." }
     ]
 }
 
@@ -63,12 +63,12 @@ def table investment_portfolio {
     columns: [
         def column sk            { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL)." },
         def column external_id   { type: text, description: "Business key — `conseq:{ContractId}`." },
-        def column label         { type: text, description: "Portfolio name as the distributor labels it." },
-        def column client_ref    { type: text, description: "NATURAL-key reference to investment_client.external_id — a text join, not a surrogate one." },
-        def column base_currency { type: { type: char, length: 3 }, description: "Reporting currency of the portfolio, ISO 4217." },
-        def column state         { type: text, description: "Contract state as the distributor reports it." },
-        def column valid_from    { type: date, description: "md `valid-from` role." },
-        def column valid_to      { type: date, description: "md `valid-to` role — NULL on the open version." }
+        def column label         { type: text, optional: true, description: "Portfolio name as the distributor labels it." },
+        def column client_ref    { type: text, optional: true, description: "NATURAL-key reference to investment_client.external_id — a text join, not a surrogate one." },
+        def column base_currency { type: { type: char, length: 3 }, optional: true, description: "Reporting currency of the portfolio, ISO 4217." },
+        def column state         { type: text, optional: true, description: "Contract state as the distributor reports it." },
+        def column valid_from    { type: date, optional: true, description: "md `valid-from` role." },
+        def column valid_to      { type: date, optional: true, description: "md `valid-to` role — NULL on the open version." }
     ]
 }
 
@@ -78,7 +78,7 @@ def table investment_consultant {
     columns: [
         def column sk              { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL)." },
         def column consultant_id   { type: text, description: "Consultant identifier (unique)." },
-        def column consultant_name { type: text, description: "Consultant name." }
+        def column consultant_name { type: text, optional: true, description: "Consultant name." }
     ]
 }
 
@@ -90,9 +90,9 @@ def table investment_asset {
     columns: [
         def column sk          { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL)." },
         def column isin        { type: { type: char, length: 12 }, description: "ISIN — the global instrument identifier, and the business key here (unique)." },
-        def column name        { type: text, description: "Instrument name." },
-        def column asset_class { type: text, description: "Instrument class as the distributor classifies it." },
-        def column currency    { type: { type: char, length: 3 }, description: "Instrument currency, ISO 4217." }
+        def column name        { type: text, optional: true, description: "Instrument name." },
+        def column asset_class { type: text, optional: true, description: "Instrument class as the distributor classifies it." },
+        def column currency    { type: { type: char, length: 3 }, optional: true, description: "Instrument currency, ISO 4217." }
     ]
 }
 
@@ -102,8 +102,8 @@ def table investment_asset_price {
     columns: [
         def column isin       { type: { type: char, length: 12 }, isKey: true, description: "The instrument this price is for." },
         def column price_date { type: date, isKey: true, description: "The day the price is FOR — part of the key, not a stamp of the run that fetched it." },
-        def column price      { type: { type: decimal, length: 18, precision: 6 }, description: "Price per unit, in `currency`." },
-        def column currency   { type: { type: char, length: 3 }, description: "Currency of the price, ISO 4217." }
+        def column price      { type: { type: decimal, length: 18, precision: 6 }, optional: true, description: "Price per unit, in `currency`." },
+        def column currency   { type: { type: char, length: 3 }, optional: true, description: "Currency of the price, ISO 4217." }
     ]
 }
 
@@ -115,15 +115,15 @@ def table investment_transaction {
     columns: [
         def column sk            { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL). Each reversal row gets its own." },
         def column external_id   { type: text, description: "Movement identity, UNIQUE — `conseq:{ContractId}:{OperationType}:{Id}` for a security leg, leg-specific forms otherwise. Load-bearing twice: the program reads a movement by it, and a redelivered window recognises itself by it." },
-        def column portfolio_ref { type: text, description: "NATURAL-key reference to investment_portfolio.external_id." },
-        def column asset_ref     { type: { type: char, length: 12 }, description: "NATURAL-key reference to investment_asset.isin. NULL on cash and external-flow legs." },
-        def column leg           { type: text, description: "security | cash | external-flow. Text, not an enum: a new code must be a parser release, not a schema migration." },
-        def column operation     { type: text, description: "buy | sell | transfer-in | transfer-out | payout | reversal-of-buy | reversal-of-sell | credit | debit | deposit | withdrawal." },
-        def column trade_date    { type: date, description: "Trade date of the movement." },
-        def column quantity      { type: { type: decimal, length: 18, precision: 6 }, description: "Units moved. NULL on cash legs." },
-        def column amount        { type: { type: decimal, length: 18, precision: 2 }, description: "Money moved, in `currency`." },
-        def column currency      { type: { type: char, length: 3 }, description: "Currency of `amount`, ISO 4217." },
-        def column reversal_of   { type: text, description: "md `reversal-link` role — the external_id this row reverses. The audit chain, and half of the effective-ledger rule (IE-C25)." }
+        def column portfolio_ref { type: text, optional: true, description: "NATURAL-key reference to investment_portfolio.external_id." },
+        def column asset_ref     { type: { type: char, length: 12 }, optional: true, description: "NATURAL-key reference to investment_asset.isin. NULL on cash and external-flow legs." },
+        def column leg           { type: text, optional: true, description: "security | cash | external-flow. Text, not an enum: a new code must be a parser release, not a schema migration." },
+        def column operation     { type: text, optional: true, description: "buy | sell | transfer-in | transfer-out | payout | reversal-of-buy | reversal-of-sell | credit | debit | deposit | withdrawal." },
+        def column trade_date    { type: date, optional: true, description: "Trade date of the movement." },
+        def column quantity      { type: { type: decimal, length: 18, precision: 6 }, optional: true, description: "Units moved. NULL on cash legs." },
+        def column amount        { type: { type: decimal, length: 18, precision: 2 }, optional: true, description: "Money moved, in `currency`." },
+        def column currency      { type: { type: char, length: 3 }, optional: true, description: "Currency of `amount`, ISO 4217." },
+        def column reversal_of   { type: text, optional: true, description: "md `reversal-link` role — the external_id this row reverses. The audit chain, and half of the effective-ledger rule (IE-C25)." }
     ]
 }
 
@@ -134,10 +134,10 @@ def table investment_position {
         def column portfolio_ref  { type: text, isKey: true, description: "NATURAL-key reference to investment_portfolio.external_id." },
         def column asset_ref      { type: { type: char, length: 12 }, isKey: true, description: "NATURAL-key reference to investment_asset.isin." },
         def column valuation_date { type: date, isKey: true, description: "The day being valued." },
-        def column quantity       { type: { type: decimal, length: 18, precision: 6 }, description: "Units held on `valuation_date`." },
-        def column market_value   { type: { type: decimal, length: 18, precision: 2 }, description: "Value of the holding on `valuation_date`, in the portfolio's base currency." },
-        def column valid_from     { type: date, description: "md `valid-from` role." },
-        def column valid_to       { type: date, description: "md `valid-to` role — NULL on the open version." }
+        def column quantity       { type: { type: decimal, length: 18, precision: 6 }, optional: true, description: "Units held on `valuation_date`." },
+        def column market_value   { type: { type: decimal, length: 18, precision: 2 }, optional: true, description: "Value of the holding on `valuation_date`, in the portfolio's base currency." },
+        def column valid_from     { type: date, optional: true, description: "md `valid-from` role." },
+        def column valid_to       { type: date, optional: true, description: "md `valid-to` role — NULL on the open version." }
     ]
 }
 
