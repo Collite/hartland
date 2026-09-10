@@ -1,0 +1,174 @@
+package investment
+
+model er
+
+// The interpreted face: WHAT HAPPENED and WHAT IS HELD. The ledger and the valued holdings — the
+// two fact entities every question in IE-C62 lands on.
+//
+// ⛔ TWO RULES LIVE OUTSIDE THIS FILE, AND A READER OF THIS FILE ALONE WILL GET THEM WRONG.
+//  (R) The EFFECTIVE ledger excludes reversal rows and the rows they reverse. A correction here is
+//      reverse-and-replace (D-C12), never an UPDATE, so summing `investment_transaction` raw
+//      double-counts every corrected movement and counts every reversal twice over.
+//  (S) The SIGN conventions: `buy` adds units and `sell` removes them; `credit`/`deposit` add money
+//      and `debit`/`withdrawal` remove it. The columns hold magnitudes, not signed amounts.
+// Both are one CTE, repeated verbatim in every query that touches the ledger (IE-C25, S2.2), because
+// `def query` has no include — a test asserts the verbatim text instead. They cannot live in the
+// binding: IE-P0 V9 measured that a `whereFilter` is dropped before it reaches translate.
+
+def entity transaction {
+    description: {
+        en: "The ledger — every movement in a portfolio: purchases, sales, fees, cash credits and debits, deposits and withdrawals. Append-only: a correction appears as a reversal plus a replacement, never as an edit.",
+        cs: "Kniha pohybů — každý pohyb v portfoliu: nákupy, prodeje, poplatky, připsání a odepsání hotovosti, vklady a výběry. Pouze se přidává: oprava se objeví jako storno plus náhrada, nikdy jako přepis."
+    }
+    labelPlural: "Transactions"
+    codeAttribute: external_id
+    roles: [fact]
+    displayLabel: { en: "Transaction", cs: "Transakce" }
+    attributes: [
+        def attribute transaction_id {
+            type: int, isKey: true,
+            description: {
+                en: "Row identity, minted by the database. Internal: it orders rows and nothing more, and no person will ever quote it.",
+                cs: "Identita řádku, kterou přiděluje databáze. Interní: pouze řadí řádky a nic víc, žádný člověk ji nebude citovat."
+            }
+        },
+        def attribute external_id {
+            type: text,
+            description: {
+                en: "The movement's identity at the source, for example `conseq:100003369:BUY:8871`. Unique, and it is what makes a redelivered window a no-op rather than a second posting.",
+                cs: "Identita pohybu u zdroje, například `conseq:100003369:BUY:8871`. Jedinečná a právě díky ní je opakovaná dodávka okna bez efektu, nikoli druhým zaúčtováním."
+            }
+        },
+        def attribute portfolio {
+            type: text,
+            description: {
+                en: "The portfolio the movement belongs to, held as its `conseq:` contract identifier.",
+                cs: "Portfolio, ke kterému pohyb patří, vedené svým identifikátorem smlouvy `conseq:`."
+            }
+        },
+        def attribute asset {
+            type: text,
+            description: {
+                en: "The instrument moved, held as its ISIN. EMPTY on cash and external-flow movements — money moving in or out is not about an instrument.",
+                cs: "Nástroj, se kterým se pohybovalo, vedený svým ISIN. PRÁZDNÝ u hotovostních a externích pohybů — peníze přicházející nebo odcházející se netýkají nástroje."
+            }
+        },
+        def attribute leg {
+            type: text,
+            description: {
+                en: "Which side of the book this movement is on: `security` (units of an instrument), `cash` (money inside the portfolio) or `external-flow` (money crossing the portfolio's boundary). Every security movement has a cash counter-movement derived beside it.",
+                cs: "Na které straně knihy pohyb stojí: `security` (jednotky nástroje), `cash` (peníze uvnitř portfolia) nebo `external-flow` (peníze překračující hranici portfolia). Ke každému pohybu `security` se vedle odvodí protipohyb v hotovosti."
+            }
+        },
+        def attribute operation {
+            type: text,
+            description: {
+                en: "What was done: `buy` and `sell` on the security leg; `credit` and `debit` on the cash leg; `deposit` and `withdrawal` on the external-flow leg, plus `transfer-in`, `transfer-out`, `payout`, `reversal-of-buy` and `reversal-of-sell` - eleven in all. THIS word carries the DIRECTION: a query reads it and takes the magnitude of `quantity` / `amount`, so an operation a query does not name contributes nothing at all, silently.",
+                cs: "Co se stalo: `buy` a `sell` na straně `security`; `credit` a `debit` na straně `cash`; `deposit` a `withdrawal` na straně `external-flow`, dále `transfer-in`, `transfer-out`, `payout`, `reversal-of-buy` a `reversal-of-sell` - celkem jedenáct. SMĚR nese TOTO slovo: dotaz je přečte a z `quantity` / `amount` vezme absolutní hodnotu, takže operace, kterou dotaz nejmenuje, nepřispěje vůbec ničím, a to tiše."
+            }
+        },
+        def attribute trade_date {
+            type: date,
+            description: {
+                en: "The day the movement was traded — the date a question like \"since April\" filters on.",
+                cs: "Den, kdy byl pohyb obchodován — datum, podle kterého filtruje dotaz typu „od dubna“."
+            }
+        },
+        def attribute quantity {
+            type: decimal,
+            description: {
+                en: "Units of the instrument moved. EMPTY on cash movements. The sign here is the PROVIDER'S, not the model's: DistrInfo sends a redemption with a NEGATIVE quantity. A holding is therefore the sum of the MAGNITUDES with the direction taken from `operation` - negating a stored sell would turn it into a purchase.",
+                cs: "Počet jednotek nástroje, o který se pohybovalo. PRÁZDNÉ u hotovostních pohybů. Znaménko je zde POSKYTOVATELE, nikoli modelu: DistrInfo posílá odkup se ZÁPORNÝM počtem. Držba je proto součtem ABSOLUTNÍCH hodnot se směrem převzatým z `operation` - negace uloženého prodeje by z něj udělala nákup."
+            }
+        },
+        def attribute amount {
+            type: decimal,
+            description: {
+                en: "Money moved, in `currency`, as a magnitude - unlike `quantity`, this column is NOT signed by the provider (a debit arrives positive). The cash balance is the signed sum over the `cash` leg ALONE: the `external-flow` leg is the same money crossing the portfolio boundary, and summing both counts every deposit twice.",
+                cs: "Objem peněz, o který se pohybovalo, v měně `currency`, jako velikost - na rozdíl od `quantity` tento sloupec poskytovatel neznaménkuje (odchozí platba přichází kladná). Hotovostní zůstatek je znaménkovým součtem POUZE přes stranu `cash`: strana `external-flow` jsou tytéž peníze překračující hranici portfolia a součet obou započítá každý vklad dvakrát."
+            }
+        },
+        def attribute currency {
+            type: text,
+            description: {
+                en: "The currency `amount` is expressed in, ISO 4217.",
+                cs: "Měna, ve které je vyjádřena hodnota `amount`, ISO 4217."
+            }
+        },
+        def attribute reversal_of {
+            type: text,
+            description: {
+                en: "Set on a reversal, naming the `external_id` of the movement it undoes. It is the audit chain — and the reason a raw sum over this ledger is wrong: both rows are still here.",
+                cs: "Vyplněno u storna a odkazuje na `external_id` pohybu, který ruší. Tvoří auditní řetěz — a je důvodem, proč je surový součet nad touto knihou chybný: oba řádky tu stále jsou."
+            }
+        }
+    ]
+}
+
+def entity position {
+    description: {
+        en: "Valued holdings — what a portfolio held in an instrument on a given day, and what it was worth. Restated valuations for the same day supersede one another rather than adding up.",
+        cs: "Oceněné držby — co portfolio drželo v daném nástroji k danému dni a jakou to mělo hodnotu. Přepočtená ocenění téhož dne se navzájem nahrazují, nesčítají se."
+    }
+    labelPlural: "Positions"
+    codeAttribute: portfolio
+    roles: [fact]
+    displayLabel: { en: "Position", cs: "Pozice" }
+    attributes: [
+        def attribute portfolio {
+            type: text, isKey: true,
+            description: {
+                en: "The portfolio holding it, held as its `conseq:` contract identifier.",
+                cs: "Portfolio, které ji drží, vedené svým identifikátorem smlouvy `conseq:`."
+            }
+        },
+        def attribute asset {
+            type: text, isKey: true,
+            description: {
+                en: "The instrument held, held as its ISIN.",
+                cs: "Držený nástroj, vedený svým ISIN."
+            }
+        },
+        def attribute valuation_date {
+            type: date, isKey: true,
+            description: {
+                en: "The day being valued. Part of the identity of the row, not a stamp of when it was computed.",
+                cs: "Den, ke kterému se oceňuje. Součást identity řádku, nikoli razítko okamžiku výpočtu."
+            }
+        },
+        def attribute quantity {
+            type: decimal,
+            description: {
+                en: "Units of the instrument held on that day.",
+                cs: "Počet jednotek nástroje držených k danému dni."
+            }
+        },
+        def attribute market_value {
+            type: decimal,
+            description: {
+                en: "What the holding was worth on that day, in the portfolio's base currency — units times the instrument's price.",
+                cs: "Jakou hodnotu držba k danému dni měla, v základní měně portfolia — počet jednotek krát cena nástroje."
+            }
+        }
+    ]
+}
+
+def relation rel_transaction_portfolio {
+    from: er.entity.transaction, to: er.entity.portfolio,
+    cardinality: { from: "0..*", to: "1" }
+}
+
+def relation rel_transaction_asset {
+    from: er.entity.transaction, to: er.entity.asset,
+    cardinality: { from: "0..*", to: "1" }
+}
+
+def relation rel_position_portfolio {
+    from: er.entity.position, to: er.entity.portfolio,
+    cardinality: { from: "0..*", to: "1" }
+}
+
+def relation rel_position_asset {
+    from: er.entity.position, to: er.entity.asset,
+    cardinality: { from: "0..*", to: "1" }
+}

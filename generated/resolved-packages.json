@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "generatedFrom": "hartland",
+  "generatedFrom": "hartland-ie",
   "root": "",
   "packages": [
     {
@@ -8,6 +8,12 @@
       "declaredName": "hartland",
       "nested": false,
       "directory": "model/binding"
+    },
+    {
+      "canonicalName": "investment",
+      "declaredName": "investment",
+      "nested": false,
+      "directory": "model/investment/binding"
     }
   ],
   "entities": [
@@ -105,6 +111,36 @@
       "qname": "hartland.er.entity.web_sales",
       "package": "hartland",
       "schema": "er"
+    },
+    {
+      "qname": "investment.er.entity.asset",
+      "package": "investment",
+      "schema": "er"
+    },
+    {
+      "qname": "investment.er.entity.client",
+      "package": "investment",
+      "schema": "er"
+    },
+    {
+      "qname": "investment.er.entity.portfolio",
+      "package": "investment",
+      "schema": "er"
+    },
+    {
+      "qname": "investment.er.entity.position",
+      "package": "investment",
+      "schema": "er"
+    },
+    {
+      "qname": "investment.er.entity.price",
+      "package": "investment",
+      "schema": "er"
+    },
+    {
+      "qname": "investment.er.entity.transaction",
+      "package": "investment",
+      "schema": "er"
     }
   ],
   "areas": [
@@ -117,6 +153,17 @@
         "hartland.er.entity.catalog_sales",
         "hartland.er.entity.store_sales",
         "hartland.er.entity.web_sales"
+      ]
+    },
+    {
+      "name": "investment",
+      "resolvedPackages": [
+        "investment"
+      ],
+      "resolvedEntities": [
+        "investment.er.entity.position",
+        "investment.er.entity.price",
+        "investment.er.entity.transaction"
       ]
     }
   ]

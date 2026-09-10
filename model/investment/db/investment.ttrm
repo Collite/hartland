@@ -1,0 +1,163 @@
+package investment
+
+model db schema dbo
+
+// The PHYSICAL face of the investment book, transcribed from `model/entry/investment-schema-v1.sql`
+// (IE-C22). Seven tables, and the seven the estate actually has — `db-ddl-parity.test.mjs` asserts
+// the (table, column) sets and the primary keys both ways, on every run.
+//
+// ⛔ WHY THIS FILE EXISTS AT ALL. An `er2db_entity` target is a `db.<schema>.<table>` qname, so the
+// binding needs a `db` layer to point at, and it cannot point at the package's OTHER model — the
+// `model book` face the entry door writes through (`model/parties.ttrm`, `model/instruments.ttrm`,
+// `model/book.ttrm`). Not because that would be awkward: `book` is not one of the grammar's model
+// codes, so those three files do not parse at all and nothing in this toolchain can see a single
+// declaration in them (IE-P0 V8, re-measured by `db-ddl-parity.test.mjs` T3.5). Veles's
+// `MappingTarget` knows only table / view / sqlQuery in any case.
+//
+// ⛔ AND THE TRANSCRIPTION IS UNGUARDED BY THE TOOLCHAIN. `target: { table: db.dbo.no_such_table }`
+// lints CLEAN through parse + resolve + lintProject, while a bogus `entity:` ref raises
+// `ttr/unresolved-reference` (IE-P0 V8b). A physical-name typo here surfaces for the first time at
+// Veles/translate time — on the estate, inside a question somebody just asked. The parity spec is
+// the only thing standing in that gap, which is why it is required rather than nice to have.
+//
+// The DDL's own rule governs this file too: **change the model, then change this file, in the same
+// commit.** The difference is that now something checks.
+//
+// ⛔ `schema dbo` IS NOT THE PHYSICAL SCHEMA, AND IT MUST NOT BE (S2.3·D1b). The seven tables
+// really do live in PostgreSQL schema `public` — `information_schema.tables` says so and IE-P0 V4
+// read it correctly. This line still says `dbo`, because the namespace token is a CATALOG LABEL,
+// not a database schema, and the query door resolves every unqualified DB identifier in the fixed
+// namespace `dbo` (`TranslatorFramework.DEFAULT_NAMESPACE`). Declaring `public` here made every
+// query in this package fail validation with `Object 'investment_portfolio' not found`, measured
+// against the door's own translator before a line of it ran on an estate.
+//
+// hartland is the proof that this is the convention and not a workaround: its TPC-DS tables are in
+// physical `public` and its db layer declares `dbo` (`model/db/facts.ttrm`), which is why the
+// dispatch base config's retired TPC-DS map was keyed `db.dbo.*`. The unparsed SQL the worker
+// receives carries no schema prefix at all in either case — the connection's `search_path`
+// resolves it — so the token's ONLY consumers are the catalog and the routing key.
+//
+// Which makes it load-bearing beyond this file: dispatch routes a plan by
+// `<schema-token>.<namespace>.<name>`, so IE-C26's key is **`"db.dbo.investment_*"`** — IE-P0 V4's
+// `db.dbo.*` was derived from the physical schema and is wrong for the same reason this line is.
+
+// ── parties ────────────────────────────────────────────────────────────────────────────────────
+
+def table investment_client {
+    description: "Clients, effective-dated (SCD2). One business identity, one row per version; the open version is the one with valid_to IS NULL."
+    primaryKey: [sk]
+    columns: [
+        def column sk          { type: int, isKey: true, description: "Generated surrogate. Minted by the database (BIGSERIAL); a version's identity, never a business key." },
+        def column external_id { type: text, description: "Business key — `conseq:{CsqClientId}`. NON-unique across versions; unique among open ones." },
+        def column name        { type: text, optional: true, description: "Client name." },
+        def column email       { type: text, optional: true, description: "Contact e-mail." },
+        def column tax_country { type: { type: char, length: 3 }, optional: true, description: "Tax residence, ISO 3166-1 alpha-3 (`CZE`)." },
+        def column valid_from  { type: date, optional: true, description: "md `valid-from` role — the day this version became true." },
+        def column valid_to    { type: date, optional: true, description: "md `valid-to` role — NULL on the open version. Every query over this table filters on it (IE-C25)." }
+    ]
+}
+
+def table investment_portfolio {
+    description: "Portfolios (Conseq contracts), effective-dated (SCD2)."
+    primaryKey: [sk]
+    columns: [
+        def column sk            { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL)." },
+        def column external_id   { type: text, description: "Business key — `conseq:{ContractId}`." },
+        def column label         { type: text, optional: true, description: "Portfolio name as the distributor labels it." },
+        def column client_ref    { type: text, optional: true, description: "NATURAL-key reference to investment_client.external_id — a text join, not a surrogate one." },
+        def column base_currency { type: { type: char, length: 3 }, optional: true, description: "Reporting currency of the portfolio, ISO 4217." },
+        def column state         { type: text, optional: true, description: "Contract state as the distributor reports it." },
+        def column valid_from    { type: date, optional: true, description: "md `valid-from` role." },
+        def column valid_to      { type: date, optional: true, description: "md `valid-to` role — NULL on the open version." }
+    ]
+}
+
+def table investment_consultant {
+    description: "Consultants. `management: canon` in the book layer — loaded from canon, NOT writable through the entry door. Present because the read side joins it."
+    primaryKey: [sk]
+    columns: [
+        def column sk              { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL)." },
+        def column consultant_id   { type: text, description: "Consultant identifier (unique)." },
+        def column consultant_name { type: text, optional: true, description: "Consultant name." }
+    ]
+}
+
+// ── instruments ────────────────────────────────────────────────────────────────────────────────
+
+def table investment_asset {
+    description: "Instruments, overwrite-on-change (SCD1), keyed on the global ISIN."
+    primaryKey: [sk]
+    columns: [
+        def column sk          { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL)." },
+        def column isin        { type: { type: char, length: 12 }, description: "ISIN — the global instrument identifier, and the business key here (unique)." },
+        def column name        { type: text, optional: true, description: "Instrument name." },
+        def column asset_class { type: text, optional: true, description: "Instrument class as the distributor classifies it." },
+        def column currency    { type: { type: char, length: 3 }, optional: true, description: "Instrument currency, ISO 4217." }
+    ]
+}
+
+def table investment_asset_price {
+    description: "Prices, keyed on (isin, price_date). NO surrogate: the natural key already identifies the fact, and one PRICES response legitimately mixes dates because it answers with the latest price per instrument."
+    primaryKey: [isin, price_date]
+    columns: [
+        def column isin       { type: { type: char, length: 12 }, isKey: true, description: "The instrument this price is for." },
+        def column price_date { type: date, isKey: true, description: "The day the price is FOR — part of the key, not a stamp of the run that fetched it." },
+        def column price      { type: { type: decimal, length: 18, precision: 6 }, optional: true, description: "Price per unit, in `currency`." },
+        def column currency   { type: { type: char, length: 3 }, optional: true, description: "Currency of the price, ISO 4217." }
+    ]
+}
+
+// ── the book ───────────────────────────────────────────────────────────────────────────────────
+
+def table investment_transaction {
+    description: "The LEDGER. Append-only; a correction is reverse-and-replace, derived by the apply program (D-C12) rather than an UPDATE."
+    primaryKey: [sk]
+    columns: [
+        def column sk            { type: int, isKey: true, description: "Generated surrogate (BIGSERIAL). Each reversal row gets its own." },
+        def column external_id   { type: text, description: "Movement identity, UNIQUE — `conseq:{ContractId}:{OperationType}:{Id}` for a security leg, leg-specific forms otherwise. Load-bearing twice: the program reads a movement by it, and a redelivered window recognises itself by it." },
+        def column portfolio_ref { type: text, optional: true, description: "NATURAL-key reference to investment_portfolio.external_id." },
+        def column asset_ref     { type: { type: char, length: 12 }, optional: true, description: "NATURAL-key reference to investment_asset.isin. NULL on cash and external-flow legs." },
+        def column leg           { type: text, optional: true, description: "security | cash | external-flow. Text, not an enum: a new code must be a parser release, not a schema migration." },
+        def column operation     { type: text, optional: true, description: "buy | sell | transfer-in | transfer-out | payout | reversal-of-buy | reversal-of-sell | credit | debit | deposit | withdrawal." },
+        def column trade_date    { type: date, optional: true, description: "Trade date of the movement." },
+        def column quantity      { type: { type: decimal, length: 18, precision: 6 }, optional: true, description: "Units moved. NULL on cash legs." },
+        def column amount        { type: { type: decimal, length: 18, precision: 2 }, optional: true, description: "Money moved, in `currency`." },
+        def column currency      { type: { type: char, length: 3 }, optional: true, description: "Currency of `amount`, ISO 4217." },
+        def column reversal_of   { type: text, optional: true, description: "md `reversal-link` role — the external_id this row reverses. The audit chain, and half of the effective-ledger rule (IE-C25)." }
+    ]
+}
+
+def table investment_position {
+    description: "Valued holdings, effective-dated (SCD2) on top of a DATED key: valuation_date says which day is being valued, the validity pair says when we believed it — a restatement for the same day is a new version."
+    primaryKey: [portfolio_ref, asset_ref, valuation_date]
+    columns: [
+        def column portfolio_ref  { type: text, isKey: true, description: "NATURAL-key reference to investment_portfolio.external_id." },
+        def column asset_ref      { type: { type: char, length: 12 }, isKey: true, description: "NATURAL-key reference to investment_asset.isin." },
+        def column valuation_date { type: date, isKey: true, description: "The day being valued." },
+        def column quantity       { type: { type: decimal, length: 18, precision: 6 }, optional: true, description: "Units held on `valuation_date`." },
+        def column market_value   { type: { type: decimal, length: 18, precision: 2 }, optional: true, description: "Value of the holding on `valuation_date`, in the portfolio's base currency." },
+        def column valid_from     { type: date, optional: true, description: "md `valid-from` role." },
+        def column valid_to       { type: date, optional: true, description: "md `valid-to` role — NULL on the open version." }
+    ]
+}
+
+// ── joins ──────────────────────────────────────────────────────────────────────────────────────
+//
+// ⚑ EVERY ONE OF THESE IS A NATURAL-KEY JOIN, AND NONE OF THEM IS A DATABASE CONSTRAINT.
+// The DDL declares no FOREIGN KEY anywhere, deliberately: a §13 parser cannot know a surrogate, so
+// the importer carries the business key (`portfolio_ref` = `conseq:100003369`) and the book joins on
+// text (DR review-086 ⑴, where an `int`-vs-natural-key mismatch was the finding a names-only check
+// could not see). A `def fk` here is a statement about a JOIN, which is what the planner needs; it
+// is not a claim that the database enforces one.
+//
+// ⚑ And the `to:` side is not a primary key. `investment_client.external_id` is unique only among
+// OPEN versions (a partial unique index `WHERE valid_to IS NULL`) — which is the same fact that puts
+// `valid_to IS NULL` in every query text (IE-C25, IE-P0 V9). Joining these without that filter
+// multiplies rows by the number of historical versions, silently.
+
+def fk fk_portfolio_client     { from: [db.dbo.investment_portfolio.client_ref],    to: [db.dbo.investment_client.external_id] }
+def fk fk_transaction_portfolio { from: [db.dbo.investment_transaction.portfolio_ref], to: [db.dbo.investment_portfolio.external_id] }
+def fk fk_transaction_asset     { from: [db.dbo.investment_transaction.asset_ref],     to: [db.dbo.investment_asset.isin] }
+def fk fk_price_asset           { from: [db.dbo.investment_asset_price.isin],          to: [db.dbo.investment_asset.isin] }
+def fk fk_position_portfolio    { from: [db.dbo.investment_position.portfolio_ref],    to: [db.dbo.investment_portfolio.external_id] }
+def fk fk_position_asset        { from: [db.dbo.investment_position.asset_ref],        to: [db.dbo.investment_asset.isin] }

@@ -6,7 +6,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadHartlandProject, ACCEPTED_RESIDUAL_CODES } from '../../tests/project-harness.mjs';
+import { loadHartlandProject, ACCEPTED_RESIDUAL_CODES, isOwnModelFile, isSyncedModelFile } from '../../tests/project-harness.mjs';
 
 const EXPECTED_QUERIES = [
   'channel_revenue_monthly', 'channel_revenue_yoy', 'category_revenue',
@@ -20,7 +20,16 @@ const BANNED_TOKENS = ['net_profit', 'margin', 'wholesale_cost', 'list_price', '
 
 const project = await loadHartlandProject();
 
+/**
+ * The queries THIS repo authors. ⛔ IE-P2·S2.3: `model/investment/queries/` is synced in from
+ * kantheon and served beside these, so an unscoped walk turns "the D-2 roster of 15" into "however
+ * many queries the tree happens to hold".
+ */
 function allQueries() {
+  return allQueriesAnywhere().filter(({ uri }) => isOwnModelFile(uri));
+}
+
+function allQueriesAnywhere() {
   const out = [];
   for (const [uri, ast] of project.asts) {
     for (const def of ast.definitions ?? []) {
@@ -83,13 +92,32 @@ test('T6.5 — no unexpected diagnostics from the queries file (project-wide swe
   assert.deepEqual(real, [], `unexpected diagnostics: ${real.join(', ')}`);
 });
 
-test('T6.6 — no query carries a `search { keywords }` block (RS-32 legacy — ttr/lexicon-legacy-keywords)', () => {
-  // Real finding: the 15-query.ttrm conformance fixture's own `search { keywords {...} } }`
-  // pattern is ITSELF a deprecated legacy form (RS-32 migrated it to locale-keyed lexicon
-  // `term` entries). Discover-chip triggering rides Stage 2.5's lexicon terms over the
-  // channel/measure/dimension carriers instead — this test guards against silently
-  // reintroducing the legacy form (which would trip ttr/lexicon-legacy-keywords, covered
-  // by T6.5's project-wide sweep, but asserted directly here too).
-  const offenders = allQueries().filter(({ def }) => def.search != null).map(({ def }) => def.name);
-  assert.deepEqual(offenders, [], `queries still carrying legacy search{}: ${offenders.join(', ')}`);
+test('T6.6 — no query carries the legacy `search { keywords }` sub-block (RS-32)', () => {
+  // ⛔ FIXED at IE-P2·S2.3 (found at S2.2·D2). This assertion said `keywords` and tested
+  // `def.search != null` — so it forbade the ENTIRE `search` block, including the
+  // `patterns:`/`examples:` form all 15 queries here carry and which is how the running golem
+  // discovers them. It has been RED on master since the toolchain bump, asserting the opposite of
+  // what this estate deliberately does, and a red assertion nobody can satisfy stops being read.
+  //
+  // What RS-32 actually deprecated in a way this repo can act on is `search { keywords { … } }`,
+  // the locale-keyed sub-block that moved onto lexicon `term` entries. The outer form is
+  // deprecated too — `ttr/lexicon-legacy-patterns` — and is ACCEPTED, not fixed, in the harness's
+  // residual list, with the reason: moving the patterns would take every q.hartland.* out of
+  // discovery at once, on the estate that is the live demo.
+  const withKeywords = allQueriesAnywhere()
+    .filter(({ def }) => def.search?.keywords != null)
+    .map(({ def }) => def.name);
+  assert.deepEqual(withKeywords, [], `queries carrying legacy search{keywords}: ${withKeywords.join(', ')}`);
+
+  // And the positive half, which is the part that would actually break the demo: every query the
+  // estate serves still HAS a search block for the golem to match on.
+  const without = allQueriesAnywhere().filter(({ def }) => def.search == null).map(({ def }) => def.name);
+  assert.deepEqual(without, [], `queries with no search block at all — undiscoverable: ${without.join(', ')}`);
+});
+
+test('T6.7 — the synced investment package brings its seven, and they are not counted as ours', () => {
+  const synced = allQueriesAnywhere().filter(({ uri }) => isSyncedModelFile(uri)).map(({ def }) => def.name);
+  assert.equal(synced.length, 7, `IE-C25's seven q.investment.* programs, got ${synced.length}: ${synced.join(', ')}`);
+  assert.ok(!synced.some((n) => EXPECTED_QUERIES.includes(n)), 'a name collides with the D-2 roster');
+  assert.equal(allQueries().length + synced.length, allQueriesAnywhere().length, 'every query is one or the other');
 });
