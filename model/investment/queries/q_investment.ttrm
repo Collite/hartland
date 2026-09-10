@@ -384,7 +384,7 @@ def query positions_at {
         -- ⚑ The NULL casts in the cash branch stay DECIMAL: they only align the UNION's column types, a
         -- NULL carries no scale to lose, and DECIMAL is the one spelling both PostgreSQL and
         -- Calcite parse (`DOUBLE` is not PostgreSQL's, `DOUBLE PRECISION` is not Calcite's).
-        -- ⚑ Exact computed money needs a decimal type IN THE PLAN — Collite/tatrman#<issue>. Moving
+        -- ⚑ Exact computed money needs a decimal type IN THE PLAN — Collite/tatrman#129. Moving
         -- the arithmetic to the caller does not help: a JavaScript number is a double too.
         -- The UNION is wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION
         -- over its output columns — only by a column name or position. The cash line sorts last,
