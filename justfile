@@ -192,3 +192,19 @@ check-investment-model:
     fi
     echo "stamped source commit: $src" >&2
     exit 3
+
+# ── IE-P2·S2.4 · the estate answers, and it answers DIFFERENTLY after a write ────────────────────
+#
+# The stage's DoD, and the one check that crosses the whole path a person crosses: bearer → BFF →
+# query door → worker for the reads, and bearer → BFF → entry substrate → ledger for the writes,
+# then back through the reads to see what changed. kantheon's conformance suite runs the programs'
+# SOURCE text on psql and cannot see any of that — S2.3·D18 and D19 both lived only in the text the
+# door EMITS, and no read suite can show that a correction moves money without moving units.
+#
+# ⛔ `full` WRITES, and a ledger is append-only: the drills leave three permanent rows behind. Name a
+# THROWAWAY portfolio. There is no default, deliberately — a default here writes to the wrong book.
+#
+#   just investment-dod                                    # readonly, against IE_DOD_PORTFOLIO
+#   IE_DOD_MODE=full just investment-dod                   # + the correction, addition and refusal drills
+investment-dod:
+    ./scripts/investment-dod.sh
