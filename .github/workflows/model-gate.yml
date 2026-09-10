@@ -1,0 +1,74 @@
+# The model gate, on every push to master and every pull request.
+#
+# hartland is content only — it vendors no toolchain — so this job checks out the public
+# Collite/tatrman repository beside it and builds the parser, semantics, lint and resolve-packages
+# CLI that the justfile and the model suites borrow from `../tatrman`, exactly as a local checkout
+# side by side does.
+#
+# What it runs:
+#   just check-investment-model   model/investment/ matches its SYNCED-FROM stamp (hash, no symlinks)
+#   just verify-model             the same check, then every model/agents/lexicon suite
+#   just check-model              generated/resolved-packages.json is not stale
+#   node --test …                 the investment drill's suite and the price-history suite
+#                                 (a stub BFF and a fake psql — no estate, no database)
+#
+# What it cannot run: `just check-investment-model-source` and `just verify-investment-sync` need a
+# checkout of the repository model/investment/ is synced FROM, which this workflow does not have.
+# Run both locally before merging a re-sync.
+name: model-gate
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  model-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: hartland
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Collite/tatrman
+          path: tatrman
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: tatrman/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: tatrman/pnpm-lock.yaml
+
+      - uses: extractions/setup-just@v2
+
+      - name: Build the tatrman toolchain the recipes borrow
+        working-directory: tatrman
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter "@tatrman/migrate..." --filter "@tatrman/lint..." --filter "@tatrman/semantics..." build
+
+      - name: model/investment matches its stamp
+        working-directory: hartland
+        run: just check-investment-model
+
+      - name: Model suites
+        working-directory: hartland
+        run: just verify-model
+
+      - name: resolved-packages.json is not stale
+        working-directory: hartland
+        run: just check-model
+
+      - name: Script suites
+        working-directory: hartland
+        run: node --test scripts/tests/investment-dod.test.mjs scripts/tests/price-history.test.mjs

@@ -10,9 +10,11 @@
 # RV-P3.2: the root data area is a third authored surface, and its guards belong in the
 # same command as the model's.)
 #
-# `check-investment-model` runs FIRST and this is the repo's CI lane for it (IE-P2·S2.3·T3):
-# `model/investment/` is written by `sync-investment-model` out of kantheon, so a hand-edit there
-# is a change to a model whose source of truth is another repository. Nothing else can see one.
+# `check-investment-model` runs FIRST (IE-P2·S2.3·T3): `model/investment/` is written by
+# `sync-investment-model` out of kantheon, so a hand-edit there is a change to a model whose source
+# of truth is another repository. CI runs this recipe on every push and pull request
+# (.github/workflows/model-gate.yml); the source-commit comparison it cannot make is
+# `check-investment-model-source`, which needs a kantheon checkout and so runs locally.
 verify-model:
     just check-investment-model
     node --test $(find model agents lexicon -name '*.test.mjs')
@@ -32,12 +34,27 @@ verify-prompts:
 
 # Emit the deterministic resolved-packages.json artifact (packages, entities, areas) via
 # the tatrman Modeler CLI — the same tool ai-models uses (`just resolve-packages`).
+#
+# ⛔ Both recipes resolve THROUGH A SYMLINK NAMED `hartland`, never through "$(pwd)". The CLI writes
+# `generatedFrom` = the project directory's BASENAME and has no option to name it, so an artifact
+# regenerated in a worktree (`hartland-ie`, `hartland-gx`, …) carried that worktree's name — master's
+# did, for weeks — and every local check from the same worktree blessed it while a checkout called
+# `hartland` (CI's) called it stale. Through the link the name is the repo's, whatever the checkout is
+# called.
 resolve-packages cli="node ../tatrman/packages/migrate/dist/cli.js":
-    {{cli}} resolve-packages "$(pwd)" --out generated/resolved-packages.json --verbose
+    #!/usr/bin/env bash
+    set -euo pipefail
+    link="$(mktemp -d)"; trap 'rm -rf "$link"' EXIT
+    ln -s "$(pwd)" "$link/hartland"
+    {{cli}} resolve-packages "$link/hartland" --out "$(pwd)/generated/resolved-packages.json" --verbose
 
 # Drift check: fail if the committed snapshot is stale.
 check-model cli="node ../tatrman/packages/migrate/dist/cli.js":
-    {{cli}} resolve-packages "$(pwd)" --check --out generated/resolved-packages.json
+    #!/usr/bin/env bash
+    set -euo pipefail
+    link="$(mktemp -d)"; trap 'rm -rf "$link"' EXIT
+    ln -s "$(pwd)" "$link/hartland"
+    {{cli}} resolve-packages "$link/hartland" --check --out "$(pwd)/generated/resolved-packages.json"
 
 # ── lexicon (RV-P3.2) ─────────────────────────────────────────────────────────
 # Compile the DECLARED (lexicon/ area + model/lexicon/*.ttrm sugar) and METADATA layers
@@ -127,20 +144,13 @@ sync-investment-model kantheon="../kantheon" allow_dirty="false":
     set -euo pipefail
     src="{{kantheon}}/packages/investment/model"
     [ -d "$src" ] || { echo "no investment package at $src" >&2; exit 2; }
-    for kind in {{INVESTMENT_KINDS}}; do
-        [ -d "$src/$kind" ] || { echo "$src/$kind is missing — refusing a partial sync" >&2; exit 2; }
-    done
-    mkdir -p model/investment
-    # --delete so a file DELETED in kantheon disappears here; --exclude tests/ per the note above.
-    for kind in {{INVESTMENT_KINDS}}; do
-        rsync -a --delete --exclude 'tests/' "$src/$kind" model/investment/
-    done
     commit=$(git -C "{{kantheon}}" rev-parse HEAD)
     # ⛔ A STAMP THAT NAMES A COMMIT THE CONTENT IS NOT IS WORSE THAN NO STAMP. Caught on this
     # recipe's own first real run: kantheon's working tree carried the S2.3 query rewrites, so the
     # sync copied them and wrote the sha of the commit BEFORE them. `check-investment-model` would
     # then be green over a tree nobody can reproduce from the named commit — the drift check
-    # confirming a lie. Refuse, unless the caller says out loud that they mean it.
+    # confirming a lie. Refuse — before anything is written — unless the caller says out loud that
+    # they mean it.
     dirty=$(git -C "{{kantheon}}" status --porcelain -- packages/investment/model)
     if [ -n "$dirty" ] && [ "{{allow_dirty}}" != "true" ]; then
         echo "kantheon's investment model has uncommitted changes; the stamp would name $commit and carry something else:" >&2
@@ -149,21 +159,64 @@ sync-investment-model kantheon="../kantheon" allow_dirty="false":
         exit 2
     fi
     [ -n "$dirty" ] && commit="$commit+dirty"
+    just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-copy "$src" model/investment
     tree=$(just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-tree-sha)
     printf 'source-repo: kantheon\nsource-path: packages/investment/model/{%s}\nsource-commit: %s\nsynced-at: %s\ntree-sha256: %s\n' \
         "$(echo {{INVESTMENT_KINDS}} | tr ' ' ',')" "$commit" "$(date -u +%Y-%m-%d)" "$tree" > model/investment/SYNCED-FROM
-    echo "synced $(find model/investment -type f ! -name SYNCED-FROM | wc -l | tr -d ' ') files from kantheon $commit"
+    echo "synced $(find model/investment -type f ! -path model/investment/SYNCED-FROM | wc -l | tr -d ' ') files from kantheon $commit"
 
-# The tree hash the stamp records and `check-investment-model` recomputes. Content AND path, so a
-# rename is a change; the stamp itself is excluded or the hash could never match what it contains.
-_investment-tree-sha:
+# The copy the sync makes, and the one `check-investment-model-source` rebuilds to compare against —
+# one definition, so the comparison cannot drift from what the sync writes. `dest` is REPLACED, not
+# merged into: afterwards it is EXACTLY the source's four directories minus every `tests/` (the note
+# above). `rsync --delete` per kind directory could see neither a stray top-level file nor a
+# receiver-side `tests/` (an excluded path is protected from deletion), so both survived a re-sync
+# and were re-certified by the new stamp.
+_investment-copy src dest:
     #!/usr/bin/env bash
     set -euo pipefail
-    cd model/investment
-    find . -type f ! -name SYNCED-FROM -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1
+    src="{{src}}"; dest="{{dest}}"
+    for kind in {{INVESTMENT_KINDS}}; do
+        [ -d "$src/$kind" ] || { echo "$src/$kind is missing — refusing a partial sync" >&2; exit 2; }
+    done
+    # ⛔ Plain files and directories only, or nothing is written. A symlink is invisible to the tree
+    # hash, and what it points at is decided by whoever reads it — so one is refused, not copied.
+    odd=$(cd "$src" && find {{INVESTMENT_KINDS}} -name tests -prune -o ! -type f ! -type d -print)
+    if [ -n "$odd" ]; then
+        echo "refusing to sync entries that are not plain files (symlinks?) from $src:" >&2
+        echo "$odd" | sed 's|^|  |' >&2
+        exit 2
+    fi
+    mkdir -p "$(dirname "$dest")"
+    stage=$(mktemp -d "$(dirname "$dest")/.investment-sync.XXXXXX")
+    trap 'rm -rf "$stage"' EXIT
+    chmod 755 "$stage"
+    for kind in {{INVESTMENT_KINDS}}; do cp -R "$src/$kind" "$stage/$kind"; done
+    find "$stage" -type d -name tests -prune -exec rm -rf {} +
+    rm -rf "$dest"
+    mv "$stage" "$dest"
+    trap - EXIT
 
-# Drift check: fail when `model/investment/` no longer matches its stamp. Runs in `verify-model`'s
-# lane (this repo has no CI job for the model beyond that recipe).
+# The tree hash the stamp records and `check-investment-model` recomputes. Content AND path, so a
+# rename is a change. Only the TOP-LEVEL stamp is left out (the hash could never match what contains
+# it); a file named SYNCED-FROM anywhere else is content like any other. And plain files only: an
+# entry `find -type f` cannot see — a symlink — is refused, because a hash that skips it certifies
+# whatever it points at.
+_investment-tree-sha dir="model/investment":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{dir}}"
+    odd=$(find . ! -type f ! -type d)
+    if [ -n "$odd" ]; then
+        echo "{{dir}} holds entries that are not plain files — the tree hash cannot see them, and the sync never writes them:" >&2
+        echo "$odd" | sed 's|^\./|  |' >&2
+        exit 3
+    fi
+    find . -type f ! -path ./SYNCED-FROM -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1
+
+# Drift check: fail when `model/investment/` no longer matches its stamp. CI runs it on every push
+# and pull request (.github/workflows/model-gate.yml), and `verify-model` runs it first locally.
+# It proves the tree is what the stamp SAYS — not that the stamp is what kantheon holds; that is
+# `check-investment-model-source`, below.
 check-investment-model:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -185,12 +238,46 @@ check-investment-model:
     if [ -d "${IE_KANTHEON_DIR:-../kantheon}/packages/investment/model" ]; then
         mkdir -p "$tmp/model"
         just --justfile "{{justfile()}}" --working-directory "$tmp" sync-investment-model "$(cd "${IE_KANTHEON_DIR:-../kantheon}" && pwd)" >/dev/null
-        diff -rq model/investment "$tmp/model/investment" 2>&1 | grep -v SYNCED-FROM | sed 's|^|  |' >&2 || true
+        diff -rq model/investment "$tmp/model/investment" 2>&1 | grep -v '^Files model/investment/SYNCED-FROM and ' | sed 's|^|  |' >&2 || true
     else
-        (cd model/investment && find . -type f ! -name SYNCED-FROM | sed 's|^\./|  |') >&2
+        (cd model/investment && find . -type f ! -path ./SYNCED-FROM | sed 's|^\./|  |') >&2
         echo "  (no kantheon checkout at ${IE_KANTHEON_DIR:-../kantheon} — listing the whole tree instead of the diff)" >&2
     fi
     echo "stamped source commit: $src" >&2
+    exit 3
+
+# The comparison `check-investment-model` cannot make. The stamp's hash proves the tree is what the
+# stamp SAYS; it cannot prove the stamp is what kantheon holds — a hand-edit followed by a re-stamp
+# passes it, and veles serves `master` straight from git. This rebuilds the tree from kantheon AT
+# THE STAMPED COMMIT (`git archive`, so the checkout's branch and working tree do not matter) through
+# the same `_investment-copy` the sync uses, and compares. LOCAL ONLY: it needs a kantheon checkout
+# that has the commit, and CI has none — run it before merging a re-sync.
+check-investment-model-source kantheon=env_var_or_default("IE_KANTHEON_DIR", "../kantheon"):
+    #!/usr/bin/env bash
+    set -euo pipefail
+    stamp=model/investment/SYNCED-FROM
+    [ -f "$stamp" ] || { echo "$stamp is missing — run \`just sync-investment-model <kantheon>\`" >&2; exit 3; }
+    sha=$(grep '^source-commit: ' "$stamp" | cut -d' ' -f2)
+    case "$sha" in
+        *+dirty) echo "the stamp names a DIRTY source ($sha): no commit holds what was synced, so there is nothing to compare against. Re-sync from a clean kantheon." >&2; exit 3 ;;
+    esac
+    git -C "{{kantheon}}" cat-file -e "$sha^{commit}" 2>/dev/null \
+        || { echo "the kantheon checkout at {{kantheon}} does not have $sha — fetch it there first" >&2; exit 2; }
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    paths=()
+    for kind in {{INVESTMENT_KINDS}}; do paths+=("packages/investment/model/$kind"); done
+    git -C "{{kantheon}}" archive --format=tar "$sha" "${paths[@]}" | tar -x -C "$tmp"
+    just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-copy "$tmp/packages/investment/model" "$tmp/want"
+    want=$(just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-tree-sha "$tmp/want")
+    have=$(just --justfile "{{justfile()}}" --working-directory "$(pwd)" _investment-tree-sha)
+    if [ "$want" = "$have" ]; then
+        echo "model/investment is exactly kantheon $sha"
+        exit 0
+    fi
+    echo "model/investment is NOT what kantheon $sha holds — the source of truth is kantheon; edit it THERE and re-sync. Files that differ:" >&2
+    diff -rq "$tmp/want" model/investment 2>&1 | grep -v '^Only in model/investment: SYNCED-FROM$' \
+        | sed "s|$tmp/want|kantheon@${sha:0:12}|g; s|^|  |" >&2 || true
     exit 3
 
 # ── IE-P2·S2.4 · the estate answers, and it answers DIFFERENTLY after a write ────────────────────
@@ -206,6 +293,11 @@ check-investment-model:
 #
 #   just investment-dod                                    # readonly, against IE_DOD_PORTFOLIO
 #   IE_DOD_MODE=full just investment-dod                   # + the correction, addition and refusal drills
+#   IE_DOD_MODE=full IE_DOD_HOLD_ONLY=1 just investment-dod
+#                                                          # journal the correction and stop; it prints
+#                                                          # the IE_DOD_MOVEMENT=… run for after the commit
+#
+# `IE_DOD_MODE` is exactly `readonly` or `full`; anything else is refused before a request is sent.
 #
 # ⚑ On an estate that caps answers, declare the cap: `IE_DOD_TOP_N=100`. hartland's `validate` sets
 # `VALIDATE_DEFAULT_TOP_N=100` deliberately, and applies it by INJECTING a LIMIT into every plan —
@@ -214,3 +306,9 @@ check-investment-model:
 # answer really is not the whole ledger.
 investment-dod:
     ./scripts/investment-dod.sh
+
+# The drill's own suite: the script against a stub BFF and a fake psql — no estate, no database. Each
+# check the drill makes is shown to FAIL against a door that answers wrongly on purpose (a stale door,
+# a replacement at the old amount, a price read at scale 0, a refusal that is not the ruled one).
+verify-investment-dod:
+    node --test scripts/tests/investment-dod.test.mjs

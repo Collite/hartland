@@ -27,7 +27,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, statSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -190,4 +190,121 @@ test('T4.5 — every synced .ttrm declares `package investment`, and the db laye
   }
   const db = readFileSync(path.join(root, 'db/investment.ttrm'), 'utf-8');
   assert.match(db, /^model db schema dbo$/m, 'the db layer must declare `dbo`, not the physical schema');
+});
+
+// ── the destination is EXACTLY the source, and nothing in it is invisible to the hash ─────────────
+//
+// The cases below sync from a throwaway kantheon with the real package's SHAPE — four kind
+// directories each carrying a `tests/`, the entry face beside them — so they do not depend on what
+// the sibling kantheon checkout holds today.
+
+function commitAll(cwd, message) {
+  execFileSync('git', ['add', '-A'], { cwd });
+  execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', message], { cwd });
+}
+
+function scratchKantheon() {
+  const dir = mkdtempSync(path.join(tmpdir(), 'ie-kantheon-'));
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  const model = path.join(dir, 'packages/investment/model');
+  for (const kind of ['db', 'er', 'binding', 'queries']) {
+    mkdirSync(path.join(model, kind, 'tests'), { recursive: true });
+    writeFileSync(path.join(model, kind, `${kind}.ttrm`), `package investment\n// ${kind}\n`);
+    writeFileSync(path.join(model, kind, 'tests', `${kind}.test.mjs`), '// kantheon-only\n');
+  }
+  writeFileSync(path.join(model, 'book.ttrm'), 'model book\n');
+  mkdirSync(path.join(model, 'entry'));
+  writeFileSync(path.join(model, 'entry', 'programs.json'), '{}\n');
+  commitAll(dir, 'seed');
+  return { dir, model };
+}
+
+const inv = (dest, ...rest) => path.join(dest, 'model/investment', ...rest);
+
+test('T4.6 — a re-sync removes a stray top-level file and a receiver-side tests/ directory', () => {
+  // `rsync --delete` per kind directory could not see either: a top-level file is outside every
+  // kind directory, and an excluded `tests/` on the receiver is protected from deletion. Both
+  // survived a re-sync and were then re-certified by the new stamp.
+  const k = scratchKantheon();
+  const dest = freshDest();
+  just(dest, 'sync-investment-model', k.dir);
+  const clean = filesUnder(inv(dest));
+
+  writeFileSync(inv(dest, 'NOTES.md'), 'stray\n');
+  mkdirSync(inv(dest, 'er/tests'));
+  writeFileSync(inv(dest, 'er/tests/local.test.mjs'), '// stray\n');
+  writeFileSync(inv(dest, 'er/extra.ttrm'), 'package investment\n');
+
+  just(dest, 'sync-investment-model', k.dir);
+  assert.deepEqual(filesUnder(inv(dest)), clean, 'the re-synced tree is not exactly the source');
+});
+
+test('T4.7 — a file named SYNCED-FROM below the top level is not invisible to the hash', () => {
+  const k = scratchKantheon();
+  const dest = freshDest();
+  just(dest, 'sync-investment-model', k.dir);
+  writeFileSync(inv(dest, 'er/SYNCED-FROM'), 'hidden\n');
+
+  const { status, output } = justFails(dest, 'check-investment-model');
+  assert.notEqual(status, 0, 'check-investment-model passed over a file only its NAME hid');
+  assert.match(output, /er\/SYNCED-FROM/, output);
+});
+
+test('T4.8 — a symlink under model/investment fails check-investment-model, and is named', () => {
+  // `find -type f` does not see a symlink, so the hash did not either: a link to any file, anywhere,
+  // passed the drift check.
+  const k = scratchKantheon();
+  const dest = freshDest();
+  just(dest, 'sync-investment-model', k.dir);
+  symlinkSync('../db/db.ttrm', inv(dest, 'er/linked.ttrm'));
+
+  const { status, output } = justFails(dest, 'check-investment-model');
+  assert.notEqual(status, 0, 'check-investment-model passed over a symlink');
+  assert.match(output, /er\/linked\.ttrm/, output);
+});
+
+test('T4.9 — a symlink in the SOURCE is refused, and the destination is left untouched', () => {
+  const k = scratchKantheon();
+  symlinkSync('../db/db.ttrm', path.join(k.model, 'er', 'linked.ttrm'));
+  commitAll(k.dir, 'a link');
+  const dest = freshDest();
+
+  const { status, output } = justFails(dest, 'sync-investment-model', k.dir);
+  assert.notEqual(status, 0, 'the sync copied a symlink');
+  assert.match(output, /er\/linked\.ttrm/, output);
+  assert.ok(!existsSync(inv(dest)), 'a refused sync still wrote the destination');
+});
+
+test('T4.10 — a hand-edit plus a re-stamp passes the self-hash; check-investment-model-source catches it', () => {
+  const k = scratchKantheon();
+  const dest = freshDest();
+  just(dest, 'sync-investment-model', k.dir);
+  just(dest, 'check-investment-model-source', k.dir); // clean: passes
+
+  // kantheon moves on. The comparison is against the STAMPED commit, not the checkout's HEAD.
+  writeFileSync(path.join(k.model, 'db', 'db.ttrm'), 'package investment\n// a later commit\n');
+  commitAll(k.dir, 'later');
+  just(dest, 'check-investment-model-source', k.dir);
+
+  const victim = inv(dest, 'queries', 'queries.ttrm');
+  writeFileSync(victim, `${readFileSync(victim, 'utf-8')}// edited by hand\n`);
+  const sha = just(dest, '_investment-tree-sha').trim();
+  const stamp = inv(dest, 'SYNCED-FROM');
+  writeFileSync(stamp, readFileSync(stamp, 'utf-8').replace(/^tree-sha256: .*$/m, `tree-sha256: ${sha}`));
+  just(dest, 'check-investment-model'); // the self-hash is satisfied — which is exactly its limit
+
+  const { status, output } = justFails(dest, 'check-investment-model-source', k.dir);
+  assert.notEqual(status, 0, 'a hand-edit that re-stamped itself passed the source comparison');
+  assert.match(output, /queries\/queries\.ttrm/, `the failure must name the file:\n${output}`);
+});
+
+test('T4.11 — a +dirty stamp names no commit, so the source comparison refuses it', () => {
+  const k = scratchKantheon();
+  const dest = freshDest();
+  writeFileSync(path.join(k.model, 'db', 'db.ttrm'), 'package investment\n// uncommitted\n');
+  just(dest, 'sync-investment-model', k.dir, 'true');
+
+  const { status, output } = justFails(dest, 'check-investment-model-source', k.dir);
+  assert.notEqual(status, 0, 'a dirty stamp was compared against a commit that does not hold it');
+  assert.match(output, /dirty/i, output);
 });
