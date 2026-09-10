@@ -17,8 +17,8 @@ model er
 
 def entity transaction {
     description: {
-        en: "The ledger — every movement in a portfolio: purchases, sales, fees, cash credits and debits, deposits and withdrawals. Append-only: a correction appears as a reversal plus a replacement, never as an edit.",
-        cs: "Kniha pohybů — každý pohyb v portfoliu: nákupy, prodeje, poplatky, připsání a odepsání hotovosti, vklady a výběry. Pouze se přidává: oprava se objeví jako storno plus náhrada, nikdy jako přepis."
+        en: "The ledger — every movement in a portfolio: purchases, sales, transfers of units in and out, payouts, cash credits and debits, deposits and withdrawals. There is no separate fee movement: a fee the provider charges arrives as a withdrawal. Append-only: a correction appears as a reversal plus a replacement, never as an edit.",
+        cs: "Kniha pohybů — každý pohyb v portfoliu: nákupy, prodeje, převody jednotek dovnitř a ven, výplaty, připsání a odepsání hotovosti, vklady a výběry. Samostatný pohyb pro poplatek neexistuje: poplatek účtovaný poskytovatelem přichází jako výběr. Pouze se přidává: oprava se objeví jako storno plus náhrada, nikdy jako přepis."
     }
     labelPlural: "Transactions"
     codeAttribute: external_id
@@ -35,8 +35,8 @@ def entity transaction {
         def attribute external_id {
             type: text,
             description: {
-                en: "The movement's identity at the source, for example `conseq:100003369:BUY:8871`. Unique, and it is what makes a redelivered window a no-op rather than a second posting.",
-                cs: "Identita pohybu u zdroje, například `conseq:100003369:BUY:8871`. Jedinečná a právě díky ní je opakovaná dodávka okna bez efektu, nikoli druhým zaúčtováním."
+                en: "The movement's identity at the source, for example `conseq:100003369:SUB:8871` (the middle word is the provider's own operation code: SUB, RED, TON, TOFF, PAY, SST, RST, CRE, DEB). Unique, and it is what makes a redelivered window a no-op rather than a second posting. A correction's two added rows carry this id with `-rev` and `-rep` appended.",
+                cs: "Identita pohybu u zdroje, například `conseq:100003369:SUB:8871` (prostřední slovo je vlastní kód operace poskytovatele: SUB, RED, TON, TOFF, PAY, SST, RST, CRE, DEB). Jedinečná a právě díky ní je opakovaná dodávka okna bez efektu, nikoli druhým zaúčtováním. Dva řádky přidané opravou nesou toto id s příponou `-rev` a `-rep`."
             }
         },
         def attribute portfolio {
@@ -56,8 +56,8 @@ def entity transaction {
         def attribute leg {
             type: text,
             description: {
-                en: "Which side of the book this movement is on: `security` (units of an instrument), `cash` (money inside the portfolio) or `external-flow` (money crossing the portfolio's boundary). Every security movement has a cash counter-movement derived beside it.",
-                cs: "Na které straně knihy pohyb stojí: `security` (jednotky nástroje), `cash` (peníze uvnitř portfolia) nebo `external-flow` (peníze překračující hranici portfolia). Ke každému pohybu `security` se vedle odvodí protipohyb v hotovosti."
+                en: "Which side of the book this movement is on: `security` (units of an instrument), `cash` (money inside the portfolio) or `external-flow` (money crossing the portfolio's boundary). The legs are delivered separately and nothing derives one from another: when the provider settles a purchase or a sale inside the portfolio, its money arrives as its own `cash` movement, and not every security movement has one.",
+                cs: "Na které straně knihy pohyb stojí: `security` (jednotky nástroje), `cash` (peníze uvnitř portfolia) nebo `external-flow` (peníze překračující hranici portfolia). Strany se dodávají samostatně a žádná se neodvozuje z jiné: když poskytovatel vypořádá nákup nebo prodej uvnitř portfolia, jeho peníze přijdou jako samostatný pohyb `cash`, a ne každý pohyb `security` takový má."
             }
         },
         def attribute operation {
@@ -146,8 +146,8 @@ def entity position {
         def attribute market_value {
             type: decimal,
             description: {
-                en: "What the holding was worth on that day, in the portfolio's base currency — units times the instrument's price.",
-                cs: "Jakou hodnotu držba k danému dni měla, v základní měně portfolia — počet jednotek krát cena nástroje."
+                en: "What the holding was worth on that day, in the portfolio's BASE currency, as the provider valued it (its converted valuation). Not the same number as units times the instrument's price when the instrument is priced in another currency — that product is in the price's currency.",
+                cs: "Jakou hodnotu držba k danému dni měla, v ZÁKLADNÍ měně portfolia, tak jak ji ocenil poskytovatel (jeho přepočtené ocenění). Není to totéž číslo jako počet jednotek krát cena nástroje, pokud je nástroj oceněn v jiné měně — ten součin je v měně ceny."
             }
         }
     ]

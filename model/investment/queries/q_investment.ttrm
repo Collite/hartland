@@ -70,23 +70,30 @@ def query portfolios_of_client {
 }
 
 def query positions_current {
-    description: "The latest valued position per instrument in a portfolio, joined to the instrument and to the last price known on that valuation date."
+    description: "The portfolio's holdings at its latest valuation, each joined to the instrument and to the last price known on that valuation date."
     language: SQL
     sourceText: """
+        -- ⛔ "Latest" is the latest valuation OF THE PORTFOLIO, not of each instrument (review-089 ⑶).
+        -- A valuation pull values the whole portfolio on ONE date, and a position's key includes that
+        -- date — so scd2 never closes the last row of an instrument the portfolio has since SOLD
+        -- (it closes a row only when the same key comes back). Partitioning by instrument therefore
+        -- listed every instrument ever held, each at its own last valuation. The instrument join is a
+        -- LEFT join for the same reason `positions_at`'s is: an instrument the book has no row for is
+        -- still a holding, named by its ISIN.
         WITH open_position AS (
           SELECT p.portfolio_ref,
                  p.asset_ref,
                  p.valuation_date,
                  p.quantity,
                  p.market_value,
-                 MAX(p.valuation_date) OVER (PARTITION BY p.asset_ref) AS latest_valuation
+                 MAX(p.valuation_date) OVER () AS latest_valuation
           FROM investment_position p
           WHERE p.valid_to IS NULL
             AND p.portfolio_ref = {portfolio_id}
         )
         SELECT pos.portfolio_ref AS portfolio_id,
                pos.asset_ref     AS isin,
-               a.name            AS asset_name,
+               COALESCE(a.name, pos.asset_ref) AS asset_name,
                a.asset_class     AS kind,
                pos.valuation_date,
                pos.quantity,
@@ -94,7 +101,7 @@ def query positions_current {
                pr.price          AS last_price,
                pr.price_date     AS last_price_date
         FROM open_position pos
-        JOIN investment_asset a
+        LEFT JOIN investment_asset a
           ON a.isin = pos.asset_ref
         LEFT JOIN investment_asset_price pr
           ON pr.isin = pos.asset_ref
@@ -339,7 +346,12 @@ def query positions_at {
           -- nullable join key, and that operator is not in the wire format either. An instrument
           -- that has never been priced is absent here and reaches the outer LEFT JOIN as NULL,
           -- which is the point.
-          SELECT ap.isin, ap.price, ap.price_date
+          -- `price_currency`, not `currency`: the holding line joins this AND `investment_asset`, and
+          -- both carry a `currency`. psql resolves the qualified names happily; the door does not —
+          -- Calcite renames the second to `currency0` and the PostgreSQL unparse then fails with
+          -- `field [currency0] not found` (measured through ttr-translator, review-089). Never let
+          -- one row carry the same column name twice in a program the door runs.
+          SELECT ap.isin, ap.price, ap.price_date, ap.currency AS price_currency
           FROM investment_asset_price ap
           JOIN (SELECT p2.isin AS isin, MAX(p2.price_date) AS as_of_price_date
                   FROM investment_asset_price p2
@@ -348,18 +360,26 @@ def query positions_at {
             ON m.isin = ap.isin
            AND m.as_of_price_date = ap.price_date
         )
+        -- ⛔ review-089 ⑵: a holding's `market_value` is units × price, so it is in the PRICE's
+        -- currency, and a portfolio can hold a EUR fund beside CZK ones (the connector's own
+        -- valuation fixture does). Every line therefore says its currency, and nothing here sums
+        -- across one. ⛔ review-089 ⑷: the instrument join is a LEFT join. `investment_asset` is
+        -- written only by the date-less valuation leg, which answers with CURRENT holdings, so an
+        -- instrument bought and sold before the connector's first sync has trades and prices and no
+        -- asset row — and an inner join made it vanish from every historical date.
         SELECT x.line_id, x.line_name, x.quantity, x.last_price, x.last_price_date, x.market_value,
-               x.line_rank
+               x.currency, x.line_rank
         FROM (
           SELECT h.asset_ref        AS line_id,
-                 a.name             AS line_name,
+                 COALESCE(a.name, h.asset_ref) AS line_name,
                  h.quantity,
                  CAST(pr.price AS FLOAT) AS last_price,
                  pr.price_date      AS last_price_date,
                  h.quantity * pr.price AS market_value,
+                 COALESCE(pr.price_currency, a.currency) AS currency,
                  0                  AS line_rank
           FROM holdings h
-          JOIN investment_asset a
+          LEFT JOIN investment_asset a
             ON a.isin = h.asset_ref
           LEFT JOIN latest_price pr
             ON pr.isin = h.asset_ref
@@ -370,6 +390,7 @@ def query positions_at {
                  CAST(NULL AS FLOAT),
                  CAST(NULL AS DATE),
                  c.balance,
+                 c.currency,
                  1
           FROM cash c
         ) x
@@ -400,8 +421,12 @@ def query positions_at {
         -- has no DECLARED scale rather than because its values are integers —
         -- Collite/tatrman-server#83. Exact money needs a decimal type IN THE PLAN —
         -- Collite/tatrman#129. Moving the arithmetic to the caller does not help: a JavaScript
-        -- number is a double too. When #83 lands, the FLOAT cast above comes off and `last_price`
-        -- goes back to being the exact stored number; T1.16 and T3.6 are what will say so.
+        -- number is a double too. When #83 lands, the FLOAT cast above can come off and `last_price`
+        -- go back to being the exact stored number — and ⛔ NOTHING OFFLINE WILL SAY SO (review-089
+        -- ㉒; this line used to claim T1.16 and T3.6 would): psql never truncated, and T1.16 only
+        -- refuses decimal casts on computed values. The signal is the issue closing; the proof is
+        -- `just investment-dod` (hartland) comparing the door's `last_price` with the book's stored
+        -- price, run on an estate whose worker carries the fix, with the cast removed.
         -- ⛔ `line_rank` IS A REAL COLUMN OF THE ANSWER, and it has to be (S2.3·D18). The UNION is
         -- wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION over its output
         -- columns — but the door then imposes a second rule of its own: **an ORDER BY key that is
@@ -454,7 +479,7 @@ def query positions_at {
 // PostgreSQL — and NOT through `POST /api/query/run`. `queries.test.mjs` T1.14 is what keeps that
 // statement honest: it is the only query allowed to carry a PostgreSQL-only construct.
 def query quarterly_evolution {
-    description: "The portfolio quarter by quarter: what it was worth, what the client put in or took out, what that left as profit, and how well the prices behind the number were known."
+    description: "The portfolio quarter by quarter and currency by currency: what it was worth, what came in or went out (money and in-kind transfers alike), what that left as profit, and how well the prices behind the number were known."
     language: SQL
     sourceText: """
         WITH effective_ledger AS (
@@ -485,6 +510,11 @@ def query quarterly_evolution {
           FROM generate_series(0, ({quarters})::int) AS g(i)
           UNION ALL
           SELECT ({as_of})::date, TRUE
+        ), bounds AS (
+          -- each period with the end of the one before it: flows count in (prev_end, period_end]
+          SELECT p.period_end, p.partial,
+                 LAG(p.period_end) OVER (ORDER BY p.period_end) AS prev_end
+          FROM period p
         ), holdings AS (
           SELECT p.period_end, e.asset_ref, SUM(e.qty_signed) AS quantity
           FROM period p
@@ -494,63 +524,116 @@ def query quarterly_evolution {
            AND e.trade_date <= p.period_end
           GROUP BY p.period_end, e.asset_ref
           HAVING SUM(e.qty_signed) <> 0
+        ), transfers AS (
+          -- ⛔ review-089 ⒀: an IN-KIND transfer moves value across the portfolio's boundary exactly
+          -- as a deposit or a withdrawal does, so it is a FLOW. Left out, a fund arriving by transfer
+          -- raised total_value with no matching flow and the P&L booked it as PROFIT. Valued at the
+          -- SAME price the period's market value uses (the latest price ≤ the period end), so a
+          -- transfer inside the period moves the value and not the P&L — and a switch between two
+          -- funds of one portfolio (a transfer-out and a transfer-in) nets to ~0 as it should. The
+          -- rows carry units and no amount (DistrInfo TON/TOFF), hence a price at all. ⚑ A default
+          -- awaiting Bora's ruling — review-089 "The fixes".
+          SELECT b.period_end, e.asset_ref,
+                 SUM(CASE WHEN e.operation = 'transfer-in' THEN COALESCE(abs(e.quantity), 0)
+                          ELSE -COALESCE(abs(e.quantity), 0) END) AS quantity
+          FROM bounds b
+          JOIN effective_ledger e
+            ON e.portfolio_ref = {portfolio_id}
+           AND e.leg = 'security'
+           AND e.operation IN ('transfer-in', 'transfer-out')
+           AND e.trade_date <= b.period_end
+           AND e.trade_date > COALESCE(b.prev_end, '-infinity'::date)
+          GROUP BY b.period_end, e.asset_ref
         ), valued AS (
-          SELECT h.period_end, h.asset_ref, h.quantity, pr.price, pr.price_date
-          FROM holdings h
+          -- holdings and transferred units alike, each at the period's price and in THAT price's
+          -- currency; an instrument never priced falls back to its own currency (or XXX, ISO 4217's
+          -- "no currency") so it still counts as `missing` somewhere
+          SELECT u.period_end, u.kind, u.asset_ref, u.quantity, pr.price, pr.price_date,
+                 COALESCE(pr.currency, a.currency, 'XXX') AS currency
+          FROM (SELECT period_end, 'holding' AS kind, asset_ref, quantity FROM holdings
+                UNION ALL
+                SELECT period_end, 'transfer' AS kind, asset_ref, quantity FROM transfers) u
+          LEFT JOIN investment_asset a
+            ON a.isin = u.asset_ref
           LEFT JOIN LATERAL (
-            SELECT p2.price, p2.price_date
+            SELECT p2.price, p2.price_date, p2.currency
             FROM investment_asset_price p2
-            WHERE p2.isin = h.asset_ref
-              AND p2.price_date <= h.period_end
+            WHERE p2.isin = u.asset_ref
+              AND p2.price_date <= u.period_end
             ORDER BY p2.price_date DESC
             LIMIT 1
           ) pr ON TRUE
+        ), currencies AS (
+          SELECT DISTINCT v.currency FROM valued v
+          UNION
+          SELECT DISTINCT e.currency
+          FROM effective_ledger e
+          WHERE e.portfolio_ref = {portfolio_id}
+            AND e.leg IN ('cash', 'external-flow')
+            AND e.currency IS NOT NULL
+        ), grid AS (
+          -- ⛔ review-089 ⑵: one row per quarter PER CURRENCY. The book has no FX table, so there
+          -- is nothing to convert with, and adding CZK to EUR is not an answer. ⚑ A default
+          -- awaiting Bora's ruling — review-089 "The fixes".
+          SELECT b.period_end, b.partial, b.prev_end, c.currency
+          FROM bounds b
+          CROSS JOIN currencies c
         ), market AS (
-          SELECT period_end,
+          SELECT period_end, currency,
                  COALESCE(SUM(round(quantity * price, 2)) FILTER (WHERE price IS NOT NULL), 0) AS market_value,
                  COUNT(*) FILTER (WHERE price IS NULL) AS missing_assets,
                  MIN(price_date) FILTER (WHERE price IS NOT NULL) AS oldest_price_date
           FROM valued
-          GROUP BY period_end
+          WHERE kind = 'holding'
+          GROUP BY period_end, currency
+        ), in_kind AS (
+          SELECT period_end, currency,
+                 COALESCE(SUM(round(quantity * price, 2)) FILTER (WHERE price IS NOT NULL), 0) AS in_kind_flow
+          FROM valued
+          WHERE kind = 'transfer'
+          GROUP BY period_end, currency
         ), cash AS (
-          SELECT p.period_end, COALESCE(SUM(e.amt_signed), 0) AS cash_balance
-          FROM period p
+          SELECT g.period_end, g.currency, COALESCE(SUM(e.amt_signed), 0) AS cash_balance
+          FROM grid g
           LEFT JOIN effective_ledger e
             ON e.portfolio_ref = {portfolio_id}
            AND e.leg = 'cash'
-           AND e.trade_date <= p.period_end
-          GROUP BY p.period_end
+           AND e.currency = g.currency
+           AND e.trade_date <= g.period_end
+          GROUP BY g.period_end, g.currency
         ), flows AS (
-          SELECT p.period_end, COALESCE(SUM(e.amt_signed), 0) AS net_flow_q
-          FROM period p
+          SELECT g.period_end, g.currency, COALESCE(SUM(e.amt_signed), 0) AS money_flow
+          FROM grid g
           LEFT JOIN effective_ledger e
             ON e.portfolio_ref = {portfolio_id}
            AND e.leg = 'external-flow'
-           AND e.trade_date <= p.period_end
-           AND e.trade_date > COALESCE((SELECT max(pp.period_end)
-                                          FROM period pp
-                                         WHERE pp.period_end < p.period_end), '-infinity'::date)
-          GROUP BY p.period_end
+           AND e.currency = g.currency
+           AND e.trade_date <= g.period_end
+           AND e.trade_date > COALESCE(g.prev_end, '-infinity'::date)
+          GROUP BY g.period_end, g.currency
         ), per_q AS (
-          SELECT p.period_end,
-                 p.partial,
+          SELECT g.period_end,
+                 g.partial,
+                 g.currency,
                  COALESCE(m.market_value, 0) AS market_value,
                  COALESCE(m.missing_assets, 0) AS missing_assets,
                  m.oldest_price_date,
                  c.cash_balance,
                  COALESCE(m.market_value, 0) + c.cash_balance AS total_value,
-                 f.net_flow_q
-          FROM period p
-          LEFT JOIN market m ON m.period_end = p.period_end
-          LEFT JOIN cash   c ON c.period_end = p.period_end
-          LEFT JOIN flows  f ON f.period_end = p.period_end
+                 f.money_flow + COALESCE(k.in_kind_flow, 0) AS net_flow_q
+          FROM grid g
+          JOIN cash  c ON c.period_end = g.period_end AND c.currency = g.currency
+          JOIN flows f ON f.period_end = g.period_end AND f.currency = g.currency
+          LEFT JOIN market  m ON m.period_end = g.period_end AND m.currency = g.currency
+          LEFT JOIN in_kind k ON k.period_end = g.period_end AND k.currency = g.currency
         ), windowed AS (
-          SELECT per_q.*, LAG(total_value) OVER (ORDER BY period_end) AS prev_total
+          SELECT per_q.*, LAG(total_value) OVER (PARTITION BY currency ORDER BY period_end) AS prev_total
           FROM per_q
         )
         SELECT {portfolio_id} AS portfolio_id,
                period_end,
                partial,
+               currency,
                market_value,
                cash_balance,
                total_value,
@@ -564,7 +647,7 @@ def query quarterly_evolution {
                     ELSE 'full' END AS price_coverage
         FROM windowed
         WHERE prev_total IS NOT NULL
-        ORDER BY period_end
+        ORDER BY period_end, currency
     """
     search {
         patterns: [
