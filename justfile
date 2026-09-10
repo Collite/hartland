@@ -206,5 +206,11 @@ check-investment-model:
 #
 #   just investment-dod                                    # readonly, against IE_DOD_PORTFOLIO
 #   IE_DOD_MODE=full just investment-dod                   # + the correction, addition and refusal drills
+#
+# ⚑ On an estate that caps answers, declare the cap: `IE_DOD_TOP_N=100`. hartland's `validate` sets
+# `VALIDATE_DEFAULT_TOP_N=100` deliberately, and applies it by INJECTING a LIMIT into every plan —
+# silently, with `truncated: false` on the way out (S2.4·D9). Without the declaration the row check
+# reads that as a disagreement between the door and the book, which is the honest default: a capped
+# answer really is not the whole ledger.
 investment-dod:
     ./scripts/investment-dod.sh

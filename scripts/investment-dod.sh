@@ -31,6 +31,13 @@
 #   IE_DOD_DSN        psql DSN for the `entry` database (the counts this script checks the door against)
 #   IE_DOD_PORTFOLIO  the portfolio to read, and in `full` mode to write to
 #   IE_DOD_MODE       full | readonly                (default readonly)
+#   IE_DOD_TOP_N      the estate's governance cap on rows per answer, if it has one. hartland sets
+#                     `VALIDATE_DEFAULT_TOP_N=100` deliberately — the validator injects a LIMIT on
+#                     every plan and the cap is a hard ceiling (`effectiveCap = min(requested,
+#                     serviceDefault)`, so a caller can only ask for LESS). Set it and the row checks
+#                     expect `min(book, cap)`; leave it unset for an uncapped estate. Read the live
+#                     value from validate's status, or from
+#                     `olymp/clusters/hartland/apps/validate/values.yaml`.
 #   IE_DOD_HOLD_ONLY  1 to journal the two drills and STOP before committing them, leaving both
 #                     batches held in the Inbox for a person to preview and commit. That is the
 #                     rehearsal shape of the beat: S2.4·D6 was ruled (a) — a correction is PROPOSED
@@ -47,6 +54,7 @@ DSN="${IE_DOD_DSN:?IE_DOD_DSN is required (psql DSN for the entry database)}"
 PORTFOLIO="${IE_DOD_PORTFOLIO:?IE_DOD_PORTFOLIO is required — name the portfolio explicitly}"
 MODE="${IE_DOD_MODE:-readonly}"
 HOLD_ONLY="${IE_DOD_HOLD_ONLY:-}"
+TOP_N="${IE_DOD_TOP_N:-}"
 TODAY="$(date -u +%F)"
 
 fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
@@ -108,8 +116,40 @@ db_txns="$(q "
    WHERE t.portfolio_ref = '$PORTFOLIO'
      AND t.reversal_of IS NULL
      AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)")"
-[ "$door_txns" = "$db_txns" ] || fail "transactions_recent says $door_txns effective rows, the book says $db_txns"
-ok "the door and the book agree: $db_txns effective movements"
+
+# ⛔ THE ESTATE MAY CAP THE ANSWER, AND ON hartland IT DOES — S2.4·D9. `validate` enforces a TopN
+# rule by INJECTING a `LIMIT <cap>` into every plan that has none, and the cap is a hard ceiling:
+# `effectiveCap = min(requested, serviceDefault)`, so a caller can ask for fewer rows and never for
+# more. hartland sets it to 100 on purpose — its own values file calls it "the governance beat in the
+# demo narrative".
+#
+# ⛔ It is applied SILENTLY. `RuleEnforcer` appends a message for a column rule and none for TopN, so
+# the answer comes back with `truncated: false` (the BFF's own limit was never reached) and 100 rows
+# of 835, presented as the whole ledger. That is the comparison below existing: without it the door
+# says "here is the effective ledger" and a reader has no way to know it is a tenth of one.
+expected_txns="$db_txns"
+if [ -n "$TOP_N" ] && [ "$db_txns" -gt "$TOP_N" ]; then
+    expected_txns="$TOP_N"
+fi
+if [ "$door_txns" != "$expected_txns" ]; then
+    if [ -z "$TOP_N" ] && [ "$door_txns" -lt "$db_txns" ]; then
+        echo "   ⚑ the door returned FEWER rows than the book holds, and no IE_DOD_TOP_N was declared." >&2
+        echo "     This estate probably caps answers. Check it and re-run with the cap declared:" >&2
+        echo "       kubectl --context hartland -n ttr-server get deploy validate \\" >&2
+        echo "         -o jsonpath='{.spec.template.spec.containers[0].env[*]}' | tr '}' '\\n' | grep TOP_N" >&2
+    fi
+    fail "transactions_recent says $door_txns effective rows, expected $expected_txns (the book holds $db_txns)"
+fi
+if [ "$expected_txns" != "$db_txns" ]; then
+    ok "the door and the book agree at the cap: $door_txns of $db_txns effective movements (TopN $TOP_N)"
+    # ⛔ Said out loud every run, because the pipeline does not say it: an answer cut by the
+    # governance cap is indistinguishable, to its caller, from a complete one.
+    printf '     \033[33m⚑ the estate CAPPED this answer at %s rows and reported truncated=false.\033[0m\n' "$TOP_N"
+    printf '       %s of the portfolio'"'"'s %s effective movements were withheld, silently. S2.4·D9.\n' \
+        "$((db_txns - TOP_N))" "$db_txns"
+else
+    ok "the door and the book agree: $db_txns effective movements"
+fi
 
 # ⚑ positions_at answers with SEVEN columns since S2.3·D18, the seventh being `line_rank` (0 =
 # holding, 1 = cash). Asserted, because it is a declared part of the answer now and a silent return
@@ -227,10 +267,26 @@ ok "+2 rows: $MOVEMENT-rev (linked) and $MOVEMENT-rep"
 
 # The whole point of the effective ledger: three rows in the book, ONE row in the answer.
 AFTER_TXNS="$(run "q.investment.transactions_recent" "{\"portfolio_id\":\"$PORTFOLIO\",\"since\":\"2000-01-01\"}")" || fail "transactions_recent stopped answering"
+# Unchanged whether or not the cap binds: a correction replaces one effective row with one effective
+# row, so neither the true count nor the capped view of it may move.
 [ "$(rows "$AFTER_TXNS")" = "$door_txns" ] || fail "the effective ledger moved from $door_txns to $(rows "$AFTER_TXNS") rows — a correction must not change the COUNT"
 seen="$(jq -r --arg m "$MOVEMENT" '[.rows[] | select(.[0] == $m or .[0] == ($m + "-rep") or .[0] == ($m + "-rev"))] | length' <<<"$AFTER_TXNS")"
-[ "$seen" = "1" ] || fail "the corrected movement appears $seen times in the effective ledger, expected exactly 1"
-ok "the ledger still shows the movement exactly once, and the count is unchanged ($door_txns)"
+# ⛔ MORE than once is always wrong — it would mean the reversal and the replacement are both
+# effective, which is the whole thing the CTE exists to prevent.
+[ "$seen" -le 1 ] || fail "the corrected movement appears $seen times in the effective ledger — the reversal is not cancelling"
+if [ "$seen" = "1" ]; then
+    ok "the ledger still shows the movement exactly once, and the count is unchanged ($door_txns)"
+elif [ "$expected_txns" != "$db_txns" ]; then
+    # Zero is only acceptable under a cap: the answer is a WINDOW on the ledger, and the corrected
+    # movement can legitimately fall outside it. Said rather than passed over, because "not in the
+    # window" and "not in the ledger" are very different statements and this check cannot tell them
+    # apart from the door alone — so it asks the book.
+    in_book="$(q "SELECT count(*) FROM investment_transaction WHERE external_id = '$MOVEMENT-rep'")"
+    [ "$in_book" = "1" ] || fail "the replacement row is not in the book either"
+    ok "the movement fell outside the capped $TOP_N-row window; the book confirms exactly one replacement"
+else
+    fail "the corrected movement vanished from the effective ledger"
+fi
 
 AFTER_POS="$(run "q.investment.positions_at" "{\"portfolio_id\":\"$PORTFOLIO\",\"as_of\":\"$TODAY\"}")" || fail "positions_at stopped answering"
 [ "$(col "$AFTER_POS" quantity)" = "$BEFORE_QTY" ] || fail "correcting an AMOUNT changed the holding: $BEFORE_QTY → $(col "$AFTER_POS" quantity)"
