@@ -348,14 +348,16 @@ def query positions_at {
             ON m.isin = ap.isin
            AND m.as_of_price_date = ap.price_date
         )
-        SELECT x.line_id, x.line_name, x.quantity, x.last_price, x.last_price_date, x.market_value
+        SELECT x.line_id, x.line_name, x.quantity, x.last_price, x.last_price_date, x.market_value,
+               x.line_rank
         FROM (
           SELECT h.asset_ref        AS line_id,
                  a.name             AS line_name,
                  h.quantity,
-                 pr.price           AS last_price,
+                 CAST(pr.price AS FLOAT) AS last_price,
                  pr.price_date      AS last_price_date,
-                 h.quantity * pr.price AS market_value
+                 h.quantity * pr.price AS market_value,
+                 0                  AS line_rank
           FROM holdings h
           JOIN investment_asset a
             ON a.isin = h.asset_ref
@@ -364,10 +366,11 @@ def query positions_at {
           UNION ALL
           SELECT 'CASH:' || c.currency,
                  'Cash (' || c.currency || ')',
-                 CAST(NULL AS DECIMAL(18,6)),
-                 CAST(NULL AS DECIMAL(18,6)),
+                 CAST(NULL AS FLOAT),
+                 CAST(NULL AS FLOAT),
                  CAST(NULL AS DATE),
-                 c.balance
+                 c.balance,
+                 1
           FROM cash c
         ) x
         -- ⛔ NO SCALE IS ASKED FOR ON COMPUTED MONEY, and that is deliberate (S2.3·D6, corrected
@@ -381,16 +384,36 @@ def query positions_at {
         -- differently on the two paths: psql honours the cast and returns `16500.00`, the door
         -- discards it and returns `16500`. Removing it makes the two agree, and puts the rounding
         -- where §2.2 already puts it — the Studio formats, it does not compute.
-        -- ⚑ The NULL casts in the cash branch stay DECIMAL: they only align the UNION's column types, a
-        -- NULL carries no scale to lose, and DECIMAL is the one spelling both PostgreSQL and
-        -- Calcite parse (`DOUBLE` is not PostgreSQL's, `DOUBLE PRECISION` is not Calcite's).
-        -- ⚑ Exact computed money needs a decimal type IN THE PLAN — Collite/tatrman#129. Moving
-        -- the arithmetic to the caller does not help: a JavaScript number is a double too.
-        -- The UNION is wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION
-        -- over its output columns — only by a column name or position. The cash line sorts last,
-        -- ordered by a CASE rather than by the boolean `line_id LIKE 'CASH:%'` the wrapper used to
-        -- carry: a bare boolean sort key is PostgreSQL's, and the door's ORDER BY takes an integer.
-        ORDER BY CASE WHEN x.line_id LIKE 'CASH:%' THEN 1 ELSE 0 END, x.line_id
+        -- ⛔ `last_price` IS CAST TO FLOAT, and a stored exact number is deliberately made inexact
+        -- (S2.3·D19). Left uncast it is the only column in this answer that reaches the worker as a
+        -- bare `numeric` COLUMN rather than as arithmetic: the cash branch contributes a NULL whose
+        -- DECIMAL cast the plan erases (D13), so PostgreSQL types the UNION column as an
+        -- UNCONSTRAINED `numeric`, JDBC reports its scale as 0, and worker-postgres builds a
+        -- `decimal128(38,0)` vector — a stored `2.103100` was delivered as `2`. Not a rounding
+        -- difference: a wrong number, silently, in front of a client. `FLOAT` is the one spelling
+        -- BOTH parsers take (PostgreSQL's `FLOAT` is `float8`; Calcite refuses `DOUBLE PRECISION`
+        -- and PostgreSQL refuses `DOUBLE`), and the door unparses it to `DOUBLE PRECISION`, which
+        -- carries the value. The NULL casts in the cash branch follow it for the same reason — they
+        -- only align the UNION's column types, and a NULL has no scale to lose either way.
+        -- ⚑ This is a WORKAROUND for a runtime defect, not the fix: worker-postgres must not read an
+        -- unconstrained `numeric` at the scale JDBC reports for it, which is 0 because the column
+        -- has no DECLARED scale rather than because its values are integers (upstream issue pending
+        -- — see the S2.3 tracker). Exact money needs a decimal type IN THE PLAN —
+        -- Collite/tatrman#129. Moving the arithmetic to the caller does not help: a JavaScript
+        -- number is a double too.
+        -- ⛔ `line_rank` IS A REAL COLUMN OF THE ANSWER, and it has to be (S2.3·D18). The UNION is
+        -- wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION over its output
+        -- columns — but the door then imposes a second rule of its own: **an ORDER BY key that is
+        -- not one of the projected columns is HOISTED INTO THE PROJECTION**, so the CASE this used
+        -- to sort by came back as an unnamed seventh column called `case`. Measured, three ways:
+        -- hiding the key in an inner subquery and trimming it with an outer SELECT does not work
+        -- either — the optimiser then DELETES the sort (it is not semantic under a projection) and
+        -- the answer comes back unordered; and an ORDER BY over a projected column that is still an
+        -- expression (`x.last_price_date IS NULL`) hoists just the same. So the choice is an honest
+        -- named column or no ordering at all, and the description promises the cash line comes last.
+        -- 0 = holding, 1 = cash: it is the sort key AND the line's kind, which is what the renderer
+        -- needs anyway to know which row has no quantity and no price.
+        ORDER BY x.line_rank, x.line_id
     """
     search {
         patterns: [
