@@ -355,7 +355,7 @@ def query positions_at {
                  h.quantity,
                  pr.price           AS last_price,
                  pr.price_date      AS last_price_date,
-                 CAST(h.quantity * pr.price AS DECIMAL(18,2)) AS market_value
+                 h.quantity * pr.price AS market_value
           FROM holdings h
           JOIN investment_asset a
             ON a.isin = h.asset_ref
@@ -367,21 +367,25 @@ def query positions_at {
                  CAST(NULL AS DECIMAL(18,6)),
                  CAST(NULL AS DECIMAL(18,6)),
                  CAST(NULL AS DATE),
-                 CAST(c.balance AS DECIMAL(18,2))
+                 c.balance
           FROM cash c
         ) x
-        -- ⛔⛔ THIS QUERY DOES NOT RUN THROUGH THE DOOR, and the scale is why (S2.3·D6, ⚑IE-15).
-        -- The surface-type lattice a plan travels in is TEXT/INT/FLOAT/BOOL/DATETIME with no
-        -- DECIMAL, so every `decimal(18,2)` column arrives as a DOUBLE — and PostgreSQL's
-        -- two-argument `round()` exists only for numeric: `ERROR: function round(double precision,
-        -- integer) does not exist`. Writing `CAST(… AS DECIMAL(18,2))` instead does NOT avoid it:
-        -- Calcite's PostgreSQL dialect unparses a decimal cast AS `ROUND(x, 2)`, so the two spell
-        -- the same failure. Measured on the local estate, both ways. It is written as the cast
-        -- because that states the intent, and because a platform whose plan carried a decimal type
-        -- would honour it; the alternative is to stop asking for a scale in SQL and let the
-        -- presentation layer format, which changes what `conform-investment-queries` expects.
-        -- Bora rules it with ⚑IE-15. Everything else about this query runs: it is the arithmetic
-        -- that is refused, not the CTE, the join or the union.
+        -- ⛔ NO SCALE IS ASKED FOR ON COMPUTED MONEY, and that is deliberate (S2.3·D6, corrected
+        -- at S2.3·D13; ruled by Bora 2026-09-10). `market_value` was written
+        -- `CAST(h.quantity * pr.price AS DECIMAL(18,2))`, which reads as "money, to the cent" and
+        -- is not what happens: the surface-type lattice a plan travels in is
+        -- TEXT/INT/FLOAT/BOOL/DATETIME with NO DECIMAL, so the cast is DISCARDED — silently, with
+        -- no error and no warning — and the door emits `CAST(… AS DOUBLE PRECISION)`. The word
+        -- `decimal` does not survive anywhere in the plan; measured by unparsing this query through
+        -- the door's own translator and grepping the plan proto. So the SAME TEXT answered
+        -- differently on the two paths: psql honours the cast and returns `16500.00`, the door
+        -- discards it and returns `16500`. Removing it makes the two agree, and puts the rounding
+        -- where §2.2 already puts it — the Studio formats, it does not compute.
+        -- ⚑ The NULL casts in the cash branch stay DECIMAL: they only align the UNION's column types, a
+        -- NULL carries no scale to lose, and DECIMAL is the one spelling both PostgreSQL and
+        -- Calcite parse (`DOUBLE` is not PostgreSQL's, `DOUBLE PRECISION` is not Calcite's).
+        -- ⚑ Exact computed money needs a decimal type IN THE PLAN — Collite/tatrman#129. Moving
+        -- the arithmetic to the caller does not help: a JavaScript number is a double too.
         -- The UNION is wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION
         -- over its output columns — only by a column name or position. The cash line sorts last,
         -- ordered by a CASE rather than by the boolean `line_id LIKE 'CASH:%'` the wrapper used to
