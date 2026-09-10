@@ -31,6 +31,13 @@
 #   IE_DOD_DSN        psql DSN for the `entry` database (the counts this script checks the door against)
 #   IE_DOD_PORTFOLIO  the portfolio to read, and in `full` mode to write to
 #   IE_DOD_MODE       full | readonly                (default readonly)
+#   IE_DOD_HOLD_ONLY  1 to journal the two drills and STOP before committing them, leaving both
+#                     batches held in the Inbox for a person to preview and commit. That is the
+#                     rehearsal shape of the beat: S2.4·D6 was ruled (a) — a correction is PROPOSED
+#                     as a batch and COMMITTED BY A HUMAN in the Inbox, which is the path Dan took at
+#                     IE-P1·S1.5 and the only correction path the Studio actually has. In hold-only
+#                     mode the script asserts up to the hold and then stops, because everything after
+#                     it is the human's move.
 
 set -euo pipefail
 
@@ -39,6 +46,7 @@ BEARER="${IE_DOD_BEARER:?IE_DOD_BEARER is required}"
 DSN="${IE_DOD_DSN:?IE_DOD_DSN is required (psql DSN for the entry database)}"
 PORTFOLIO="${IE_DOD_PORTFOLIO:?IE_DOD_PORTFOLIO is required — name the portfolio explicitly}"
 MODE="${IE_DOD_MODE:-readonly}"
+HOLD_ONLY="${IE_DOD_HOLD_ONLY:-}"
 TODAY="$(date -u +%F)"
 
 fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
@@ -192,6 +200,16 @@ post() {
 
 CORRECTION="$(batch correct update "{\"external_id\":\"$MOVEMENT\"}" "{\"amount\":\"$NEW_AMOUNT\"}")"
 [ "$(post "/api/entry/batches?intent=hold" "$CORRECTION")" = "201" ] || fail "the correction was not journalled: $(cat /tmp/ie-dod-post.json)"
+if [ -n "$HOLD_ONLY" ]; then
+    # ⛔ Ruled (a): the commit is a PERSON'S. The batch is held; it is now in the Inbox, where
+    # someone previews it, reads the two rows it proposes, and commits it under their own name. The
+    # script stops here rather than doing it for them, because the point of the beat is that a human
+    # decided — and a script that committed "to be sure" would remove the only thing being shown.
+    ok "held for the Inbox — preview and commit it there, as $MOVEMENT"
+    printf '\n\033[1mheld: the correction of %s (%s → %s) is waiting in the Inbox.\033[0m\n' "$MOVEMENT" "$OLD_AMOUNT" "$NEW_AMOUNT"
+    printf 'Open /e/inbox?state=held, preview it, and commit. Re-run without IE_DOD_HOLD_ONLY to assert the rest.\n'
+    exit 0
+fi
 [ "$(post "/api/entry/preview" "$CORRECTION")" = "200" ] || fail "preview refused: $(cat /tmp/ie-dod-post.json)"
 jq -e '.rejects | length == 0' /tmp/ie-dod-post.json >/dev/null || fail "preview rejected rows: $(cat /tmp/ie-dod-post.json)"
 [ "$(post "/api/entry/commit" "$CORRECTION")" = "200" ] || fail "commit refused: $(cat /tmp/ie-dod-post.json)"
