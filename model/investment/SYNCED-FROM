@@ -1,5 +1,5 @@
 source-repo: kantheon
 source-path: packages/investment/model/{db,er,binding,queries}
-source-commit: eefe8a06b5a625e699a68304d5d44605d4ec5ddf
+source-commit: 731a4578297c6bc9ed6dab6a2bf59d7b4e67a302
 synced-at: 2026-09-10
-tree-sha256: 082a0ea67bc9c8b4fd6cdc84d61c7e1ea82cda66d44644022c0fffbc61e12a54
+tree-sha256: 1743a770a63da2fcb5ce79c3204b72c1d6394d813b202f9e68df7363404a12af

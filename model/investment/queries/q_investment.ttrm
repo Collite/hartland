@@ -397,10 +397,11 @@ def query positions_at {
         -- only align the UNION's column types, and a NULL has no scale to lose either way.
         -- ⚑ This is a WORKAROUND for a runtime defect, not the fix: worker-postgres must not read an
         -- unconstrained `numeric` at the scale JDBC reports for it, which is 0 because the column
-        -- has no DECLARED scale rather than because its values are integers (upstream issue pending
-        -- — see the S2.3 tracker). Exact money needs a decimal type IN THE PLAN —
+        -- has no DECLARED scale rather than because its values are integers —
+        -- Collite/tatrman-server#83. Exact money needs a decimal type IN THE PLAN —
         -- Collite/tatrman#129. Moving the arithmetic to the caller does not help: a JavaScript
-        -- number is a double too.
+        -- number is a double too. When #83 lands, the FLOAT cast above comes off and `last_price`
+        -- goes back to being the exact stored number; T1.16 and T3.6 are what will say so.
         -- ⛔ `line_rank` IS A REAL COLUMN OF THE ANSWER, and it has to be (S2.3·D18). The UNION is
         -- wrapped because PostgreSQL will not ORDER a set operation by an EXPRESSION over its output
         -- columns — but the door then imposes a second rule of its own: **an ORDER BY key that is
