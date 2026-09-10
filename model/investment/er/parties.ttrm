@@ -60,8 +60,8 @@ def entity client {
         def attribute since {
             type: date,
             description: {
-                en: "The day the currently recorded details became true. It dates the RECORD, not the relationship: a change of address moves it.",
-                cs: "Den, od kterého platí aktuálně evidované údaje. Datuje ZÁZNAM, nikoli vztah: změna adresy jej posune."
+                en: "The day the provider accepted the client's contract (its signing date when no acceptance is recorded). Every recorded version of the client carries that same date, so it dates the relationship's paperwork — a later change of name or e-mail does not move it.",
+                cs: "Den, kdy poskytovatel přijal smlouvu klienta (datum podpisu, pokud přijetí evidováno není). Toto datum nese každá evidovaná verze klienta, takže datuje papíry vztahu — pozdější změna jména či e-mailu jej neposune."
             }
         }
     ]
@@ -102,8 +102,8 @@ def entity portfolio {
         def attribute base_currency {
             type: text,
             description: {
-                en: "The currency the portfolio reports in, ISO 4217 (`CZK`, `EUR`). Values and balances are expressed in it.",
-                cs: "Měna, ve které portfolio reportuje, ISO 4217 (`CZK`, `EUR`). Hodnoty a zůstatky jsou v ní vyjádřeny."
+                en: "The currency the portfolio reports in, ISO 4217 (`CZK`, `EUR`). The provider's own valuation of a position is in it. Ledger amounts, cash balances and prices are NOT converted into it — each carries its own currency, and a portfolio can hold cash and instruments in several.",
+                cs: "Měna, ve které portfolio reportuje, ISO 4217 (`CZK`, `EUR`). Je v ní vlastní ocenění pozice poskytovatelem. Částky v knize, zůstatky hotovosti a ceny se do ní NEPŘEPOČÍTÁVAJÍ — každá nese vlastní měnu a portfolio může držet hotovost i nástroje v několika."
             }
         },
         def attribute state {
