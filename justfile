@@ -34,12 +34,27 @@ verify-prompts:
 
 # Emit the deterministic resolved-packages.json artifact (packages, entities, areas) via
 # the tatrman Modeler CLI — the same tool ai-models uses (`just resolve-packages`).
+#
+# ⛔ Both recipes resolve THROUGH A SYMLINK NAMED `hartland`, never through "$(pwd)". The CLI writes
+# `generatedFrom` = the project directory's BASENAME and has no option to name it, so an artifact
+# regenerated in a worktree (`hartland-ie`, `hartland-gx`, …) carried that worktree's name — master's
+# did, for weeks — and every local check from the same worktree blessed it while a checkout called
+# `hartland` (CI's) called it stale. Through the link the name is the repo's, whatever the checkout is
+# called.
 resolve-packages cli="node ../tatrman/packages/migrate/dist/cli.js":
-    {{cli}} resolve-packages "$(pwd)" --out generated/resolved-packages.json --verbose
+    #!/usr/bin/env bash
+    set -euo pipefail
+    link="$(mktemp -d)"; trap 'rm -rf "$link"' EXIT
+    ln -s "$(pwd)" "$link/hartland"
+    {{cli}} resolve-packages "$link/hartland" --out "$(pwd)/generated/resolved-packages.json" --verbose
 
 # Drift check: fail if the committed snapshot is stale.
 check-model cli="node ../tatrman/packages/migrate/dist/cli.js":
-    {{cli}} resolve-packages "$(pwd)" --check --out generated/resolved-packages.json
+    #!/usr/bin/env bash
+    set -euo pipefail
+    link="$(mktemp -d)"; trap 'rm -rf "$link"' EXIT
+    ln -s "$(pwd)" "$link/hartland"
+    {{cli}} resolve-packages "$link/hartland" --check --out "$(pwd)/generated/resolved-packages.json"
 
 # ── lexicon (RV-P3.2) ─────────────────────────────────────────────────────────
 # Compile the DECLARED (lexicon/ area + model/lexicon/*.ttrm sugar) and METADATA layers
