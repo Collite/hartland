@@ -167,15 +167,38 @@ const PROGRAMS = {
   },
 };
 
-function answer(db, program, params, cap) {
+function answer(db, program, params, cap, { limit = 10000, offset = 0, legacy = false } = {}) {
   const spec = PROGRAMS[program];
   const named = Object.fromEntries(Object.entries(params).map(([k, v]) => [`:${k}`, v]));
   const used = Object.fromEntries(Object.entries(named).filter(([k]) => spec.sql.includes(k)));
   let rows = db.prepare(spec.sql).all(used).map((r) => Object.values(r));
   if (spec.shape) rows = rows.map(spec.shape);
-  // The estate's governance cap: validate injects a LIMIT into every plan, and says nothing (S2.4·D9).
-  if (cap) rows = rows.slice(0, cap);
-  return { columns: spec.columns.map((name) => ({ name })), rows, rowCount: rows.length, truncated: false, messages: [] };
+  const columns = spec.columns.map((name) => ({ name }));
+  if (legacy) {
+    // An estate from BEFORE the row window (S2.4·D9): validate injects its LIMIT and says nothing, and
+    // the BFF knows no `offset` — every read starts at row 0.
+    if (cap) rows = rows.slice(0, cap);
+    const shown = rows.slice(0, limit);
+    return { columns, rows: shown, rowCount: shown.length, truncated: rows.length > limit, messages: [] };
+  }
+  // IE-P3·S3.0: studio-bff asks the pipeline for `limit + 1` rows at `offset` (the RunRequest's
+  // row_window); validate grants that up to its cap, and when it CUTS and the answer reaches the cut,
+  // query puts `top_n_applied` on the answer — validate's own sentence.
+  const asked = limit + 1;
+  const granted = cap ? Math.min(asked, cap) : asked;
+  const windowed = rows.slice(offset, offset + granted);
+  const messages =
+    cap && asked > cap && windowed.length === cap
+      ? [{
+          code: 'top_n_applied',
+          severity: 'warn',
+          text: `Answer limited to ${cap} rows by the row cap; the caller asked for ${asked}.`,
+          sourceService: '',
+          sourceStage: '',
+        }]
+      : [];
+  const shown = windowed.slice(0, limit);
+  return { columns, rows: shown, rowCount: shown.length, truncated: windowed.length > limit, messages };
 }
 
 /** A copy of `a` with `column` set to `value` on the row whose `idColumn` is `id`. */
@@ -194,7 +217,7 @@ function staleDoor() {
 
 // ── the estate ───────────────────────────────────────────────────────────────────────────────────
 
-async function estate({ book = baseBook(), cap, door, qevo = { status: 404, code: 'PROGRAM_NOT_COMPILABLE' }, mutate } = {}) {
+async function estate({ book = baseBook(), cap, door, pagedDoor, legacy = false, qevo = { status: 404, code: 'PROGRAM_NOT_COMPILABLE' }, mutate } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), 'ie-dod-'));
   const dbPath = path.join(dir, 'book.sqlite');
   const db = new DatabaseSync(dbPath);
@@ -226,8 +249,16 @@ async function estate({ book = baseBook(), cap, door, qevo = { status: 404, code
         if (qevo.drop) return req.socket.destroy();
         return reply(qevo.status, { code: qevo.code, message: 'stub' });
       }
+      const limit = body.limit ?? 1000;
+      const offset = body.offset ?? 0;
+      let a = answer(db, body.program, body.params ?? {}, cap, { limit, offset, legacy });
+      // A PAGED read (IE-P3·S3.0·T7) is not one of the single reads the doors below are scripted
+      // against: they count calls, and a page is not a call they know about. It has its own hook.
+      if (offset > 0 || limit < 10000) {
+        if (pagedDoor) a = pagedDoor(body.program, a, offset) ?? a;
+        return reply(200, a);
+      }
       const n = (ctx.calls[body.program] = (ctx.calls[body.program] ?? 0) + 1);
-      let a = answer(db, body.program, body.params ?? {}, cap);
       if (door) a = door(body.program, a, n) ?? a;
       return reply(200, a);
     }
@@ -540,6 +571,75 @@ test('a last_price read at scale 0 (2 for 2.1031) fails readonly mode, naming th
   const e = await estate({ door });
   try {
     await mustFail(e, { IE_DOD_MODE: 'readonly' }, /positions_at prices CZ0000000002 at 2; the book's latest price on or before \d{4}-\d{2}-\d{2} is 2\.1031/);
+  } finally {
+    await e.close();
+  }
+});
+
+// ── IE-P3·S3.0·T7 — the whole ledger, through the row window ─────────────────────────────────────
+
+/** More effective movements than a page holds: `n` one-crown cash credits on the throwaway portfolio. */
+function longBook(n) {
+  const book = baseBook();
+  for (let i = 0; i < n; i++) {
+    const month = String((i % 12) + 1).padStart(2, '0');
+    const day = String((i % 28) + 1).padStart(2, '0');
+    book.transactions.push(tx(`p:l${String(i).padStart(4, '0')}`, 'cash', 'credit', `2025-${month}-${day}`, { amount: 1 }));
+  }
+  return book;
+}
+
+test('T7 · a ledger longer than the cap is read WHOLE through the row window, and agrees with the book', async () => {
+  const e = await estate({ book: longBook(450), cap: 200 });
+  try {
+    const r = await mustPass(e, { IE_DOD_MODE: 'readonly', IE_DOD_TOP_N: '200' });
+    // The base book's 6 movements on this portfolio + 450 = 456, in pages of 200 − 1.
+    assert.match(r.out, /agree at the FULL count: 456 effective movements, read in 3 page\(s\) of up to 199 rows/);
+    // The single read is still a window — and now the estate says so.
+    assert.match(r.out, /agree at the cap: 200 of 456/);
+    assert.match(r.out, /SAID so \(top_n_applied\)/);
+  } finally {
+    await e.close();
+  }
+});
+
+test('T7 · a BFF that ignores `offset` fails the paged read instead of counting page one again', async () => {
+  const e = await estate({ book: longBook(450), cap: 200, legacy: true });
+  try {
+    await mustFail(e, { IE_DOD_MODE: 'readonly', IE_DOD_TOP_N: '200' }, /repeats page 1 — the BFF ignored `offset`/);
+  } finally {
+    await e.close();
+  }
+});
+
+test("T7 · an estate that caps BELOW the declared IE_DOD_TOP_N fails, quoting the estate's own notice", async () => {
+  const e = await estate({ book: longBook(450), cap: 100 });
+  try {
+    await mustFail(e, { IE_DOD_MODE: 'readonly', IE_DOD_TOP_N: '200' }, /was cut by the estate: "Answer limited to 100 rows/);
+  } finally {
+    await e.close();
+  }
+});
+
+test('T7 · a page boundary that repeats one movement and skips another fails, though the count matches', async () => {
+  // Every page after the first opens with its SECOND row twice: the same number of rows, one movement
+  // shown twice and one never — what a sort that can tie does, and what a count alone cannot see.
+  const pagedDoor = (program, a, offset) => (program === TR && offset > 0 ? { ...a, rows: [a.rows[1], ...a.rows.slice(1)] } : a);
+  const e = await estate({ book: longBook(450), cap: 200, pagedDoor });
+  try {
+    await mustFail(e, { IE_DOD_MODE: 'readonly', IE_DOD_TOP_N: '200' }, /only \d+ distinct movements — a page boundary repeated one and skipped another/);
+  } finally {
+    await e.close();
+  }
+});
+
+test('T7 · an IE_DOD_TOP_N the drill cannot page with is refused before any request', async () => {
+  const e = await estate();
+  try {
+    for (const topN of ['1', 'abc', '-5']) {
+      await mustFail(e, { IE_DOD_MODE: 'readonly', IE_DOD_TOP_N: topN }, /IE_DOD_TOP_N must be an integer >= 2/);
+    }
+    assert.deepEqual(e.requests, [], 'a request reached the BFF');
   } finally {
     await e.close();
   }

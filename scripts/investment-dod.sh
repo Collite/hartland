@@ -41,13 +41,13 @@
 #   IE_DOD_DSN        psql DSN for the `entry` database (the counts this script checks the door against)
 #   IE_DOD_PORTFOLIO  the portfolio to read, and in `full` mode to write to
 #   IE_DOD_MODE       full | readonly                (default readonly)
-#   IE_DOD_TOP_N      the estate's governance cap on rows per answer, if it has one. hartland sets
-#                     `VALIDATE_DEFAULT_TOP_N=100` deliberately — the validator injects a LIMIT on
-#                     every plan and the cap is a hard ceiling (`effectiveCap = min(requested,
-#                     serviceDefault)`, so a caller can only ask for LESS). Set it and the row checks
-#                     expect `min(book, cap)`; leave it unset for an uncapped estate. Read the live
-#                     value from validate's status, or from
-#                     `olymp/clusters/hartland/apps/validate/values.yaml`.
+#   IE_DOD_TOP_N      the estate's governance cap on rows per answer, if it has one — hartland sets
+#                     `VALIDATE_DEFAULT_TOP_N=200` (IE-P3·S3.0·T1; it was 100). The validator injects a
+#                     LIMIT on every plan, so a SINGLE read of a long ledger is a window on it: set
+#                     this and the single-read checks expect `min(book, cap)`; leave it unset for an
+#                     uncapped estate. It also sizes the PAGED read, which must see the whole ledger:
+#                     pages of `cap − 1` rows (200 − 1 when unset). Read the live value from validate's
+#                     `/status`, or from `olymp/clusters/hartland/apps/validate/values.yaml`.
 #   IE_DOD_HOLD_ONLY  1 to journal the CORRECTION and STOP before committing it, leaving the batch
 #                     held in the Inbox for a person to preview and commit. That is the rehearsal
 #                     shape of the beat: S2.4·D6 was ruled (a) — a correction is PROPOSED as a batch
@@ -86,6 +86,14 @@ if [ -n "$NAMED" ]; then
     [ "$MODE" = "full" ] || fail "IE_DOD_MOVEMENT asserts a committed correction and then runs the addition drill — it needs IE_DOD_MODE=full"
     [ -z "$HOLD_ONLY" ] || fail "IE_DOD_MOVEMENT (assert a committed correction) and IE_DOD_HOLD_ONLY (journal a new one and stop) cannot both be set"
 fi
+# The cap sizes the paged read, so it has to be a number a page can be built from.
+if [ -n "$TOP_N" ]; then
+    { [[ "$TOP_N" =~ ^[0-9]+$ ]] && [ "$TOP_N" -ge 2 ]; } || fail "IE_DOD_TOP_N must be an integer >= 2, not '$TOP_N' — nothing was sent"
+fi
+# ⛔ The paged read's page is the cap MINUS ONE. studio-bff asks the pipeline for `limit + 1` rows — the
+# probe row that sets `truncated` — so a page of exactly the cap would ask for cap + 1 and be cut every
+# time. At cap − 1 the estate grants each page whole and `truncated` alone says whether there is more.
+PAGE_ROWS=$(( ${TOP_N:-200} - 1 ))
 # Every id below is spliced into SQL text. None of the estate's ids carries a quote, so one that does
 # is a typo — and would otherwise become a different statement.
 case "$PORTFOLIO$NAMED" in *"'"*) fail "a portfolio or movement id containing a quote: '$PORTFOLIO' '$NAMED'" ;; esac
@@ -97,11 +105,13 @@ trap 'rm -rf "$WORK"' EXIT
 
 # ── the door ─────────────────────────────────────────────────────────────────────────────────────
 
-# `request <program> <params-json>` → the HTTP status on stdout (curl's `000` when nothing answered),
-# the body in $WORK/run.json. It never fails: what an answer means is the caller's decision.
+# `request <program> <params-json> [limit] [offset]` → the HTTP status on stdout (curl's `000` when
+# nothing answered), the body in $WORK/run.json. It never fails: what an answer means is the caller's
+# decision. `offset` rides the body only when it is not 0 — §2.1's row window, IE-P3·S3.0.
 request() {
     local body http
-    body="$(jq -nc --arg p "$1" --argjson params "$2" '{program: $p, params: $params, limit: 10000}')"
+    body="$(jq -nc --arg p "$1" --argjson params "$2" --argjson limit "${3:-10000}" --argjson offset "${4:-0}" \
+        '{program: $p, params: $params, limit: $limit} + (if $offset > 0 then {offset: $offset} else {} end)')"
     rm -f "$WORK/run.json"
     http="$(curl -sS -o "$WORK/run.json" -w '%{http_code}' \
         -X POST "$BFF/api/query/run" \
@@ -111,16 +121,56 @@ request() {
     printf '%s' "${http:-000}"
 }
 
-# `run <program> <params-json>` → the §2.2 answer, or a non-zero exit naming the BFF's own code.
+# `run <program> <params-json> [limit] [offset]` → the §2.2 answer, or a non-zero exit naming the
+# BFF's own code.
 run() {
     local http code
-    http="$(request "$1" "$2")"
+    http="$(request "$1" "$2" "${3:-10000}" "${4:-0}")"
     if [ "$http" != "200" ]; then
         code="$(jq -r '.code // "?"' "$WORK/run.json" 2>/dev/null || echo '?')"
         printf 'HTTP %s %s — %s\n' "$http" "$code" "$(jq -r '.message // ""' "$WORK/run.json" 2>/dev/null || cat "$WORK/curl.err")" >&2
         return 1
     fi
     cat "$WORK/run.json"
+}
+
+# `run_all <program> <params-json>` → the program's WHOLE answer, read through the row window (§2.1
+# `limit` + `offset`, PAGE_ROWS rows a page) as one §2.2-shaped answer with a `pages` count. IE-P3·S3.0·T7.
+#
+# ⛔ Two ways a paged read goes wrong WITHOUT an error, and both are refused here, naming themselves:
+#   · a BFF that IGNORES `offset` (one older than the row window) answers page one for every page, so
+#     the drill would count page one over and over;
+#   · a page carrying `top_n_applied` was CUT by the estate below what the drill asked — its cap is lower
+#     than IE_DOD_TOP_N says, and the page did not end where the data did. Paging on would be guessing.
+run_all() {
+    local program="$1" params="$2" offset=0 pages=0 page rc first="" page_first notice
+    local acc="$WORK/pages.json"
+    echo '[]' >"$acc"
+    while :; do
+        page="$(run "$program" "$params" "$PAGE_ROWS" "$offset")" || return 1
+        pages=$((pages + 1))
+        notice="$(jq -r '[.messages[]? | select(.code == "top_n_applied") | .text][0] // empty' <<<"$page")"
+        if [ -n "$notice" ]; then
+            printf 'page %s of %s (from row %s) was cut by the estate: "%s" — its cap is below the declared IE_DOD_TOP_N=%s\n' \
+                "$pages" "$program" "$offset" "$notice" "${TOP_N:-200 (the default)}" >&2
+            return 1
+        fi
+        rc="$(jq -r '.rowCount' <<<"$page")"
+        page_first="$(jq -c '.rows[0] // null' <<<"$page")"
+        if [ "$pages" -eq 1 ]; then
+            first="$page_first"
+        elif [ "$page_first" = "$first" ] && [ "$first" != "null" ]; then
+            printf 'page %s of %s (from row %s) repeats page 1 — the BFF ignored `offset`: studio-bff predates the row window (IE-P3·S3.0)\n' \
+                "$pages" "$program" "$offset" >&2
+            return 1
+        fi
+        jq -c --slurpfile acc "$acc" '$acc[0] + [.]' <<<"$page" >"$acc.next" && mv "$acc.next" "$acc"
+        { [ "$(jq -r '.truncated' <<<"$page")" = "true" ] && [ "$rc" -gt 0 ]; } || break
+        offset=$((offset + rc))
+        [ "$pages" -lt 10000 ] || { echo "$program: 10000 pages and the answer has not ended" >&2; return 1; }
+    done
+    jq -c '{columns: .[0].columns, rows: (map(.rows) | add), pages: length}
+           | .rowCount = (.rows | length) | .truncated = false' "$acc"
 }
 
 # ⛔ EVERY COLUMN IS READ BY NAME, never by position. A query rewrite that reorders a projection must
@@ -188,6 +238,25 @@ done
 door_txns="$(rows "${ANSWER[transactions_recent]}")"
 db_txns="$(book_effective)"
 
+# ⛔ THE WHOLE LEDGER, THROUGH THE ROW WINDOW — IE-P3·S3.0·T7, on Bora's S2.4·D9 ruling ("set the
+# default to 200 and page over it"). Wherever the estate caps answers a single read is a WINDOW on the
+# ledger; paging reads all of it, and THIS is the count that has to equal the book's — the full one,
+# not `min(book, cap)`. Checked for repeats as well as the count: a page boundary over a sort that can
+# tie shows one movement twice and loses another, and the total still matches (kantheon T1.19 is what
+# keeps every program's sort total). Before the single-read check, so that an estate capping below the
+# declared cap is named as exactly that.
+ALL_TXNS="$(run_all "q.investment.transactions_recent" "{\"portfolio_id\":\"$PORTFOLIO\",\"since\":\"2000-01-01\"}")" \
+    || fail "transactions_recent could not be read WHOLE through the row window (see above)"
+paged="$(rows "$ALL_TXNS")"
+paged_pages="$(jq -r '.pages' <<<"$ALL_TXNS")"
+paged_distinct="$(jq -r "$JQ_LIB"' need(["transaction_id"]) | [objs[].transaction_id] | unique | length' <<<"$ALL_TXNS")" \
+    || fail "the paged answer has no transaction_id column"
+[ "$paged" = "$db_txns" ] \
+    || fail "transactions_recent read through the row window says $paged effective rows in $paged_pages page(s); the book holds $db_txns"
+[ "$paged_distinct" = "$paged" ] \
+    || fail "the paged read shows $paged rows but only $paged_distinct distinct movements — a page boundary repeated one and skipped another"
+ok "the door and the book agree at the FULL count: $paged effective movements, read in $paged_pages page(s) of up to $PAGE_ROWS rows"
+
 # ⛔ THE ESTATE MAY CAP THE ANSWER, AND ON hartland IT DOES — S2.4·D9. `validate` enforces a TopN
 # rule by INJECTING a `LIMIT <cap>` into every plan that has none, and the cap is a hard ceiling:
 # `effectiveCap = min(requested, serviceDefault)`, so a caller can ask for fewer rows and never for
@@ -210,11 +279,19 @@ if [ "$door_txns" != "$expected_txns" ]; then
 fi
 if [ "$expected_txns" != "$db_txns" ]; then
     ok "the door and the book agree at the cap: $door_txns of $db_txns effective movements (TopN $TOP_N)"
-    # ⛔ Said out loud every run, because the pipeline does not say it: an answer cut by the
-    # governance cap is indistinguishable, to its caller, from a complete one.
-    printf '     \033[33m⚑ the estate CAPPED this answer at %s rows and reported truncated=false.\033[0m\n' "$TOP_N"
-    printf '       %s of the portfolio'"'"'s %s effective movements were withheld, silently. S2.4·D9.\n' \
-        "$((db_txns - TOP_N))" "$db_txns"
+    # ⛔ Said out loud every run. Since IE-P3·S3.0 the estate says it too — a capped answer carries
+    # `top_n_applied` — and WHETHER it did is itself a check: an estate that caps silently is still
+    # running the validate/query images S2.4·D9 was found on.
+    if jq -e '[.messages[]? | select(.code == "top_n_applied")] | length > 0' <<<"${ANSWER[transactions_recent]}" >/dev/null; then
+        printf '     \033[33m⚑ the estate capped this single read at %s rows, and SAID so (top_n_applied).\033[0m\n' "$TOP_N"
+        printf '       %s of %s movements were left out of it; the paged read above has every one.\n' \
+            "$((db_txns - TOP_N))" "$db_txns"
+    else
+        printf '     \033[33m⚑ the estate CAPPED this answer at %s rows and reported truncated=false, SILENTLY.\033[0m\n' "$TOP_N"
+        printf '       %s of the portfolio'"'"'s %s effective movements were withheld with no warning (S2.4·D9) —\n' \
+            "$((db_txns - TOP_N))" "$db_txns"
+        printf '       this estate'"'"'s validate/query predate the row window (IE-P3·S3.0).\n'
+    fi
 else
     ok "the door and the book agree: $db_txns effective movements"
 fi

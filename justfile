@@ -299,11 +299,13 @@ check-investment-model-source kantheon=env_var_or_default("IE_KANTHEON_DIR", "..
 #
 # `IE_DOD_MODE` is exactly `readonly` or `full`; anything else is refused before a request is sent.
 #
-# ⚑ On an estate that caps answers, declare the cap: `IE_DOD_TOP_N=100`. hartland's `validate` sets
-# `VALIDATE_DEFAULT_TOP_N=100` deliberately, and applies it by INJECTING a LIMIT into every plan —
-# silently, with `truncated: false` on the way out (S2.4·D9). Without the declaration the row check
-# reads that as a disagreement between the door and the book, which is the honest default: a capped
-# answer really is not the whole ledger.
+# ⚑ On an estate that caps answers, declare the cap: `IE_DOD_TOP_N=200` on hartland (IE-P3·S3.0 raised
+# `VALIDATE_DEFAULT_TOP_N` from 100). A single read is then checked at `min(book, cap)` — and the ledger
+# is ALSO read whole, in pages of `cap − 1` through §2.1's `offset`, and THAT count must equal the
+# book's (IE-P3·S3.0·T7). Without the declaration the single-read check reads a capped answer as a
+# disagreement between the door and the book, which is the honest default. Since the row window the
+# estate SAYS when it caps (`top_n_applied`); the drill prints whether it did, because a silent cap
+# means validate and query predate it (S2.4·D9).
 investment-dod:
     ./scripts/investment-dod.sh
 
