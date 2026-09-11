@@ -56,7 +56,8 @@ test('DONE 4 — ListQueries returns exactly 15 q.hartland.* with params', () =>
     }
   }
   assert.equal(own, 15, 'the D-2 roster');
-  assert.equal(synced, 7, 'IE-C25\'s seven, synced from kantheon');
+  // Nine since IE-P3·S3.1 (period_values + portfolio_header joined the seven).
+  assert.equal(synced, 9, 'IE-C25\'s nine, synced from kantheon');
 });
 
 test('DONE 5 — cs + en lexicon resolves (zero unresolved for:, project-wide)', () => {

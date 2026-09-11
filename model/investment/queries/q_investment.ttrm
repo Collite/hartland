@@ -2,8 +2,9 @@ package investment
 
 model query
 
-// IE-C25 — the seven `q.investment.*` pattern queries. Shape and precedent:
-// `Collite/hartland/model/queries/q_hartland.ttrm`.
+// IE-C25 — the nine `q.investment.*` pattern queries. Shape and precedent:
+// `Collite/hartland/model/queries/q_hartland.ttrm`. The last two — `period_values` and
+// `portfolio_header` — joined at IE-P3·S3.1 for the report.
 //
 // ## What these are, and what they are not
 //
@@ -468,16 +469,24 @@ def query positions_at {
 // nor `generate_series`. The T-SQL `DATEADD` the parser DOES accept is unparsed VERBATIM to
 // PostgreSQL, which cannot run it — so even the one date function that compiles does not execute.
 //
-// It is left as authored, in PostgreSQL, because it is the report's query (IE-C30) and the report
-// is P3's: the choice is Bora's between (a) the report renderer computing the quarter ends and
-// calling a per-period query — the recommendation, since it puts date arithmetic in the caller
-// where both dialects agree it belongs — and (b) rewriting it over `period_start`/`period_end`, the
-// two platform grounding functions that DO lower per dialect, which then makes the psql conformance
-// runner untrue because the text it executes is no longer the text the estate runs. Filed as ⚑IE-15.
+// ⚑IE-15 was RULED (a) by Bora on 2026-09-10 and BUILT at IE-P3·S3.1: the report renderer computes
+// the quarter ends and calls `period_values` (below) once per period through the door, then adds the
+// total, the P&L, the return and the coverage itself (report-renderer `QuarterlyEvolution.kt`) —
+// the three things that need the previous row, which the door cannot look at.
 //
-// Until then this program runs where S2.2 proved it — `just conform-investment-queries`, directly on
-// PostgreSQL — and NOT through `POST /api/query/run`. `queries.test.mjs` T1.14 is what keeps that
-// statement honest: it is the only query allowed to carry a PostgreSQL-only construct.
+// This query stays AS AUTHORED, in PostgreSQL, as the REFERENCE. It runs where S2.2 proved it —
+// `just conform-investment-queries`, directly on PostgreSQL (T3.7, T3.12) — and NOT through
+// `POST /api/query/run`. The renderer's assembly of `period_values` is held to the same hand-computed
+// expectations to the cent (QuarterlyEvolutionSpec), so the two paths answer one question or a suite
+// goes red. `queries.test.mjs` T1.14 keeps the exemption honest: this is the only query allowed to
+// carry a PostgreSQL-only construct.
+//
+// ⚑ Two differences from the report's grid, both deliberate. (1) When `as_of` IS a quarter end this
+// query reports it as a partial row after a full row for the quarter before; IE-C30 says the grid is
+// "the last `quarters` quarter ends ≤ as_of", so the renderer reports that quarter once, not partial.
+// (2) Veles still serves this query — as PARSE_STATUS_FAILED — with its search patterns, so a Golem
+// that picks it for a quarterly question gets a refusal; IE-P4's area work points such questions at
+// the report instead.
 def query quarterly_evolution {
     description: "The portfolio quarter by quarter and currency by currency: what it was worth, what came in or went out (money and in-kind transfers alike), what that left as profit, and how well the prices behind the number were known."
     language: SQL
@@ -531,8 +540,8 @@ def query quarterly_evolution {
           -- SAME price the period's market value uses (the latest price ≤ the period end), so a
           -- transfer inside the period moves the value and not the P&L — and a switch between two
           -- funds of one portfolio (a transfer-out and a transfer-in) nets to ~0 as it should. The
-          -- rows carry units and no amount (DistrInfo TON/TOFF), hence a price at all. ⚑ A default
-          -- awaiting Bora's ruling — review-089 "The fixes".
+          -- rows carry units and no amount (DistrInfo TON/TOFF), hence a price at all. ✅ The
+          -- review-089 default, RULED by Bora 2026-09-11: it stands.
           SELECT b.period_end, e.asset_ref,
                  SUM(CASE WHEN e.operation = 'transfer-in' THEN COALESCE(abs(e.quantity), 0)
                           ELSE -COALESCE(abs(e.quantity), 0) END) AS quantity
@@ -573,8 +582,8 @@ def query quarterly_evolution {
             AND e.currency IS NOT NULL
         ), grid AS (
           -- ⛔ review-089 ⑵: one row per quarter PER CURRENCY. The book has no FX table, so there
-          -- is nothing to convert with, and adding CZK to EUR is not an answer. ⚑ A default
-          -- awaiting Bora's ruling — review-089 "The fixes".
+          -- is nothing to convert with, and adding CZK to EUR is not an answer. ✅ The
+          -- review-089 default, RULED by Bora 2026-09-11: it stands.
           SELECT b.period_end, b.partial, b.prev_end, c.currency
           FROM bounds b
           CROSS JOIN currencies c
@@ -665,5 +674,197 @@ def query quarterly_evolution {
         { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
         { name: as_of, type: date, label: "As of date (the partial final period)" },
         { name: quarters, type: int, label: "Completed quarters before the as-of row" }
+    ]
+}
+
+// ⚑IE-15 (a) — ONE PERIOD of `quarterly_evolution`, the part of it the door can run. The report
+// renderer calls this once per period end it computed (plus one period before the window, whose
+// total the first reported P&L is measured against), and assembles the quarter table from the
+// answers. Everything that needs the PREVIOUS period — total, P&L, return, coverage — is the
+// renderer's, because the door has no LAG. Its arithmetic is quarterly_evolution's, cut at one
+// period: holdings valued at the latest price on or before `to_date` in that price's currency, the
+// cash leg to `to_date`, and the flows inside [`from_date`, `to_date`] — money AND in-kind transfers
+// at the same price the market value uses (review-089 ⒀).
+//
+// ⛔ One line per contribution, then ONE GROUP BY. The reference query builds a period × currency
+// grid and aggregates with FILTER (WHERE …); neither survives the door. Here each holding, transfer,
+// cash movement and flow becomes a line carrying its currency and its share of each column, and the
+// lines are summed per currency — so a currency is a row exactly when something in it is held or
+// moves. The renderer fills the other currencies' zeros.
+//
+// ⛔ Every money column is CAST to FLOAT in every branch of the UNION (S2.3·D19): a branch that
+// contributed a bare `numeric` would leave PostgreSQL typing the union column as an UNCONSTRAINED
+// `numeric`, which worker-postgres reads at scale 0. FLOAT is the one spelling both parsers take.
+//
+// ⛔ The HOLDINGS branch stays FIRST in `lines`. The door emits the other branches'
+// `CAST(NULL AS DATE)` as a bare NULL (measured through ttr-translator 0.10.1, IE-P3·S3.1), so the
+// union's date type comes from the first branch's real `price_date` column. Reorder the branches and
+// re-run the door probe before trusting psql's word for it.
+def query period_values {
+    description: "One period of the portfolio, currency by currency: what its holdings were worth at the period end at the last known prices, the cash it held, the money and in-kind transfers that crossed its boundary during the period, and how many holdings had no price at all."
+    language: SQL
+    sourceText: """
+        WITH effective_ledger AS (
+          SELECT t.*,
+                 CASE
+                   WHEN t.leg = 'security' AND t.operation IN ('buy', 'transfer-in', 'reversal-of-sell')
+                     THEN  COALESCE(abs(t.quantity), 0)
+                   WHEN t.leg = 'security' AND t.operation IN ('sell', 'transfer-out', 'payout', 'reversal-of-buy')
+                     THEN -COALESCE(abs(t.quantity), 0)
+                   ELSE 0
+                 END AS qty_signed,
+                 CASE
+                   WHEN t.leg = 'cash'          AND t.operation = 'credit'     THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'cash'          AND t.operation = 'debit'      THEN -COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'deposit'    THEN  COALESCE(abs(t.amount), 0)
+                   WHEN t.leg = 'external-flow' AND t.operation = 'withdrawal' THEN -COALESCE(abs(t.amount), 0)
+                   ELSE 0
+                 END AS amt_signed
+          FROM investment_transaction t
+          WHERE t.reversal_of IS NULL
+            AND NOT EXISTS (SELECT 1 FROM investment_transaction r WHERE r.reversal_of = t.external_id)
+        )
+        , holdings AS (
+          SELECT asset_ref, SUM(qty_signed) AS quantity
+          FROM effective_ledger
+          WHERE portfolio_ref = {portfolio_id}
+            AND leg = 'security'
+            AND trade_date <= {to_date}
+          GROUP BY asset_ref
+          HAVING SUM(qty_signed) <> 0
+        ), transfers AS (
+          -- ⛔ review-089 ⒀: an in-kind transfer crosses the portfolio's boundary as a deposit does,
+          -- so it is a FLOW, valued at the price the period's market value uses. The rows carry units
+          -- and no amount (DistrInfo TON/TOFF), hence a price at all.
+          SELECT asset_ref,
+                 SUM(CASE WHEN operation = 'transfer-in' THEN COALESCE(abs(quantity), 0)
+                          ELSE -COALESCE(abs(quantity), 0) END) AS quantity
+          FROM effective_ledger
+          WHERE portfolio_ref = {portfolio_id}
+            AND leg = 'security'
+            AND operation IN ('transfer-in', 'transfer-out')
+            AND trade_date >= {from_date}
+            AND trade_date <= {to_date}
+          GROUP BY asset_ref
+        ), latest_price AS (
+          -- positions_at's grouped-MAX-joined-back, for the reasons recorded there (no LATERAL, no
+          -- correlated MAX), and `price_currency` for the reason recorded there (never two columns of
+          -- one name in a row the door carries).
+          SELECT ap.isin, ap.price, ap.price_date, ap.currency AS price_currency
+          FROM investment_asset_price ap
+          JOIN (SELECT p2.isin AS isin, MAX(p2.price_date) AS as_of_price_date
+                  FROM investment_asset_price p2
+                 WHERE p2.price_date <= {to_date}
+                 GROUP BY p2.isin) m
+            ON m.isin = ap.isin
+           AND m.as_of_price_date = ap.price_date
+        ), lines AS (
+          -- a holding: its value in its price's currency; never priced, it counts as missing and
+          -- falls back to the instrument's own currency, or XXX (ISO 4217's "no currency")
+          SELECT COALESCE(pr.price_currency, a.currency, 'XXX') AS currency,
+                 CAST(COALESCE(h.quantity * pr.price, 0) AS FLOAT) AS market_value,
+                 CAST(0 AS FLOAT) AS cash_balance,
+                 CAST(0 AS FLOAT) AS net_flow,
+                 CASE WHEN pr.price IS NULL THEN 1 ELSE 0 END AS missing_assets,
+                 pr.price_date AS price_date
+          FROM holdings h
+          LEFT JOIN investment_asset a
+            ON a.isin = h.asset_ref
+          LEFT JOIN latest_price pr
+            ON pr.isin = h.asset_ref
+          UNION ALL
+          -- a transfer in kind: a flow, at the same price
+          SELECT COALESCE(pr.price_currency, a.currency, 'XXX'),
+                 CAST(0 AS FLOAT),
+                 CAST(0 AS FLOAT),
+                 CAST(COALESCE(x.quantity * pr.price, 0) AS FLOAT),
+                 0,
+                 CAST(NULL AS DATE)
+          FROM transfers x
+          LEFT JOIN investment_asset a
+            ON a.isin = x.asset_ref
+          LEFT JOIN latest_price pr
+            ON pr.isin = x.asset_ref
+          UNION ALL
+          -- the cash leg, to the period end
+          SELECT currency, CAST(0 AS FLOAT), CAST(amt_signed AS FLOAT), CAST(0 AS FLOAT), 0, CAST(NULL AS DATE)
+          FROM effective_ledger
+          WHERE portfolio_ref = {portfolio_id}
+            AND leg = 'cash'
+            AND currency IS NOT NULL
+            AND trade_date <= {to_date}
+          UNION ALL
+          -- the external-flow leg, inside the period — never summed into cash, which would count
+          -- every deposit twice
+          SELECT currency, CAST(0 AS FLOAT), CAST(0 AS FLOAT), CAST(amt_signed AS FLOAT), 0, CAST(NULL AS DATE)
+          FROM effective_ledger
+          WHERE portfolio_ref = {portfolio_id}
+            AND leg = 'external-flow'
+            AND currency IS NOT NULL
+            AND trade_date >= {from_date}
+            AND trade_date <= {to_date}
+        )
+        SELECT currency,
+               SUM(market_value) AS market_value,
+               SUM(cash_balance) AS cash_balance,
+               SUM(net_flow) AS net_flow,
+               SUM(missing_assets) AS missing_assets,
+               MIN(price_date) AS oldest_price_date
+        FROM lines
+        GROUP BY currency
+        ORDER BY currency
+    """
+    search {
+        patterns: [
+            "(portfolio )?value (at|on) the end of (a|the) period",
+            "(net )?(inflows|outflows|flows) (in|during) (the )?period",
+            "hodnota portfolia ke konci obdobi",
+            "vklady a vybery za obdobi"
+        ],
+        examples: [
+            "What was the portfolio worth at the end of the period, and what flowed in?",
+            "Jaká byla hodnota portfolia na konci období a co do něj přiteklo?"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" },
+        { name: from_date, type: date, label: "First day of the period (inclusive)" },
+        { name: to_date, type: date, label: "Last day of the period (inclusive)" }
+    ]
+}
+
+def query portfolio_header {
+    description: "The name of a portfolio, its client and its base currency, as they stand now — the title block of a report about it."
+    language: SQL
+    sourceText: """
+        -- A LEFT join: a portfolio whose client row is missing still has a name. And a portfolio the
+        -- book holds NO row for answers nothing at all — the ledger can name a portfolio the valuation
+        -- leg never described — so the report names it by its id rather than failing.
+        SELECT p.external_id   AS portfolio_id,
+               p.label         AS portfolio_name,
+               c.name          AS client_name,
+               p.base_currency
+        FROM investment_portfolio p
+        LEFT JOIN investment_client c
+          ON c.external_id = p.client_ref
+         AND c.valid_to IS NULL
+        WHERE p.valid_to IS NULL
+          AND p.external_id = {portfolio_id}
+        ORDER BY p.external_id
+    """
+    search {
+        patterns: [
+            "(which|what) portfolio is (this|it)",
+            "(name|owner|base currency) of (the|this) portfolio",
+            "nazev portfolia a jmeno klienta",
+            "ktera mena je zakladni pro portfolio"
+        ],
+        examples: [
+            "Which portfolio is this, and whose is it?",
+            "Čí je toto portfolio a jak se jmenuje?"
+        ]
+    }
+    parameters: [
+        { name: portfolio_id, type: text, label: "Portfolio id (conseq:<ContractId>)" }
     ]
 }
