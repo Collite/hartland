@@ -540,8 +540,8 @@ def query quarterly_evolution {
           -- SAME price the period's market value uses (the latest price ≤ the period end), so a
           -- transfer inside the period moves the value and not the P&L — and a switch between two
           -- funds of one portfolio (a transfer-out and a transfer-in) nets to ~0 as it should. The
-          -- rows carry units and no amount (DistrInfo TON/TOFF), hence a price at all. ⚑ A default
-          -- awaiting Bora's ruling — review-089 "The fixes".
+          -- rows carry units and no amount (DistrInfo TON/TOFF), hence a price at all. ✅ The
+          -- review-089 default, RULED by Bora 2026-09-11: it stands.
           SELECT b.period_end, e.asset_ref,
                  SUM(CASE WHEN e.operation = 'transfer-in' THEN COALESCE(abs(e.quantity), 0)
                           ELSE -COALESCE(abs(e.quantity), 0) END) AS quantity
@@ -582,8 +582,8 @@ def query quarterly_evolution {
             AND e.currency IS NOT NULL
         ), grid AS (
           -- ⛔ review-089 ⑵: one row per quarter PER CURRENCY. The book has no FX table, so there
-          -- is nothing to convert with, and adding CZK to EUR is not an answer. ⚑ A default
-          -- awaiting Bora's ruling — review-089 "The fixes".
+          -- is nothing to convert with, and adding CZK to EUR is not an answer. ✅ The
+          -- review-089 default, RULED by Bora 2026-09-11: it stands.
           SELECT b.period_end, b.partial, b.prev_end, c.currency
           FROM bounds b
           CROSS JOIN currencies c
