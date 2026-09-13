@@ -267,6 +267,26 @@ that means deleting session rows via each store's API/DB (iris-bff `iris` DB, py
 
 Never inside the freeze window (§7.5).
 
+### 7.2b A ConfigMap sync is not a vocabulary reload (lexicon)
+
+`lex-matcher` (the `fuzzy` deployment) loads the compiled lexicon archive **at boot** and
+re-checks it on `refreshIntervalSeconds` — default **3600**, overridable by
+`FUZZY_REFRESH_INTERVAL_SECONDS`; a value `<= 0` means manual-only, with no background loop at
+all. An ArgoCD sync that replaces the archive ConfigMap therefore changes nothing the matcher
+is serving: the new vocabulary is on disk and the old one is still in memory.
+
+After any lexicon change, do one of:
+
+1. wait out the hour;
+2. `POST /refresh` on lex-matcher — admin-gated, a caller without the admin role gets 403;
+3. **`kubectl --context hartland -n ttr-server rollout restart deploy/fuzzy`** — deterministic,
+   and the one to use before a show.
+
+The record, because it is what makes this worth a section: on **2026-08-13** fuzzy loaded
+**307 entries at 06:37**, ArgoCD synced the **351**-entry archive at **08:49**, and the next
+refresh tick was **~09:37** — a 48-minute window in which every ConfigMap on the cluster showed
+the new vocabulary and the matcher served the old one.
+
 ### 7.3 Pre-show (T-60 → T-10; scripted as `just pre-show hartland` when it lands)
 
 1. `demo-reset` (§7.1).
@@ -284,6 +304,19 @@ Force re-read: `kubectl annotate application <app> -n argocd argocd.argoproj.io/
 Values/`extraEnv` changes roll pods automatically (Deployment-spec change). Remember Helm
 `extraEnv` **replaces** the chart list (quirks §4.2) — carry the defaults over.
 
+### 7.4b The golem image tag is pinned by hand
+
+`sys-image-updater` will never move the golem pin, so do not wait for it. Its golem rule names
+the image `ghcr.io/boraperusic/golem` and writes back to
+`clusters/hartland/apps/golem/values.yaml` — a path that no longer exists, replaced when
+`appset-golems` took over from the single golem app. The running golems take their image from
+`clusters/hartland/golems/_values.yaml` (`ghcr.io/collite/golem`), which the updater never
+touches.
+
+So after cutting a golem image: **bump the tag in `golems/_values.yaml` by hand and merge** —
+on olymp, merge to `master` IS the deploy. Until the rule is fixed (out of scope here), treat a
+new golem release as un-deployed until you have seen its tag in that file.
+
 ### 7.5 The freeze window (E-1/G1)
 
 From "demo-ready declared" to show day: **no chart, image, or model changes** — images move
@@ -299,6 +332,7 @@ too.
 |---|---|
 | Answer comes back "0 rows" | quirks §0 — pull `ttr-server/query-*` log by `correlation_id`; it's almost never the data |
 | Golem serves stale/old SQL after a model push | you forgot the golem rollout restart — §7.2 / quirks §1.2 |
+| New lexicon term still not matching after an ArgoCD sync | §7.2b — a ConfigMap sync is not a vocabulary reload; fuzzy re-reads hourly |
 | Query fails parse in veles but runs in psql | Calcite is stricter — quirks §2 (reserved words, alias GROUP BY, `{brace}` params only) |
 | Series truncated at N rows | validator TopN ceiling — `VALIDATE_DEFAULT_TOP_N` (=100 on hartland), quirks §4.1 |
 | Text param matches nothing ("Marketplace") | case-sensitivity — phrase the utterance lowercase until the CaseFoldingParams release lands (quirks §3.3) |
