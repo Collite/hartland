@@ -5,10 +5,9 @@ Oracle rows for the 15 `q.hartland.*` queries on BOTH worlds (US in USD, CZ = US
 the standing cluster estate; run by `just demo-check hartland` and by the nightlies on every
 cluster (bp-dsk, collite-o1, hartland) against the shared `hartland-pg` (BM-10).
 
-## `fingerprints/` — the investment report's rehearsal oracle (IE-P3·S3.3, IE contracts §7.2)
+## Investment report fingerprints are deliberately NOT kept here (IE-P3·S3.3·D8)
 
-A second kind of oracle, in the same spirit and kept apart from `cases/`: one CSV per
-`(template, portfolio, as_of)`, holding the quarter rows of the workbook the Reports tile produced.
-`just report-fingerprint --save` writes one; a later run compares the report a client downloads with
-the reference query run on the book, so a fingerprint is what a rehearsal can be held to rather than
-a screenshot. ⚑ The saved file is the WORKBOOK's side — the book is the other side and is read live.
+`just drill-in-cluster fingerprint --save` produces a fingerprint of the investment report: its quarter
+rows for one portfolio, the oracle a rehearsal is held to. Those rows are a real portfolio's balances, and
+this repository is public — so the scripts refuse to write one anywhere inside it, and the rehearsal
+fingerprints live in the private project repository (ruled 2026-09-14).

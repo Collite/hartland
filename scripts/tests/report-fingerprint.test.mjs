@@ -310,6 +310,31 @@ test('the SQL handed to psql is the model’s, with every parameter bound', asyn
   });
 });
 
+// ⛔ RULED 2026-09-14 (S3.3·D8): a fingerprint is a real portfolio's balances and this repository is
+// PUBLIC. The two cases below are the guard: `--save` alone writes nothing, and a save directory inside
+// this repo is refused.
+const REPO = path.resolve(here, '../..');
+
+test('⛔ --save with no directory PRINTS the fingerprint and writes nothing into this repository', async () => {
+  await withHarness({}, async (h) => {
+    const { code, out } = await run(h, {}, ['--save']);
+    assert.equal(code, 0, out);
+    assert.match(out, /-----BEGIN FINGERPRINT investment-evolution-v1-conseq-900000001-2026-08-31\.csv-----/);
+    assert.equal(existsSync(path.join(REPO, 'run-set/fingerprints')), false, 'nothing may land in the public repo');
+  });
+});
+
+test('⛔ a save directory INSIDE this public repository is refused, naming why', async () => {
+  const inside = path.join(REPO, 'run-set/fingerprints-must-never-exist');
+  await withHarness({}, async (h) => {
+    const { code, out } = await run(h, { IE_FP_SAVE_DIR: inside }, ['--save']);
+    assert.equal(code, 1, out);
+    assert.match(out, /PUBLIC/);
+    assert.match(out, /S3\.3·D8/);
+    assert.equal(existsSync(inside), false, 'the refused directory must not be created');
+  });
+});
+
 test('--save writes the fingerprint, where it is told to', async () => {
   await withHarness({}, async (h) => {
     // ⚑ IE_FP_SAVE_DIR, not the default: the default is the REPO's run-set/fingerprints (§7.2, where

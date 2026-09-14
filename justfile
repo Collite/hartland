@@ -324,7 +324,8 @@ verify-investment-dod:
 # same statement kantheon's conformance suite holds to hand-computed answers.
 #
 #   IE_FP_BFF=… IE_FP_DSN=… IE_FP_PORTFOLIO=conseq:… just report-fingerprint
-#   … just report-fingerprint --save          # writes run-set/fingerprints/<template>-<portfolio>-<as_of>.csv
+#   … just report-fingerprint --save          # prints the fingerprint; IE_FP_SAVE_DIR also writes it —
+#                                             # ⛔ never inside this repo: it is public (S3.3·D8)
 #
 # The bearer is IE_FP_BEARER, or the `estate-drill` service account (IE_FP_OIDC_*) — see
 # `scripts/lib/estate-token.sh` for why a copied token is not good enough.
@@ -343,6 +344,6 @@ verify-report-fingerprint:
 #
 #   just drill-in-cluster dod            # the read drill, against conseq:200791223
 #   just drill-in-cluster fingerprint    # render the report and hold it against the book
-#   just drill-in-cluster fingerprint --save   # …and lift the fingerprint out of the pod's log
+#   just drill-in-cluster fingerprint --save   # …and lift it into the PRIVATE project repo (S3.3·D8)
 drill-in-cluster drill *ARGS:
     ./scripts/drill-in-cluster.sh {{drill}} {{ARGS}}
