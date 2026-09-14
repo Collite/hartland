@@ -37,7 +37,10 @@
 #
 # Env:
 #   IE_DOD_BFF        base URL of studio-bff        (e.g. http://127.0.0.1:7330)
-#   IE_DOD_BEARER     a bearer the BFF verifies
+#   IE_DOD_BEARER     a bearer the BFF verifies — or, instead of one, IE_DOD_OIDC_TOKEN_URL +
+#                     IE_DOD_OIDC_CLIENT_ID + IE_DOD_OIDC_CLIENT_SECRET and the drill mints its own
+#                     per run (`estate-drill`, IE-P3·S3.3). A copied token lives ~5 minutes, which is
+#                     why two of the three S3.0·T7 attempts died on a stale one; `lib/estate-token.sh`.
 #   IE_DOD_DSN        psql DSN for the `entry` database (the counts this script checks the door against)
 #   IE_DOD_PORTFOLIO  the portfolio to read, and in `full` mode to write to
 #   IE_DOD_MODE       full | readonly                (default readonly)
@@ -61,12 +64,15 @@
 
 set -euo pipefail
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/estate-token.sh
+. "$HERE/lib/estate-token.sh"
+
 fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 step() { printf '\n\033[1m── %s\033[0m\n' "$*"; }
 
 BFF="${IE_DOD_BFF:?IE_DOD_BFF is required (studio-bff base URL)}"
-BEARER="${IE_DOD_BEARER:?IE_DOD_BEARER is required}"
 DSN="${IE_DOD_DSN:?IE_DOD_DSN is required (psql DSN for the entry database)}"
 PORTFOLIO="${IE_DOD_PORTFOLIO:?IE_DOD_PORTFOLIO is required — name the portfolio explicitly}"
 MODE="${IE_DOD_MODE:-readonly}"
@@ -99,6 +105,11 @@ PAGE_ROWS=$(( ${TOP_N:-200} - 1 ))
 case "$PORTFOLIO$NAMED" in *"'"*) fail "a portfolio or movement id containing a quote: '$PORTFOLIO' '$NAMED'" ;; esac
 
 for tool in curl jq psql; do command -v "$tool" >/dev/null || fail "$tool is not on PATH"; done
+
+# The bearer: a person's if one is given, else minted from the `estate-drill` service account
+# (IE-P3·S3.3). ⚑ Minted AFTER the tools check — the mint itself needs curl and jq — and after the
+# mode check above, so a mistyped IE_DOD_MODE is still refused before anything leaves the process.
+BEARER="$(estate_token IE_DOD)" || fail "no bearer for studio-bff"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

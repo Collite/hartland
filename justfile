@@ -314,3 +314,34 @@ investment-dod:
 # a replacement at the old amount, a price read at scale 0, a refusal that is not the ruled one).
 verify-investment-dod:
     node --test scripts/tests/investment-dod.test.mjs
+
+# IE-P3·S3.3·T1 — the report a client downloads, held against the book (IE-C35).
+#
+# It renders `investment-evolution:v1` through studio-bff exactly as the Reports tile does, reads the
+# Summary sheet back out of the `.xlsx`, and compares it row by row with the REFERENCE query run on the
+# book with psql. ⛔ The reference runs on psql and not through the door because ⚑IE-15 (a) ruled that
+# program un-runnable there — a live walk re-confirmed the 404 on 2026-09-14 — and because it is the
+# same statement kantheon's conformance suite holds to hand-computed answers.
+#
+#   IE_FP_BFF=… IE_FP_DSN=… IE_FP_PORTFOLIO=conseq:… just report-fingerprint
+#   … just report-fingerprint --save          # writes run-set/fingerprints/<template>-<portfolio>-<as_of>.csv
+#
+# The bearer is IE_FP_BEARER, or the `estate-drill` service account (IE_FP_OIDC_*) — see
+# `scripts/lib/estate-token.sh` for why a copied token is not good enough.
+report-fingerprint *ARGS:
+    ./scripts/report-fingerprint.sh {{ARGS}}
+
+# Its own suite: the script against a stub BFF, a canned psql and a workbook the suite writes itself.
+# Every check is shown FAILING against a workbook that is wrong on purpose — a cent too far, a missing
+# currency, a changed coverage word — and the two RULED differences (per-line rounding, an as_of on a
+# quarter end) are asserted as accepted and refused respectively.
+verify-report-fingerprint:
+    node --test scripts/tests/report-fingerprint.test.mjs
+
+# IE-P3·S3.3 — run a drill FROM INSIDE the cluster: no port-forward (this estate's drop mid-run, which
+# is how S3.0·T7 failed twice), and no copied bearer (the Job mints its own from `estate-drill`).
+#
+#   just drill-in-cluster dod            # the read drill, against conseq:200791223
+#   just drill-in-cluster fingerprint    # render the report and hold it against the book
+drill-in-cluster drill:
+    ./scripts/drill-in-cluster.sh {{drill}}
