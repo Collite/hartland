@@ -244,7 +244,14 @@ def read_csv(path: str) -> list[dict[str, str]]:
         return [dict(row) for row in csv.DictReader(fh)]
 
 
-def compare(a: list[dict], b: list[dict], tolerance: Decimal, label_a: str, label_b: str) -> list[str]:
+def compare(
+    a: list[dict],
+    b: list[dict],
+    tolerance: Decimal,
+    label_a: str,
+    label_b: str,
+    return_tolerance: Decimal = Decimal("0.0001"),
+) -> list[str]:
     """Every difference, named. Rows are matched on (period_end, currency) — never on order."""
     problems = []
     keys_a = {(r["period_end"], r["currency"]) for r in a}
@@ -268,7 +275,13 @@ def compare(a: list[dict], b: list[dict], tolerance: Decimal, label_a: str, labe
                         problems.append(f"{key[0]} {key[1]} {name}: {label_a}={left or '(blank)'} {label_b}={right or '(blank)'}")
                     continue
                 gap = abs(Decimal(left) - Decimal(right))
-                limit = tolerance if name in MONEY else Decimal("0.000001")
+                # ⚑ The return is a RATIO of two rounded figures, so it inherits their disagreement
+                # amplified: measured live on hartland 2026-09-14, a quarter whose money matched to the
+                # cent still differed by 0.000008 percentage points, because the two sides round at
+                # different moments (S3.1·D7). The sheet prints two decimals; a ten-thousandth of a
+                # percentage point is far below anything a reader or a rehearsal can see, and still
+                # catches a genuinely wrong return by orders of magnitude.
+                limit = tolerance if name in MONEY else return_tolerance
                 if gap > limit:
                     problems.append(f"{key[0]} {key[1]} {name}: {label_a}={left} {label_b}={right} (off by {gap})")
             elif left != right:
@@ -314,6 +327,7 @@ def main() -> int:
     p_cmp.add_argument("a")
     p_cmp.add_argument("b")
     p_cmp.add_argument("--tolerance", default="0.01")
+    p_cmp.add_argument("--return-tolerance", default="0.0001")
     p_cmp.add_argument("--label-a", default="workbook")
     p_cmp.add_argument("--label-b", default="reference")
 
@@ -331,8 +345,14 @@ def main() -> int:
         return 0
 
     if args.command == "compare":
-        problems = compare(read_csv(args.a), read_csv(args.b), Decimal(args.tolerance), args.label_a, args.label_b)
-        tolerance_note = f" (money to ±{args.tolerance}, the ruled per-line rounding difference — S3.1·D7)"
+        problems = compare(
+            read_csv(args.a), read_csv(args.b), Decimal(args.tolerance), args.label_a, args.label_b,
+            Decimal(args.return_tolerance),
+        )
+        tolerance_note = (
+            f" (money to ±{args.tolerance}, return % to ±{args.return_tolerance}"
+            " — the ruled rounding-order difference, S3.1·D7)"
+        )
         label = f"{args.label_a} vs {args.label_b}"
     else:
         problems = compare(

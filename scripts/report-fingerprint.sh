@@ -31,7 +31,9 @@
 #   the bearer: IE_FP_BEARER, or IE_FP_OIDC_TOKEN_URL + _CLIENT_ID + _CLIENT_SECRET (lib/estate-token.sh)
 #
 # Flags:
-#   --save            write the workbook's rows to run-set/fingerprints/<template>-<portfolio>-<as_of>.csv
+#   --save            print the workbook's rows as a fingerprint block, and write them to IE_FP_SAVE_DIR
+#                     if set — ⛔ never inside this repository: it is public, and a fingerprint holds a
+#                     real portfolio's balances (S3.3·D8). They live in the private project repo.
 #   --expect <json>   ALSO compare against kantheon's expectations.json (the fixture estate — T4)
 
 set -euo pipefail
@@ -64,6 +66,11 @@ QUARTERS="${IE_FP_QUARTERS:-4}"
 MODEL="${IE_FP_MODEL:-$HERE/../model/investment/queries/q_investment.ttrm}"
 TEMPLATE="${IE_FP_TEMPLATE:-investment-evolution:v1}"
 TOLERANCE="${IE_FP_TOLERANCE:-0.01}"
+# The return is a ratio of two rounded figures and inherits their difference amplified — measured on
+# hartland: money equal to the cent, return apart by 0.000008 percentage points. The sheet prints two
+# decimals, so a ten-thousandth of a point is invisible to a reader and still orders of magnitude
+# tighter than any real error.
+RETURN_TOLERANCE="${IE_FP_RETURN_TOLERANCE:-0.0001}"
 ENGINE="$HERE/lib/fingerprint.py"
 
 for tool in curl jq psql python3; do command -v "$tool" >/dev/null || fail "$tool is not on PATH"; done
@@ -154,7 +161,7 @@ ok "the book answers $(($(wc -l <"$WORK/reference.canonical.csv") - 1)) quarter 
 step "3. the workbook against the book"
 
 python3 "$ENGINE" compare "$WORK/workbook.csv" "$WORK/reference.canonical.csv" \
-    --tolerance "$TOLERANCE" --label-a workbook --label-b book \
+    --tolerance "$TOLERANCE" --return-tolerance "$RETURN_TOLERANCE" --label-a workbook --label-b book \
     || fail "the report a client receives does not match the book"
 
 if [ -n "$EXPECT" ]; then
@@ -163,15 +170,36 @@ if [ -n "$EXPECT" ]; then
         || fail "the workbook does not match the hand-computed expectations"
 fi
 
+# Whether a path — which need not exist yet — falls inside THIS repository.
+inside_this_repo() {
+    local target repo
+    target="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1")"
+    repo="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HERE/..")"
+    case "$target/" in "$repo"/*) return 0 ;; esac
+    return 1
+}
+
 if [ -n "$SAVE" ]; then
     slug="$(printf '%s' "$TEMPLATE" | tr ':' '-')-$(printf '%s' "$PORTFOLIO" | tr ':' '-')-$AS_OF.csv"
-    # The rehearsal fingerprint lives in the repo (§7.2), which is the default — but the directory is
-    # an env var so a run can put it elsewhere: a Job in the cluster has no working tree to commit to,
-    # and this script's own suite must not write into one.
-    dest="${IE_FP_SAVE_DIR:-$HERE/../run-set/fingerprints}/$slug"
-    mkdir -p "$(dirname "$dest")"
-    cp "$WORK/workbook.csv" "$dest"
-    ok "fingerprint saved: $dest"
+    # ⛔ RULED by Bora 2026-09-14 (IE-P3·S3.3·D8): a fingerprint is a REAL portfolio's quarterly balances,
+    # and this repository is PUBLIC. So it is never written in here — the rehearsal fingerprints live in
+    # the private project repository.
+    #
+    # `--save` therefore PRINTS the block, always: the run that matters happens in a pod whose filesystem
+    # goes away with the Job, and `drill-in-cluster.sh` lifts the block out of the log into the private
+    # repo. A file is written only where IE_FP_SAVE_DIR points — and refused inside this repository.
+    if [ -n "${IE_FP_SAVE_DIR:-}" ]; then
+        dest="$IE_FP_SAVE_DIR/$slug"
+        if inside_this_repo "$dest"; then
+            fail "IE_FP_SAVE_DIR ($IE_FP_SAVE_DIR) is inside this repository, which is PUBLIC — a fingerprint holds a real portfolio's balances (S3.3·D8). Point it at the private project repo."
+        fi
+        mkdir -p "$(dirname "$dest")"
+        cp "$WORK/workbook.csv" "$dest"
+        ok "fingerprint saved: $dest"
+    fi
+    printf -- '-----BEGIN FINGERPRINT %s-----\n' "$slug"
+    cat "$WORK/workbook.csv"
+    printf -- '-----END FINGERPRINT-----\n'
 fi
 
 printf '\n\033[32mthe report matches the book — %s, %s quarters to %s\033[0m\n' "$PORTFOLIO" "$QUARTERS" "$AS_OF"

@@ -26,6 +26,8 @@
 #   IE_TOP_N        the estate's row cap   (default: 200)
 #   IE_IMAGE        the runner image       (default: postgres:16-alpine — psql, plus apk for the rest)
 #   IE_KEEP         1 to leave the Job and its ConfigMap behind for inspection
+#   IE_FINGERPRINTS_DIR  where a `--save`d fingerprint is written (default: the private project repo beside
+#                   this checkout). ⛔ Never inside this repository — it is public (S3.3·D8).
 #
 # ⛔ Read drills only. `IE_DOD_MODE=full` writes three permanent rows to an append-only ledger, and the
 # drill client is deliberately audienced at `studio` alone — it cannot write through entry-substrate
@@ -33,7 +35,9 @@
 
 set -euo pipefail
 
-DRILL="${1:?usage: drill-in-cluster.sh <dod|fingerprint>}"
+DRILL="${1:?usage: drill-in-cluster.sh <dod|fingerprint> [args…]}"
+shift
+PASSTHROUGH="$*"
 CTX="${IE_CTX:-hartland}"
 NS="${IE_NS:-ttr-server}"
 PORTFOLIO="${IE_PORTFOLIO:-conseq:200791223}"
@@ -45,8 +49,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
 case "$DRILL" in
-    dod)         COMMAND="bash /drill/investment-dod.sh" ;;
-    fingerprint) COMMAND="bash /drill/report-fingerprint.sh" ;;
+    dod)         COMMAND="bash /drill/investment-dod.sh $PASSTHROUGH" ;;
+    fingerprint) COMMAND="bash /drill/report-fingerprint.sh $PASSTHROUGH" ;;
     *) fail "the drill is 'dod' or 'fingerprint', not '$DRILL'" ;;
 esac
 
@@ -116,7 +120,40 @@ YAML
 printf 'running %s in %s/%s …\n' "$JOB" "$CTX" "$NS"
 kubectl --context "$CTX" -n "$NS" wait --for=condition=complete "job/$JOB" --timeout=600s >/dev/null 2>&1 \
     || kubectl --context "$CTX" -n "$NS" wait --for=condition=failed "job/$JOB" --timeout=5s >/dev/null 2>&1 || true
-kubectl --context "$CTX" -n "$NS" logs "job/$JOB" --tail=400 || true
+LOG="$(mktemp)"
+kubectl --context "$CTX" -n "$NS" logs "job/$JOB" --tail=400 >"$LOG" 2>&1 || true
+cat "$LOG"
+
+# A fingerprint printed by a run in a pod is the only copy — the Job's filesystem goes with it. Lift it
+# out of the log into the PRIVATE project repo.
+#
+# ⛔ RULED by Bora 2026-09-14 (S3.3·D8): never into THIS repository — it is public, and a fingerprint is a
+# real portfolio's quarterly balances. The default is the project repo beside this checkout (the
+# collite-gh layout); IE_FINGERPRINTS_DIR overrides it, and a destination inside this repo is refused.
+# A refusal is RECORDED rather than fatal here, so the Job and its ConfigMaps are still cleaned up below.
+FP_ERROR=""
+slug="$(sed -n 's/^-----BEGIN FINGERPRINT \(.*\)-----$/\1/p' "$LOG" | head -1)"
+if [ -n "$slug" ]; then
+    dir="${IE_FINGERPRINTS_DIR:-$HERE/../../project/kantheon/features/midas/investment-estate/fingerprints}"
+    repo="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HERE/..")"
+    real="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$dir")"
+    case "$real/" in
+        "$repo"/*)
+            FP_ERROR="the fingerprint destination $dir is inside this PUBLIC repository (S3.3·D8) — set IE_FINGERPRINTS_DIR to the private project repo; the fingerprint is in the log above"
+            ;;
+        *)
+            if [ -d "$(dirname "$real")" ]; then
+                mkdir -p "$real"
+                sed -n '/^-----BEGIN FINGERPRINT /,/^-----END FINGERPRINT-----$/p' "$LOG" | sed '1d;$d' >"$real/$slug"
+                printf '\nfingerprint written: %s (%s rows) — commit it in the PROJECT repo, by path\n' \
+                    "$real/$slug" "$(($(wc -l <"$real/$slug") - 1))"
+            else
+                FP_ERROR="no private project repo at $(dirname "$real") — set IE_FINGERPRINTS_DIR; the fingerprint is in the log above, nothing was written"
+            fi
+            ;;
+    esac
+fi
+rm -f "$LOG"
 
 state="$(kubectl --context "$CTX" -n "$NS" get job "$JOB" -o jsonpath='{.status.succeeded}' 2>/dev/null || true)"
 if [ -z "${IE_KEEP:-}" ]; then
@@ -124,4 +161,5 @@ if [ -z "${IE_KEEP:-}" ]; then
     kubectl --context "$CTX" -n "$NS" delete configmap estate-drill-scripts estate-drill-model --ignore-not-found >/dev/null
 fi
 [ "$state" = "1" ] || fail "$JOB did not succeed (its log is above)"
+[ -z "$FP_ERROR" ] || fail "$FP_ERROR"
 printf '\n\033[32m%s succeeded\033[0m\n' "$JOB"
