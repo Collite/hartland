@@ -343,5 +343,6 @@ verify-report-fingerprint:
 #
 #   just drill-in-cluster dod            # the read drill, against conseq:200791223
 #   just drill-in-cluster fingerprint    # render the report and hold it against the book
-drill-in-cluster drill:
-    ./scripts/drill-in-cluster.sh {{drill}}
+#   just drill-in-cluster fingerprint --save   # …and lift the fingerprint out of the pod's log
+drill-in-cluster drill *ARGS:
+    ./scripts/drill-in-cluster.sh {{drill}} {{ARGS}}

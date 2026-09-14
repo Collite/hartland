@@ -64,6 +64,11 @@ QUARTERS="${IE_FP_QUARTERS:-4}"
 MODEL="${IE_FP_MODEL:-$HERE/../model/investment/queries/q_investment.ttrm}"
 TEMPLATE="${IE_FP_TEMPLATE:-investment-evolution:v1}"
 TOLERANCE="${IE_FP_TOLERANCE:-0.01}"
+# The return is a ratio of two rounded figures and inherits their difference amplified — measured on
+# hartland: money equal to the cent, return apart by 0.000008 percentage points. The sheet prints two
+# decimals, so a ten-thousandth of a point is invisible to a reader and still orders of magnitude
+# tighter than any real error.
+RETURN_TOLERANCE="${IE_FP_RETURN_TOLERANCE:-0.0001}"
 ENGINE="$HERE/lib/fingerprint.py"
 
 for tool in curl jq psql python3; do command -v "$tool" >/dev/null || fail "$tool is not on PATH"; done
@@ -154,7 +159,7 @@ ok "the book answers $(($(wc -l <"$WORK/reference.canonical.csv") - 1)) quarter 
 step "3. the workbook against the book"
 
 python3 "$ENGINE" compare "$WORK/workbook.csv" "$WORK/reference.canonical.csv" \
-    --tolerance "$TOLERANCE" --label-a workbook --label-b book \
+    --tolerance "$TOLERANCE" --return-tolerance "$RETURN_TOLERANCE" --label-a workbook --label-b book \
     || fail "the report a client receives does not match the book"
 
 if [ -n "$EXPECT" ]; then
@@ -172,6 +177,11 @@ if [ -n "$SAVE" ]; then
     mkdir -p "$(dirname "$dest")"
     cp "$WORK/workbook.csv" "$dest"
     ok "fingerprint saved: $dest"
+    # …and printed, because the run that matters happens in a POD: its filesystem goes away with the
+    # Job, so the log is the only way out. `drill-in-cluster.sh` writes this block into the repo.
+    printf -- '-----BEGIN FINGERPRINT %s-----\n' "$slug"
+    cat "$WORK/workbook.csv"
+    printf -- '-----END FINGERPRINT-----\n'
 fi
 
 printf '\n\033[32mthe report matches the book — %s, %s quarters to %s\033[0m\n' "$PORTFOLIO" "$QUARTERS" "$AS_OF"

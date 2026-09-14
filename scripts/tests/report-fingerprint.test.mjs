@@ -223,6 +223,25 @@ test('⚑ a difference INSIDE the ruled rounding tolerance passes (S3.1·D7)', a
   });
 });
 
+// ⚑ Measured on hartland 2026-09-14: every money column agreed to the cent and the RETURN was apart by
+// 0.000008 percentage points, because the two sides round at different moments and a ratio amplifies
+// it (S3.1·D7). The sheet prints two decimals, so this must pass — and a real error must not.
+test('⚑ a return apart by rounding ORDER passes; one that is actually wrong fails', async () => {
+  const nudged = ROWS.map((r, i) => (i === 1 ? { ...r, ret: r.ret + 0.000008 } : r));
+  await withHarness({ workbookRows: nudged }, async (h) => {
+    const { code, out } = await run(h);
+    assert.equal(code, 0, out);
+    assert.match(out, /return % to ±0\.0001/);
+  });
+
+  const wrong = ROWS.map((r, i) => (i === 1 ? { ...r, ret: r.ret + 0.01 } : r));
+  await withHarness({ workbookRows: wrong }, async (h) => {
+    const { code, out } = await run(h);
+    assert.equal(code, 1, out);
+    assert.match(out, /2025-12-31 CZK return_q_pct/);
+  });
+});
+
 test('⛔ a currency the workbook left out FAILS — a short report is not a passing one', async () => {
   await withHarness({ workbookRows: ROWS.slice(0, 3) }, async (h) => {
     const { code, out } = await run(h);
@@ -304,6 +323,10 @@ test('--save writes the fingerprint, where it is told to', async () => {
     assert.ok(existsSync(file), `${file}\n${out}`);
     const csv = readFileSync(file, 'utf8').trim().split('\n');
     assert.equal(csv[0], 'period_end,currency,total_value,market_value,cash_balance,net_flow_q,pnl_q,return_q_pct,price_coverage');
+    // …and PRINTED between markers: the run that matters happens in a pod, whose filesystem goes away
+    // with the Job, so the log is the only way the rehearsal fingerprint gets out.
+    assert.match(out, /-----BEGIN FINGERPRINT investment-evolution-v1-conseq-900000001-2026-08-31\.csv-----/);
+    assert.match(out, /-----END FINGERPRINT-----/);
     assert.equal(csv.length, 1 + ROWS.length);
     assert.match(csv[2], /^2025-12-31,CZK,1220000\.00,875000\.00,345000\.00,200000\.00,25000\.00,2\.512563,full$/);
   });

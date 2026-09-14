@@ -33,7 +33,9 @@
 
 set -euo pipefail
 
-DRILL="${1:?usage: drill-in-cluster.sh <dod|fingerprint>}"
+DRILL="${1:?usage: drill-in-cluster.sh <dod|fingerprint> [args…]}"
+shift
+PASSTHROUGH="$*"
 CTX="${IE_CTX:-hartland}"
 NS="${IE_NS:-ttr-server}"
 PORTFOLIO="${IE_PORTFOLIO:-conseq:200791223}"
@@ -45,8 +47,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
 case "$DRILL" in
-    dod)         COMMAND="bash /drill/investment-dod.sh" ;;
-    fingerprint) COMMAND="bash /drill/report-fingerprint.sh" ;;
+    dod)         COMMAND="bash /drill/investment-dod.sh $PASSTHROUGH" ;;
+    fingerprint) COMMAND="bash /drill/report-fingerprint.sh $PASSTHROUGH" ;;
     *) fail "the drill is 'dod' or 'fingerprint', not '$DRILL'" ;;
 esac
 
@@ -116,7 +118,21 @@ YAML
 printf 'running %s in %s/%s …\n' "$JOB" "$CTX" "$NS"
 kubectl --context "$CTX" -n "$NS" wait --for=condition=complete "job/$JOB" --timeout=600s >/dev/null 2>&1 \
     || kubectl --context "$CTX" -n "$NS" wait --for=condition=failed "job/$JOB" --timeout=5s >/dev/null 2>&1 || true
-kubectl --context "$CTX" -n "$NS" logs "job/$JOB" --tail=400 || true
+LOG="$(mktemp)"
+kubectl --context "$CTX" -n "$NS" logs "job/$JOB" --tail=400 >"$LOG" 2>&1 || true
+cat "$LOG"
+
+# A fingerprint printed by a run in a pod is the only copy — the Job's filesystem goes with it. Lift
+# it out of the log and into the repo, where `run-set/fingerprints/` is committed (§7.2).
+slug="$(sed -n 's/^-----BEGIN FINGERPRINT \(.*\)-----$/\1/p' "$LOG" | head -1)"
+if [ -n "$slug" ]; then
+    dest="$HERE/../run-set/fingerprints/$slug"
+    mkdir -p "$(dirname "$dest")"
+    sed -n '/^-----BEGIN FINGERPRINT /,/^-----END FINGERPRINT-----$/p' "$LOG" \
+        | sed '1d;$d' >"$dest"
+    printf '\nfingerprint written: run-set/fingerprints/%s (%s rows)\n' "$slug" "$(($(wc -l <"$dest") - 1))"
+fi
+rm -f "$LOG"
 
 state="$(kubectl --context "$CTX" -n "$NS" get job "$JOB" -o jsonpath='{.status.succeeded}' 2>/dev/null || true)"
 if [ -z "${IE_KEEP:-}" ]; then
