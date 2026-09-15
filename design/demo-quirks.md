@@ -40,7 +40,7 @@ files even though ResolveArea returned `["hartland"]`.
 `/hartland/`.
 
 ### 1.2 Two refreshes are needed after a model edit — veles AND golem
-veles pulls the model from `Collite/hartland` (branch `demo-p2`, subdir `model/`) on a
+veles pulls the model from `Collite/ttr-demo` (branch `demo-p2`, subdir `model/`) on a
 poll interval; golem fetches the **ModelBundle from veles once at boot and caches it**.
 So after you push a model change:
 

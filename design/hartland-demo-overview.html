@@ -354,7 +354,7 @@
       </table></div>
 
       <h3>How the model is served &amp; the two rules that bite</h3>
-      <p>veles polls the model from git <span class="mono">Collite/hartland@demo-p2</span> and serves it as a ModelBundle; golem resolves the area via Ariadne and loads the 15 patterns as its <span class="mono">preferred_queries</span>.</p>
+      <p>veles polls the model from git <span class="mono">Collite/ttr-demo@demo-p2</span> and serves it as a ModelBundle; golem resolves the area via Ariadne and loads the 15 patterns as its <span class="mono">preferred_queries</span>.</p>
       <div class="note">
         <span class="nt">The two-refresh rule</span>
         <p>After <b>any</b> model edit you must refresh <b>both</b>: veles (<span class="mono">VelesService/Refresh {force:true}</span> → confirm queries flip to PARSED) <b>and</b> golem (<span class="mono">kubectl rollout restart deployment/golem-hartland</span> and <span class="mono">-finance</span>) — golem caches the ModelBundle at boot. Skip the golem restart and it keeps sending stale SQL that fails at the translator — which golem masks as <span class="mono">STATUS_DONE, 0 rows</span>.</p>
@@ -400,7 +400,7 @@ kubectl --context &lt;c&gt; -n data apply  -f platform/data/hartland-pg/base/res
         &nbsp;&nbsp;├─▶ <b>llm-gateway</b>.ttr-server <span style="color:var(--muted)">:7280 — Bearer ttrk-golem</span><br>
         &nbsp;&nbsp;└─▶ <b>query-mcp</b> :7307/mcp ─▶ <b>theseus</b> ─▶ translate / validate / worker ─▶ <b>hartland-pg</b> <span style="color:var(--muted)">(ns data)</span>
       </div>
-      <p>Cross-namespace hosts <b>must</b> be FQDNs. The golems' Shem bundles come from <span class="mono">Collite/hartland@demo-p2</span>; the image is pinned (<span class="mono">ghcr.io/collite/golem:0.9.4</span>). All secrets pull from a <b>separate</b> vault — <span class="mono">hartland.vault.azure.net</span> (Collite tenant): <span class="mono">veles-github-pat</span>, <span class="mono">ttrk-golem</span>, <span class="mono">azure-openai-key</span>, the pg-hartland RO creds, and the ArgoCD repo cred.</p>
+      <p>Cross-namespace hosts <b>must</b> be FQDNs. The golems' Shem bundles come from <span class="mono">Collite/ttr-demo@demo-p2</span>; the image is pinned (<span class="mono">ghcr.io/collite/golem:0.9.4</span>). All secrets pull from a <b>separate</b> vault — <span class="mono">hartland.vault.azure.net</span> (Collite tenant): <span class="mono">veles-github-pat</span>, <span class="mono">ttrk-golem</span>, <span class="mono">azure-openai-key</span>, the pg-hartland RO creds, and the ArgoCD repo cred.</p>
 
       <h3>The four steps GitOps does <em>not</em> do</h3>
       <p>Run these by hand — the collite-o1 bring-up on 2026-07-20 proved every one is a real gate:</p>

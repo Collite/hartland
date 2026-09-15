@@ -222,7 +222,7 @@ select even if one tried (D-6a).
 
 ### 2.5 How the model is served (veles → ModelBundle → golem)
 
-**veles** polls the model from git `Collite/hartland` (branch `demo-p2`, subdir `model/`)
+**veles** polls the model from git `Collite/ttr-demo` (branch `demo-p2`, subdir `model/`)
 and serves it as a ModelBundle. golem asks Ariadne `ResolveArea(hartland)` → the flat
 `hartland` package → `GetModel`, and loads the 15 `q.hartland.*` as its `preferred_queries`.
 Two operational rules that have bitten hours (demo-quirks §1):
@@ -356,7 +356,7 @@ so Discover/Themis can route. Cross-namespace hosts **must** be FQDNs.
 ### 4.4 Golems (`golems/`)
 
 `appset-golems.yaml` renders each enabled Shem from three sources: (1) the Shem ConfigMap from
-`Collite/hartland@demo-p2` (`agents/golem/shems/<shem>`, read via the `argocd-hartland-repo`
+`Collite/ttr-demo@demo-p2` (`agents/golem/shems/<shem>`, read via the `argocd-hartland-repo`
 cred); (2) the golem chart from `Collite/kantheon@master`; (3) the `$values` ref (olymp).
 Enablement is one JSON per Shem — `golem-hartland.json`, `golem-hartland-finance.json`.
 `_values.yaml` pins the image (`ghcr.io/collite/golem:0.9.4`, `IfNotPresent`), the veles gate,
@@ -375,7 +375,7 @@ model + Shem-bundle access), `golem-llm-gateway-key` (vault `ttrk-golem`),
 
 ### 4.6 Bring-up sequence and the manual (non-GitOps) steps
 
-Pre-flight gates (`plan-cluster.md`): G1 release tags · G2 the `Collite/hartland` repo
+Pre-flight gates (`plan-cluster.md`): G1 release tags · G2 the `Collite/ttr-demo` repo
 (model + 15 queries + both Shems) · G3 the seeded dump in Seaweed · G4 constellation proven
 on bp-dsk · G5 hardware. Then H1 fork (`just new-cluster` → `just bootstrap` → re-seal
 `eso-bootstrap-auth` → verify the four platform apps Synced/Healthy), H2 warehouse, H3 wiring,

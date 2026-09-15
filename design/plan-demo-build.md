@@ -22,13 +22,13 @@
 
 ## Where the work lives (BM-9 — hartland repo is the home; kantheon is code-only)
 
-**`Collite/hartland`** (cloned at `collite-gh/hartland`, currently a stub) holds **all** demo
+**`Collite/ttr-demo`** (cloned at `collite-gh/hartland`, currently a stub) holds **all** demo
 assets — data scripts, model, run-set, agents/Shems, and a copy of the demo design docs.
 **olymp** keeps the GitOps cluster overlay. **kantheon** keeps only *code* (the constellation
 services + any new Proteus goldens). Proposed hartland repo tree:
 
 ```
-Collite/hartland/
+Collite/ttr-demo/
 ├── model/                     # BM-5 — the TTR-M model ("model lives in a model folder", Bora)
 │   ├── db/                    #   model db (physical schema subset)
 │   ├── er/                    #   model er + er2db binding
@@ -52,7 +52,7 @@ Collite/hartland/
 
 | Repo | Phase 1 (data) | Phase 2 (model) | Phase 3 (cluster/dry-run) |
 |---|---|---|---|
-| **`Collite/hartland`** | `data/` — catalog, seeds, localize, recon, dumps (**both worlds**) | `model/` + `agents/` — db/er/md/binding/lexicon + both Shems | `run-set/` consumed by the cluster; design docs |
+| **`Collite/ttr-demo`** | `data/` — catalog, seeds, localize, recon, dumps (**both worlds**) | `model/` + `agents/` — db/er/md/binding/lexicon + both Shems | `run-set/` consumed by the cluster; design docs |
 | **olymp** (`clusters/hartland/`) | — | — | H1–H5 bring-up (extended for 2 connections) — `plan-cluster.md`, Ariadne source = hartland repo |
 | **kantheon** (code only) | — | Proteus goldens for new query shapes (service test assets) | constellation services (consumed, not built here) |
 
@@ -76,8 +76,8 @@ shared component, not a bespoke one.
 
 | Phase | Deliverable | Gated by |
 |---|---|---|
-| **Phase 1 — Two-world dataset** | `hartland_us` **and** `hartland_cz` databases: re-dated, carrying the **full bilingual per-item catalog**, CZ fully localized (towns/addresses/DCs/CZK), the DC-meltdown story seeded in **both**; versioned demo dumps of each. Built in **`Collite/hartland/data/`**. | pristine `tpc-ds-1g` dump (have it) |
-| **Phase 2 — TTR-M model stack** | **`Collite/hartland/model/`** + `agents/`: one `db`+`er`+`md`+`binding`+`lexicon(en,cs)` model loading clean against **both** connections; `q.hartland.*` #1–15; both Shems (en+cs). | Phase 1 (a seeded DB to resolve against) |
+| **Phase 1 — Two-world dataset** | `hartland_us` **and** `hartland_cz` databases: re-dated, carrying the **full bilingual per-item catalog**, CZ fully localized (towns/addresses/DCs/CZK), the DC-meltdown story seeded in **both**; versioned demo dumps of each. Built in **`Collite/ttr-demo/data/`**. | pristine `tpc-ds-1g` dump (have it) |
+| **Phase 2 — TTR-M model stack** | **`Collite/ttr-demo/model/`** + `agents/`: one `db`+`er`+`md`+`binding`+`lexicon(en,cs)` model loading clean against **both** connections; `q.hartland.*` #1–15; both Shems (en+cs). | Phase 1 (a seeded DB to resolve against) |
 | **Phase 3 — Dry-run & cluster** | The `hartland` showcase cluster serving **both worlds**, demo-ready per the E-5 bar, a full **dry-run** of the arc passing twice unaided (in the delivery locale); a completeness review of every prior-design task. | Phases 1+2; G1/G4 (pins, waves) from `plan-cluster.md` |
 
 ---
@@ -92,7 +92,7 @@ recon baselines and frozen R0 numbers.
 **Pre-flight:** pristine `tpc-ds-1g` dump available (✔, `06-e` pipeline step 1); the existing
 re-dated+seeded `hartland` (US) DB on `test-pg-1` (✔ per Bora — becomes `hartland_us`); Q-BM-1/2/5
 decided (FX-scale CZK, generator+hero, Brno+Praha+Ostrava+Plzeň+Hradec Králové). All scripts
-authored in **`Collite/hartland/data/`** (BM-9 — not kantheon).
+authored in **`Collite/ttr-demo/data/`** (BM-9 — not kantheon).
 
 ### Stage 1.1 — Catalog taxonomy & bilingual generator
 *Goal:* a deterministic, reproducible generator that maps every `i_item_sk` → a believable
@@ -174,7 +174,7 @@ bilingual product, from a curated taxonomy — the single source both worlds dra
 
 # Phase 2 — The TTR-M model stack (one model, two worlds)
 
-**Deliverable (deployable):** the `Collite/hartland` repo — a single TTR-M model set
+**Deliverable (deployable):** the `Collite/ttr-demo` repo — a single TTR-M model set
 (`db`+`er`+`md`+`binding`+`lexicon(en,cs)`) that **loads clean and resolves against both
 connections**, exposes the 15 `q.hartland.*` queries, and assembles **both Shems** with en+cs
 example questions. This is the ai-models-analog and the on-stage "customer-onboarding" talking
@@ -183,7 +183,7 @@ point (D-7).
 **Pre-flight:** Phase 1 stage 1.1–1.2 landed (a catalog-rich, seeded DB to resolve against — the
 US dump suffices for model authoring; CZ validates the lexicon); `@tatrman/*` toolchain
 available; TTR-M grammar ≥ 4.4 (lexicon + md — confirmed present); CZ personas' roles known
-(Q-BM-4a). The `Collite/hartland` repo exists (stub); scaffold its tree per BM-9 (model in the
+(Q-BM-4a). The `Collite/ttr-demo` repo exists (stub); scaffold its tree per BM-9 (model in the
 top-level `model/` folder), mirroring ai-models for the `agents/` side (Q-10).
 
 ### Stage 2.1 — Repo scaffold + `model db` (physical)
@@ -276,7 +276,7 @@ passing twice unaided — plus a completeness review that every task implied by 
 (07-f ops, satellites, E-4) is accounted for.
 
 **Pre-flight gates** (from `plan-cluster.md`, extended): **G1** MP-4 tags cut · **G2**
-`Collite/hartland` **populated** (model + run-set = Phase 2 done) · **G3** *both* demo dumps in
+`Collite/ttr-demo` **populated** (model + run-set = Phase 2 done) · **G3** *both* demo dumps in
 staging (= Phase 1 done) · **G4** constellation waves proven on bp-dsk (themis/pythia wave 4,
 hebe wave 6, Iris P4, Metis/Charon) · **G5** Q-12 hardware. *(All Q-BM sub-decisions resolved
 2026-07-18 — one CNPG/two DBs, single-locale-per-delivery — so no design gate remains.)*
@@ -311,7 +311,7 @@ data/wiring, not the fork.)
 
 ### Stage 3.3 — Estate wired for both worlds  → **plan-cluster.md H3, extended**
 *Goal:* the constellation answers over either world through one model.
-- Per H3.1: Ariadne model Git source = `Collite/hartland` (Q-9 single-source check).
+- Per H3.1: Ariadne model Git source = `Collite/ttr-demo` (Q-9 single-source check).
 - **Δ:** **two** Arges connections `pg-hartland-us` + `pg-hartland-cz`; **two** Kyklop
   `world.table-connections` mappings (same model tables → each DB).
 - Per H3.2: both Shems register; **Δ Q-BM-4:** Keycloak realm gains the CZ personas alongside
@@ -321,7 +321,7 @@ data/wiring, not the fork.)
 
 ### Stage 3.4 — The `hartland-query` run-set (both worlds)  → **plan-cluster.md H4, extended**
 *Goal:* the query surface proven mechanically for each world.
-- Per H4: the run-set lives in **`Collite/hartland/run-set/`** (BM-9 — was "kantheon-owned"),
+- Per H4: the run-set lives in **`Collite/ttr-demo/run-set/`** (BM-9 — was "kantheon-owned"),
   pointed at the standing cluster; oracle rows for all 15 queries.
 - **Δ:** oracle rows for **both** worlds (US in USD, CZ in CZK = US ×FX per Q-BM-1a); `just
   demo-check hartland` runs both worlds; the E-5 item-5 routing/forecast probes run per world.
@@ -351,7 +351,7 @@ data/wiring, not the fork.)
   needed to *validate* the cs lexicon — so 2.5/2.6 gate on Phase 1 CZ). Phase 2 completion = G2.
 - **Phase 3** needs Phases 1+2 (G2+G3) plus the olymp/bp-dsk gates G1/G4/G5 and the new G6.
   Stage 3.0 (review) runs first and gates H2+.
-- **Cross-repo (BM-9):** `Collite/hartland` owns Phases 1 **and** 2 **and** the run-set (`data/`,
+- **Cross-repo (BM-9):** `Collite/ttr-demo` owns Phases 1 **and** 2 **and** the run-set (`data/`,
   `model/`, `agents/`, `run-set/`, `design/`); olymp owns the H1–H5 bring-up (Phase 3) and reads
   the hartland repo for the model + run-set; kantheon holds only code (services + new Proteus
   goldens). The olymp `plan-cluster.md` stays the pointer doc for the `[O]` slices.

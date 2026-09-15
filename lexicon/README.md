@@ -102,7 +102,7 @@ a second worktree of the same SHA — and the committed archive still carried `h
 from whichever worktree last rebuilt it. `just check-lexicon` therefore failed on a clean master
 for anyone whose clone sat anywhere else, which is the drift gate reporting the filesystem rather
 than the vocabulary. With the fix both paths compile to the id above. Toolchain side:
-`Collite/tatrman` — `MetadataExtractor` now spells the model tier's provenance relative to the
+`Collite/ttr-core` — `MetadataExtractor` now spells the model tier's provenance relative to the
 estate root, the way every other layer already did.
 
 ⚑ **The two `RG-LEXC-004` warnings are not new here** and are not a regression: `prodejna` and

@@ -1,7 +1,7 @@
 ---
 effort: HB — Hebe demo on Hartland (personal-agent plane, cluster Hebe)
-repo_home: Collite/hartland/design/hebe-demo
-code_home: [Collite/hartland (data/hebe fixtures, rig-hb, beats), olymp (values/route/secret PRs), kantheon (consumed read-only at hebe/v0.4.0)]
+repo_home: Collite/ttr-demo/design/hebe-demo
+code_home: [Collite/ttr-demo (data/hebe fixtures, rig-hb, beats), olymp (values/route/secret PRs), kantheon (consumed read-only at hebe/v0.4.0)]
 state: planned
 phase: corpus authored 2026-07-23; partial HB-P0 probed 2026-07-27 (probes.md) — HB-P1 found BLOCKED on unwritten kantheon P4 wiring
 next: Bora — rule HB-⚑1…5 (⚑3 Telegram bot still the earliest hard gate) + NEW ⚑ on token-exchange:v1 (probes.md §2) + NEW ⚑ on the inbox carrier for scheduled briefs (inbox-beat1.md §5) · finish the HB-P0 rows left unprobed (no cluster mutation)

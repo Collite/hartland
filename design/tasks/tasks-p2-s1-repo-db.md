@@ -13,7 +13,7 @@
 ## Where the code lives
 
 ```
-Collite/hartland/
+Collite/ttr-demo/
 ├── modeler.toml               # T1 — project manifest (schemas, language, connections doc)
 ├── model/
 │   ├── connections.toml        # T3 — the two connection descriptors (Ariadne/Arges input)

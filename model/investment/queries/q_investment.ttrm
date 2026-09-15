@@ -3,7 +3,7 @@ package investment
 model query
 
 // IE-C25 — the nine `q.investment.*` pattern queries. Shape and precedent:
-// `Collite/hartland/model/queries/q_hartland.ttrm`. The last two — `period_values` and
+// `Collite/ttr-demo/model/queries/q_hartland.ttrm`. The last two — `period_values` and
 // `portfolio_header` — joined at IE-P3·S3.1 for the report.
 //
 // ## What these are, and what they are not
@@ -420,8 +420,8 @@ def query positions_at {
         -- ⚑ This is a WORKAROUND for a runtime defect, not the fix: worker-postgres must not read an
         -- unconstrained `numeric` at the scale JDBC reports for it, which is 0 because the column
         -- has no DECLARED scale rather than because its values are integers —
-        -- Collite/tatrman-server#83. Exact money needs a decimal type IN THE PLAN —
-        -- Collite/tatrman#129. Moving the arithmetic to the caller does not help: a JavaScript
+        -- Collite/ttr-server#83. Exact money needs a decimal type IN THE PLAN —
+        -- Collite/ttr-core#129. Moving the arithmetic to the caller does not help: a JavaScript
         -- number is a double too. When #83 lands, the FLOAT cast above can come off and `last_price`
         -- go back to being the exact stored number — and ⛔ NOTHING OFFLINE WILL SAY SO (review-089
         -- ㉒; this line used to claim T1.16 and T3.6 would): psql never truncated, and T1.16 only

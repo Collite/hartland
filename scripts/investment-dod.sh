@@ -315,7 +315,7 @@ fi
 ok "positions_at declares its sort key (line_rank)"
 
 # ⛔ THE DOOR'S PRICE IS THE BOOK'S PRICE, to 6 dp. `positions_at` casts `last_price` to FLOAT as a
-# workaround for Collite/tatrman-server#83 — an unconstrained NUMERIC was read at scale 0, so 2.1031
+# workaround for Collite/ttr-server#83 — an unconstrained NUMERIC was read at scale 0, so 2.1031
 # came back as 2 — and nothing offline can say when that cast may come off. This is the check that
 # can: every holding line's price against the book's latest `investment_asset_price` on or before
 # today. A line the book has never priced must be unpriced at the door too.
@@ -333,7 +333,7 @@ while IFS=$'\t' read -r line_id door_price; do
     [ -z "$door_price" ] && [ -z "$book_price" ] && continue
     if [ -z "$door_price" ] || [ -z "$book_price" ] || ! jq -en --arg a "$door_price" --arg b "$book_price" \
         '(($a | tonumber) * 1000000 | round) == (($b | tonumber) * 1000000 | round)' >/dev/null 2>&1; then
-        fail "positions_at prices $line_id at ${door_price:-NULL}; the book's latest price on or before $TODAY is ${book_price:-none}. A whole number where the book has decimals is Collite/tatrman-server#83's scale-0 read"
+        fail "positions_at prices $line_id at ${door_price:-NULL}; the book's latest price on or before $TODAY is ${book_price:-none}. A whole number where the book has decimals is Collite/ttr-server#83's scale-0 read"
     fi
     priced=$((priced + 1))
 done <<<"$price_lines"

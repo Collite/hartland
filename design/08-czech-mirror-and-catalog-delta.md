@@ -32,7 +32,7 @@ Four framing calls answered up front, each drives the BM entries below:
 
 **Follow-up confirmations (2026-07-18, second pass — Bora):**
 
-5. **Repo = `Collite/hartland`** (cloned at `collite-gh/hartland`, created by Bora, currently a
+5. **Repo = `Collite/ttr-demo`** (cloned at `collite-gh/hartland`, created by Bora, currently a
    stub). It is the **single home for all demo assets** — the TTR-M model (in a top-level
    `model/` folder), every data script (re-date / localize / catalog / seed / recon), the
    `hartland-query` run-set, the agent def + both Shems, and the demo design docs. **Kantheon
@@ -90,7 +90,7 @@ connection. There is no second model to keep in sync.
   (the original scope).
 
 - 2026-07-18 · **BM-2 · One model, two connections** (topology). A **single** TTR-M model set
-  (`db` + `er` + `md` + `binding` + `lexicon`) in `Collite/hartland`, served over **both**
+  (`db` + `er` + `md` + `binding` + `lexicon`) in `Collite/ttr-demo`, served over **both**
   databases via two Arges connections **`pg-hartland-us`** (USD) and **`pg-hartland-cz`** (CZK).
   Physical schema is identical, so `db`/`er`/`md`/`binding` are shared verbatim; per-world
   differences ride the **`lexicon`** layer (en vs cs). · Why: Bora — the platform-agnostic story
@@ -156,7 +156,7 @@ connection. There is no second model to keep in sync.
   first-class dot-path. · **Supersedes `05-d`'s single-model framing** (05-d's entity roster,
   measures policy, synonym families all carry forward into `er` + `lexicon`).
 
-- 2026-07-18 · **BM-6 · Repo & cluster ripples.** `Collite/hartland` (D-7/BM-9) carries the
+- 2026-07-18 · **BM-6 · Repo & cluster ripples.** `Collite/ttr-demo` (D-7/BM-9) carries the
   db/er/md/binding/lexicon stack + one agent def + both Shems (`golem-hartland`,
   `golem-hartland-finance`), consumed by Ariadne as its model Git source. The cluster gains a
   **second Arges connection** `pg-hartland-cz` + a **second Kyklop mapping**, and a **second
@@ -166,7 +166,7 @@ connection. There is no second model to keep in sync.
   per FI-4", `05-d`) is **now in scope**. · This extends E-2/E-3 and the olymp
   `plan-cluster.md` (H2/H3) — see Phase 3 of the companion plan.
 
-- 2026-07-18 · **BM-9 · Demo-repo consolidation — everything demo lives in `Collite/hartland`;
+- 2026-07-18 · **BM-9 · Demo-repo consolidation — everything demo lives in `Collite/ttr-demo`;
   kantheon is code-only.** All demo build assets move to / are authored in the hartland repo:
   the **`model/`** folder (db/er/md/binding/lexicon per BM-5), **`data/`** (re-date, CZ
   localize, catalog generator, seeds, recon — the scripts formerly slated for `kantheon/surgery/`),

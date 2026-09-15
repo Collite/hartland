@@ -22,7 +22,7 @@
 
 ## Phase deliverable (deployable)
 
-The `Collite/hartland` repo's **`model/`** + **`agents/`** trees: a **single** TTR-M model set —
+The `Collite/ttr-demo` repo's **`model/`** + **`agents/`** trees: a **single** TTR-M model set —
 `model db` (physical) + `model er` (logical) + `model md` (ROLAP star) + `model binding`
 (er2db + md2db) + `model lexicon locale en` + `locale cs` — that **loads clean and resolves
 against both connections**, exposes the 15 `q.hartland.*` queries with their params, excludes any
@@ -110,7 +110,7 @@ STATUS.md at task-list time, per planning-conventions §0).
       `@tatrman/integration-tests` runnable via `pnpm --filter @tatrman/<pkg> test`.
 - [ ] TTR-M grammar **≥ 4.4** confirmed (lexicon + md present) — `head packages/grammar/src/TTR.g4`
       `@grammar-version`; `model md` / `model lexicon locale` accepted (fixtures 62/63/64 parse).
-- [ ] `Collite/hartland` repo cloned at `collite-gh/hartland`; the BM-9 tree is **already
+- [ ] `Collite/ttr-demo` repo cloned at `collite-gh/hartland`; the BM-9 tree is **already
       scaffolded** (`model/{db,er,md,lexicon,queries}`, `agents/golem`, `data/`, `run-set/`,
       `design/` all present as of 2026-07-18) — Stage 2.1 T1 **confirms and fills**, it does not
       create from nothing. `model/binding/` is the one folder to add (er2db + md2db `.ttrm` files).
@@ -120,7 +120,7 @@ STATUS.md at task-list time, per planning-conventions §0).
       "Nedorazilo včas", DC names, container/size codes) is committed under `data/catalog/` — the
       Stage 2.5 lexicon consumes it. (Authoring 2.5 can start against the US-side labels; the cs
       side needs Phase-1 CZ — see below.)
-- [ ] A `modeler.toml` at the `Collite/hartland` **repo root** (or `model/`) declares the project
+- [ ] A `modeler.toml` at the `Collite/ttr-demo` **repo root** (or `model/`) declares the project
       name, `[schemas] declared = ["db","er","md","binding","lexicon"]`, and `[language] preferred`
       — see `tatrman docs/features/v1/design/architecture.md §5` for the manifest schema.
 

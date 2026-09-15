@@ -9,7 +9,7 @@
   `probes.md` the exact SHAs of both repos the demo builds on (`git log -1` on the merged
   masters / branch). If either is missing → STOP, flag Bora (plan §Global pre-flight),
   do not build on unmerged worktrees.
-- [ ] **T2 — Branch + skeleton.** In `Collite/hartland`: branch `studio-demo`; create
+- [ ] **T2 — Branch + skeleton.** In `Collite/ttr-demo`: branch `studio-demo`; create
   `design/studio-demo/` (this corpus — commit it), `rig/`, `data/plan/`. Add
   `rig/README.md` stub with the three entry points (contracts §7).
 - [ ] **T3 — Probe: the A1 authoring loop posture (feeds SD-⚑3).** On the pinned state,

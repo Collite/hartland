@@ -1,7 +1,7 @@
 # The model gate, on every push to master and every pull request.
 #
 # hartland is content only — it vendors no toolchain — so this job checks out the public
-# Collite/tatrman repository beside it and builds the parser, semantics, lint and resolve-packages
+# Collite/ttr-core repository beside it and builds the parser, semantics, lint and resolve-packages
 # CLI that the justfile and the model suites borrow from `../tatrman`, exactly as a local checkout
 # side by side does.
 #
@@ -36,7 +36,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: Collite/tatrman
+          repository: Collite/ttr-core
           path: tatrman
 
       - uses: pnpm/action-setup@v4
