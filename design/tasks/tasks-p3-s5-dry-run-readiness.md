@@ -9,7 +9,7 @@
 >
 > **Goal:** demo-ready per the **E-5 bar (both worlds)** + the full **dry-run** — `demo-reset` → the 07-f arc **twice
 > consecutively, zero operator intervention, inside 30′, in the delivery locale**. **Repos: [O] olymp** (recipes,
-> freeze) · **[H] `Collite/hartland/design/`** (the cs mirror of 07-f, if a CZ delivery is scheduled).
+> freeze) · **[H] `Collite/ttr-demo/design/`** (the cs mirror of 07-f, if a CZ delivery is scheduled).
 >
 > **SV-P4 cross-ref:** this internal dry-run is mirrored externally by **SV-P4 · S7** (`.../tasks-sv-p4-s7-dry-run.md`
 > T1/T2) — the outsider's dry acceptance run on **collite-o1 + standing `hartland-pg`** (Stage 3.2), importing the
@@ -54,10 +54,10 @@
 - [ ] **T4 — Declare + document the freeze window (H5.1 T4 — E-1).**
   Document the freeze procedure in `clusters/hartland/README`: **no chart/image/model changes** (pins move pin-to-pin
   by PR only, G1); the **only** permitted operations are `demo-reset` + the daily `just demo-check hartland`. Note the
-  freeze covers the `Collite/hartland` model/run-set too (Ariadne source is pinned to a ref).
+  freeze covers the `Collite/ttr-demo` model/run-set too (Ariadne source is pinned to a ref).
 
 - [ ] **T5 — cs mirror of 07-f / the transcript (BM-8 — [H], only if a CZ delivery is planned).**
-  If a **Czech delivery** is scheduled, author the **cs mirror** in `Collite/hartland/design/`: a straight
+  If a **Czech delivery** is scheduled, author the **cs mirror** in `Collite/ttr-demo/design/`: a straight
   translation of the 07-f beats + the transcript — **fixture names, questions, and narration in Czech**, the same
   arc (BM-7 keeps the stories identical, only locale/currency differ; the CZ R0 appendix from Phase-1 1.6 T4 supplies
   the numbers). **No new content, no bilingual beat, no cameo** (BM-8). If only EN is delivered, this task is N-A

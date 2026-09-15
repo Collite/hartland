@@ -4,12 +4,12 @@
 > [`../test-fixture-hartland-replan.md`](../test-fixture-hartland-replan.md) (**§2.1 — the per-context re-plan**) ·
 > **`olymp/clusters/hartland/plan-cluster.md`** (Phase **H4**). Decisions:
 > [`../08-czech-mirror-and-catalog-delta.md`](../08-czech-mirror-and-catalog-delta.md) (**BM-9** run-set lives in
-> `Collite/hartland`; **BM-10** hartland on every cluster; **Q-BM-1a** CZ = US ×FX; **Q-BM-7** retire the live
+> `Collite/ttr-demo`; **BM-10** hartland on every cluster; **Q-BM-1a** CZ = US ×FX; **Q-BM-7** retire the live
 > `tpcds-query`/`tpc-ds-1g` context, keep the pristine dump).
 >
 > **Goal:** the query surface proven mechanically for **each world** — the `hartland-query` run-set (oracle rows for
 > all 15 `q.hartland.*`, both worlds) + the olymp test-contexts repointed onto hartland, defaulting to **CZ**.
-> **Repos: [H] `Collite/hartland/run-set/`** (oracle rows) · **[O] olymp `test-contexts/*` + per-cluster CES** ·
+> **Repos: [H] `Collite/ttr-demo/run-set/`** (oracle rows) · **[O] olymp `test-contexts/*` + per-cluster CES** ·
 > **[K] kantheon** (`deployment/test/bp-dsk-run-set.txt`, `.github/workflows/integration-nightly.yml`). New Proteus
 > goldens for CASE-sum/md-derived shapes are **kantheon code (referenced, authored in Phase 2)** — not here.
 
@@ -23,7 +23,7 @@
 ## Pre-flight
 
 - [ ] Stage 3.4 branch: `feat/p3-s4-run-set-repoint`.
-- [ ] `Collite/hartland/run-set/` exists (stub with README present); oracle-row home is here (BM-9).
+- [ ] `Collite/ttr-demo/run-set/` exists (stub with README present); oracle-row home is here (BM-9).
 - [ ] Shapes to mirror: `olymp/test-contexts/tpcds-query/` (context.yaml + per-service values; Arges extraEnv
       pattern) and `olymp/test-contexts/golem-erp/context.yaml` (Shem-as-ConfigMap agent-turn pattern).
 - [ ] Phase-1 `data/recon/R0.md` (both worlds; CZ = US ×FX) available — the oracle-row source of truth.
@@ -31,7 +31,7 @@
 ## Tasks
 
 - [ ] **T1 — Author the `hartland-query` run-set, both worlds (H4.1 T1/T2 — [H]).**
-  In `Collite/hartland/run-set/` author the oracle rows for all **15** `q.hartland.*` queries **per world**:
+  In `Collite/ttr-demo/run-set/` author the oracle rows for all **15** `q.hartland.*` queries **per world**:
   **US in USD**, **CZ = US ×FX** (Q-BM-1a — one figure set carries; the FX constant from `dump-manifest.md`). Anchor
   aggregates to `demo-transcript.md` App. B + the frozen `R0.md`. Structure: `run-set/{queries/,oracle/{us,cz}/}`
   with a per-query expected-rows file per world. Pointed at the **standing cluster estate** (no per-run bring-up).
@@ -87,8 +87,8 @@
   Per the conventions: the "test" is a **golden/oracle self-check + template render**, not a mocked unit —
   ```sh
   # oracle rows well-formed + both worlds present for all 15 queries:
-  ls Collite/hartland/run-set/oracle/us | wc -l    # 15
-  ls Collite/hartland/run-set/oracle/cz | wc -l    # 15
+  ls Collite/ttr-demo/run-set/oracle/us | wc -l    # 15
+  ls Collite/ttr-demo/run-set/oracle/cz | wc -l    # 15
   # every repointed context renders + carries a hartland connection, none still references pg-tpcds live:
   for c in hartland-query theseus-runquery golem-hartland pythia-rca themis-routing; do
     grep -qr 'pg-hartland' olymp/test-contexts/$c/ && echo "$c ok"; done
@@ -110,5 +110,5 @@
 just demo-check hartland                                  # both worlds' 15 queries + item-5 probes green
 grep -c hartland kantheon/deployment/test/bp-dsk-run-set.txt      # ≥ 4 hartland-named contexts
 grep -rl 'pg-tpcds' olymp/test-contexts/ | grep -vi smoke         # expect empty
-diff <(cut -d, -f2 Collite/hartland/run-set/oracle/cz/q03.csv) <(fx-scale Collite/hartland/run-set/oracle/us/q03.csv)  # CZ == US ×FX
+diff <(cut -d, -f2 Collite/ttr-demo/run-set/oracle/cz/q03.csv) <(fx-scale Collite/ttr-demo/run-set/oracle/us/q03.csv)  # CZ == US ×FX
 ```

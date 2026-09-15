@@ -1,7 +1,7 @@
 package investment
 
 // The area is the Golem's roster (IE-C62) and Veles resolves it from the SERVED GIT TREE — hartland's
-// veles reads `Collite/hartland` `model/`, so the copy synced there by `just sync-investment-model`
+// veles reads `Collite/ttr-demo` `model/`, so the copy synced there by `just sync-investment-model`
 // (IE-C27, S2.3) is what a question actually resolves against, and NO ai-models delta is needed
 // (IE-P0 V5).
 //

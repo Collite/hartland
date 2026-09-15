@@ -7,10 +7,10 @@
 > **BM-6** second Kyklop map + cs prompt bundle + CZ personas, **Q-BM-4a** new CZ personas). Design:
 > `06-e-cluster-spec.md` **E-3**; `demo-transcript.md` satellite **G** (governance) + **D** (Discover); F-1/S-13.
 >
-> **Goal:** the constellation answers over **either world through one model** — model served from `Collite/hartland`,
+> **Goal:** the constellation answers over **either world through one model** — model served from `Collite/ttr-demo`,
 > **two** Arges connections + **two** Kyklop mappings, **both** Shems registered, **both** persona sets in Keycloak,
 > the **cs prompt bundle** mounted. **Repo: [O] olymp** (wiring); the model + Shems + prompts are **[H] Phase-2
-> artifacts, consumed** here (Ariadne source = `Collite/hartland`).
+> artifacts, consumed** here (Ariadne source = `Collite/ttr-demo`).
 >
 > **SV-P4 cross-ref:** the live hartland model + `hartland_cz` this stage serves is the **reference model** that
 > **SV-P4 · S5** (`.../tasks-sv-p4-s5-golem-conformance.md` T5) authors its conformance core tier against
@@ -19,7 +19,7 @@
 ## Depends on
 
 - **Stage 3.2 DONE** — both DBs serve read-only on the hartland CNPG (the connections need a live warehouse).
-- **G2 — `Collite/hartland` populated** (Phase 2 done): `model/` loads clean + resolves against both connections;
+- **G2 — `Collite/ttr-demo` populated** (Phase 2 done): `model/` loads clean + resolves against both connections;
   both Shems assemble with en+cs `example_questions`; `q.hartland.*` #1–15 present.
 - **G4 — constellation waves proven on bp-dsk** (themis/pythia wave 4, hebe wave 6, Iris-P4, Metis/Charon) — the
   DONE bar depends on these; **G1** (pins) for the DONE bar's "pinned tags" clause.
@@ -35,7 +35,7 @@
 ## Tasks
 
 > **⚑ FINDING — LEXICON PARSE ERRORS = STALE veles IMAGE (2026-07-19, T1 verification; corrected).**
-> veles serves the real `Collite/hartland` model (branch `demo-p2`, commit `44b4d3f`, 548 objects) via
+> veles serves the real `Collite/ttr-demo` model (branch `demo-p2`, commit `44b4d3f`, 548 objects) via
 > `METADATA_GIT_*` + the `veles-github-pat` secret, loading with **48 errors**:
 > - **20 `ttr/package-declaration-mismatch`** — non-fatal (`LoadWarning`), the documented `modeler.toml`
 >   `layout="off"` residual. Core star (db/er/md/binding/queries) loads + resolves (zero unresolved-refs).
@@ -67,7 +67,7 @@
 
 > **⚠ SERVICE NAMES RECONCILED (Stage 3.0 X-roster, resolved 2026-07-18 — `p3-completeness-matrix.md`).**
 > T1–T4 name apps by their pre-rename identities; use the **current** app dirs
-> (`clusters/hartland/apps/<name>/`): **T1** Ariadne → **`veles`** (model Git source = `Collite/hartland`);
+> (`clusters/hartland/apps/<name>/`): **T1** Ariadne → **`veles`** (model Git source = `Collite/ttr-demo`);
 > **T2** Arges (DB connection) → **`postgres`** (the PG worker holding the `pg-hartland` conn — the
 > `ARGES_PG_HARTLAND_*` env lives here now; **not** `validate`, which is argos); **T3** Kyklop
 > (world map) → **`dispatch`**; **T4** Prometheus (real LLM keys) → **`llm-gateway`** (the LLM
@@ -76,10 +76,10 @@
 > Kyklop maps, real LLM keys) is unchanged — only names + env-var prefixes. (Confirm the Themis
 > routing app dir: `resolver` vs `themis-mcp`.)
 
-- [ ] **T1 — Ariadne model Git source = `Collite/hartland` (H3.1 T1; resolve Q-9).**
-  Point Ariadne at the `Collite/hartland` repo (`model/` folder) as its model Git source in
+- [ ] **T1 — Ariadne model Git source = `Collite/ttr-demo` (H3.1 T1; resolve Q-9).**
+  Point Ariadne at the `Collite/ttr-demo` repo (`model/` folder) as its model Git source in
   `clusters/hartland/apps/ariadne/values.yaml`. Add the ArgoCD/Ariadne **repo credential** for the private
-  `Collite/hartland`. Resolve **Q-9** here: verify single- vs multi-source support; the kantheon in-repo `tpcds`
+  `Collite/ttr-demo`. Resolve **Q-9** here: verify single- vs multi-source support; the kantheon in-repo `tpcds`
   seed stays the *integration fixture* and is NOT served on this cluster. Confirm `ResolveArea("hartland")` loads
   the db/er/md/binding/lexicon stack (en + cs) at startup.
 

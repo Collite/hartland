@@ -1,7 +1,7 @@
 ---
 effort: SD — Tatrman Studio demo on Hartland (FO-A1 Designer + FO-A2 Planner)
-repo_home: Collite/hartland/design/studio-demo
-code_home: [Collite/hartland (model delta, data/plan, rig/), tatrman + tatrman-platform (consumed read-only at pinned SHAs)]
+repo_home: Collite/ttr-demo/design/studio-demo
+code_home: [Collite/ttr-demo (model delta, data/plan, rig/), tatrman + tatrman-platform (consumed read-only at pinned SHAs)]
 state: ready
 phase: corpus authored 2026-07-23 + **⚑SD-1…5 ALL RULED same day** (A on Bora's machine / Rancher Desktop docker → C graduation; identity relaxed for A; ⚑3 per P0 probe; Satellite R out for A); nothing executed
 next: SD-P0 (pre-flight: merge tatrman#104/platform#13, push fo-a2, then probes T3–T5 on RD docker)

@@ -21,7 +21,7 @@ Two restore-ready, versioned demo dumps — **`hartland_us`** and **`hartland_cz
 re-dated (+23y), carrying the **full bilingual per-item catalog**, CZ fully localized
 (towns / addresses / DCs / CZK), the DC-meltdown story seeded in **both** (Memphis DC / Brno DC),
 with committed recon baselines and frozen **R0** numbers. All Phase-1 assets are authored in the
-**`Collite/hartland`** repo under `data/` (BM-9 — not kantheon).
+**`Collite/ttr-demo`** repo under `data/` (BM-9 — not kantheon).
 
 ## Stream / lane
 
@@ -43,7 +43,7 @@ STATUS.md at task-list time, per planning-conventions §0).
 
 - [ ] Pristine `tpc-ds-1g` SF1 dump available on `test-pg-1` (bp-dsk `data` ns) — ✔ per `06-e` pipeline step 1.
 - [ ] The existing re-dated + seeded US `hartland` DB stands on `test-pg-1` — ✔ per Bora; becomes `hartland_us` (Stage 1.2 T1).
-- [ ] `Collite/hartland` repo cloned at `collite-gh/hartland` (stub); `data/` subtree scaffolded per BM-9:
+- [ ] `Collite/ttr-demo` repo cloned at `collite-gh/hartland` (stub); `data/` subtree scaffolded per BM-9:
       `data/{redate,localize-cz,catalog,seed,recon}` + `data/README.md` (the pipeline-order doc, supersedes the old `surgery/README.md`).
 - [ ] Q-BM sub-decisions decided (all ✔ 2026-07-18): FX-scale CZK (Q-BM-1a), generator + hero curation (Q-BM-2b),
       one CNPG / two DBs (Q-BM-3a), new CZ personas (Q-BM-4a), CZ DCs = Brno + Praha + Ostrava + Plzeň + Hradec Králové (Q-BM-5).

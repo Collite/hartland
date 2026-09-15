@@ -2,7 +2,7 @@
 
 One `*.case.yaml` = one distributable nightly test case (contract: olymp
 `nightly/design/contracts.md` **N-C3**). Oracle rows live beside them in `../oracle/{us,cz}/`
-(BM-9 — demo/test content lives in `Collite/hartland`); the runner lives in olymp
+(BM-9 — demo/test content lives in `Collite/ttr-demo`); the runner lives in olymp
 (`nightly/case-runner.py`).
 
 ## Authoring a case (the whole job — ~30 min)
@@ -18,7 +18,7 @@ One `*.case.yaml` = one distributable nightly test case (contract: olymp
    plain = exact. CZ money = US ×23 (FX, `data/localize-cz/fx.conf`).
 4. **Run it locally** against bp-dsk:
    `python3 ../../../olymp/nightly/case-runner.py --cases . --only <id> --kube dsk`
-5. **PR to `Collite/hartland`** (case + oracle CSV together). CI runs
+5. **PR to `Collite/ttr-demo`** (case + oracle CSV together). CI runs
    `case-runner.py --check` (schema + owner + oracle presence) — no cluster needed.
 
 Rules: read-only cases target the standing `hartland_{us,cz}`; anything that writes targets

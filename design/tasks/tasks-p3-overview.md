@@ -19,7 +19,7 @@
 | Tag | Repo | Phase-3 surface |
 |---|---|---|
 | **[O]** | **olymp** (GitOps) | `clusters/hartland/`, `platform/data/hartland-pg/`, `test-contexts/*`, per-cluster `platform/auth/` CES, `nightly-ecosystem.yml` |
-| **[H]** | **Collite/hartland** (demo home, BM-9) | `run-set/` (the `hartland-query` oracle rows, both worlds); `design/` (cs mirror of 07-f, if a CZ delivery is planned) |
+| **[H]** | **Collite/ttr-demo** (demo home, BM-9) | `run-set/` (the `hartland-query` oracle rows, both worlds); `design/` (cs mirror of 07-f, if a CZ delivery is planned) |
 | **[K]** | **kantheon** (code-only) | `deployment/test/bp-dsk-run-set.txt`, `.github/workflows/integration-nightly.yml`; new Proteus goldens are **referenced, not authored here** |
 
 Model + agents (`[H]` `model/`, `agents/`) are authored in Phase 2 and **consumed** here (Ariadne source).
@@ -50,7 +50,7 @@ mapping validated against the live rosters and folded into S3.1 T5 + S3.3. Two o
 
 - [ ] **G1 — MP-4 release tags cut** [K]: the showcase runs **pinned tags only** (E-1). Bring-up (3.1) may
       start `:testing`; the flip to pins happens before rehearsals (3.5). Gates the freeze window.
-- [ ] **G2 — `Collite/hartland` populated** [H]: `model/` (db/er/md/binding/lexicon en+cs) + both Shems +
+- [ ] **G2 — `Collite/ttr-demo` populated** [H]: `model/` (db/er/md/binding/lexicon en+cs) + both Shems +
       `run-set/` — i.e. **Phase 2 done**. Gates 3.3/3.4.
 - [ ] **G3 — both demo dumps in staging** [H]: `tpcds-staging/hartland/us/` **and** `.../cz/` re-dated +
       catalogued + seeded (= **Phase 1 done**, `data/recon/dump-manifest.md` pinned). Gates 3.2 restore +

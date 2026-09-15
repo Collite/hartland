@@ -27,7 +27,7 @@
   query-mcp, llm-gateway) → `ttr-server` · golems + capabilities-mcp → `kantheon` · CNPG
   warehouses (`hartland_us`, `hartland_cz`) → `data` · Keycloak → `auth` · Envoy Gateway →
   `gateway` · ArgoCD → `argocd` · monitoring → `monitoring`.
-- **Model source**: veles serves the TTR-M model from **this repo** (`Collite/hartland`,
+- **Model source**: veles serves the TTR-M model from **this repo** (`Collite/ttr-demo`,
   branch `demo-p2`, subdir `model/`); golems cache the ModelBundle at boot — see §7.4 for the
   two-step refresh after any model change.
 
@@ -164,7 +164,7 @@ Browser ── https ──► Envoy Gateway (:443, TLS, wildcard cert)
                                              ▼  (all in ns ttr-server)
                                           query-mcp → theseus→proteus→argos→kyklop→arges
                                              │                                    │
-                                          veles (model, from Collite/hartland)  CNPG data ns:
+                                          veles (model, from Collite/ttr-demo)  CNPG data ns:
                                                                                  hartland_us / hartland_cz
 ```
 
@@ -258,7 +258,7 @@ that means deleting session rows via each store's API/DB (iris-bff `iris` DB, py
 
 ### 7.2 After a model or query change (the two-refresh rule — quirks §1.2)
 
-1. Push to `Collite/hartland` (branch `demo-p2`).
+1. Push to `Collite/ttr-demo` (branch `demo-p2`).
 2. veles re-fetch: `VelesService/Refresh {force:true}` (or wait out the poll); confirm
    `ListQueries` → PARSED.
 3. **`kubectl --context hartland -n kantheon rollout restart deployment/golem-hartland`**

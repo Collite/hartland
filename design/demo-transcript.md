@@ -286,7 +286,7 @@ That's the pitch: your data, answering in sentences, showing its work."*
 
 ## Appendix A — Requirements rollup (the /planning checklist)
 
-**Repo `Collite/hartland`** (D-7; Q-10 tree at build): hartland agent def + TTR model
+**Repo `Collite/ttr-demo`** (D-7; Q-10 tree at build): hartland agent def + TTR model
 packages (19 entities, D-5) + `q.hartland.*` preferred queries #1–#15 (D-2; CASE-sum shapes
 need new Proteus goldens) + naming/synonym layer (D-6, D-6a exclusions) + **both** Shem
 overlays (golem-hartland "Hartland Analytics", golem-hartland-finance "Hartland Finance",

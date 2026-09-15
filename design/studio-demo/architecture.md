@@ -5,7 +5,7 @@
 > 2026-07-22) on the **Hartland** world. This corpus *consumes, never reopens*: the FO design
 > (`project/common/frontends-offering/design.md`, FO-1…33), the A1 corpus
 > (`…/designer/authoring/`), the A2 corpus (`…/studio-planning/planner/`), and the Hartland
-> demo corpus (this repo, `design/`). Demo assets live **here** (BM-9: `Collite/hartland` is
+> demo corpus (this repo, `design/`). Demo assets live **here** (BM-9: `Collite/ttr-demo` is
 > the single home for demo assets; tatrman/tatrman-platform stay code-only). Companions:
 > [`00-demo-narrative.md`](./00-demo-narrative.md) · [`contracts.md`](./contracts.md) ·
 > [`plan.md`](./plan.md) · [`tasks/`](./tasks/).
@@ -126,7 +126,7 @@ owning arc (§1 scope rule), or an honest-degradation variant of the beat.
 
 ## 6. Decisions
 
-- **SD-D1 · Demo assets live in `Collite/hartland`** (BM-9 extension): this corpus under
+- **SD-D1 · Demo assets live in `Collite/ttr-demo`** (BM-9 extension): this corpus under
   `design/studio-demo/`, fixtures under `data/plan/` + `model/` delta + `run-set/studio/`.
 - **SD-D2 · The demo consumes closed arcs.** A1/A2 contracts are frozen inputs; defects →
   issues on the owning repos; the demo may *configure* and *stub-per-shipped-CAP* but

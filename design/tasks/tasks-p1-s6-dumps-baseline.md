@@ -20,7 +20,7 @@
 - [ ] Stage 1.6 branch: `feat/p1-s6-dumps-baseline`.
 - [ ] Both worlds are in their final state (all prior stages' verify blocks green); no pending fixes.
 - [ ] Seaweed `tpcds-staging` bucket reachable; `hartland/us/` and `hartland/cz/` prefixes exist (S-10; no new bucket).
-- [ ] `demo-transcript.md` (the copy in `Collite/hartland/design/`) with its ⟨R0⟩ slots is writable for T4.
+- [ ] `demo-transcript.md` (the copy in `Collite/ttr-demo/design/`) with its ⟨R0⟩ slots is writable for T4.
 
 ## Tasks
 
@@ -50,7 +50,7 @@
   re-restored from the new dumps." One version bump = one manifest edit.
 
 - [ ] **T4 — Regenerate the transcript ⟨R0⟩ values (US) + a CZ R0 appendix.**
-  In the `Collite/hartland/design/demo-transcript.md` copy, replace every ⟨R0: …⟩ placeholder with the frozen US value
+  In the `Collite/ttr-demo/design/demo-transcript.md` copy, replace every ⟨R0: …⟩ placeholder with the frozen US value
   from `R0.md`. Add a **CZ R0 appendix** (the same beats in CZK) so a Czech delivery (BM-8, one-locale-per-delivery) has
   its own frozen numbers. Keep the % figures identical across the two (BM-7 parity); only absolutes differ (×FX). Note
   the FX constant at the head of the CZ appendix.
