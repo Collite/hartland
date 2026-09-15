@@ -72,6 +72,12 @@ fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 step() { printf '\n\033[1m── %s\033[0m\n' "$*"; }
 
+# This drill is configured by IE_DOD_* alone — it parses no options. Silence was the wrong answer:
+# `just drill-in-cluster dod --save` handed `--save` to a script that ignores it, so a person asking
+# for a saved artifact got a successful run and no file (report-fingerprint.sh is the one that takes
+# `--save`). An unknown argument is a misunderstanding about which drill is running: name it.
+[ $# -eq 0 ] || fail "investment-dod.sh takes no arguments — it is configured by IE_DOD_* (got '$1'). \`--save\` belongs to report-fingerprint.sh"
+
 BFF="${IE_DOD_BFF:?IE_DOD_BFF is required (studio-bff base URL)}"
 DSN="${IE_DOD_DSN:?IE_DOD_DSN is required (psql DSN for the entry database)}"
 PORTFOLIO="${IE_DOD_PORTFOLIO:?IE_DOD_PORTFOLIO is required — name the portfolio explicitly}"

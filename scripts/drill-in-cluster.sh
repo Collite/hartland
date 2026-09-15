@@ -37,7 +37,6 @@ set -euo pipefail
 
 DRILL="${1:?usage: drill-in-cluster.sh <dod|fingerprint> [args…]}"
 shift
-PASSTHROUGH="$*"
 CTX="${IE_CTX:-hartland}"
 NS="${IE_NS:-ttr-server}"
 PORTFOLIO="${IE_PORTFOLIO:-conseq:200791223}"
@@ -48,9 +47,24 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 fail() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
+# The arguments travel a long way: into a `sh -c` string, inside a JSON array, inside YAML piped to
+# `kubectl apply`. `$*` lost them at the first hop — `--expect "/p with space/e.json"` arrived as two
+# arguments — and a `"` in one produced a malformed JSON array, so the Job died on a parse error
+# instead of naming the bad argument. So: refuse what cannot survive the hop, by name, and quote the
+# rest with `printf %q` (spaces, tabs and shell metacharacters included).
+PASSTHROUGH=""
+for arg in "$@"; do
+    case "$arg" in
+        *'"'*|*'`'*|*'$'*|*'\'*|*$'\n'*)
+            fail "the argument '$arg' carries a double quote, backtick, \$, backslash or newline — none of those survives the trip into the Job's command; drop it, or set the drill's IE_* variable instead"
+            ;;
+    esac
+    PASSTHROUGH="$PASSTHROUGH $(printf '%q' "$arg")"
+done
+
 case "$DRILL" in
-    dod)         COMMAND="bash /drill/investment-dod.sh $PASSTHROUGH" ;;
-    fingerprint) COMMAND="bash /drill/report-fingerprint.sh $PASSTHROUGH" ;;
+    dod)         COMMAND="bash /drill/investment-dod.sh$PASSTHROUGH" ;;
+    fingerprint) COMMAND="bash /drill/report-fingerprint.sh$PASSTHROUGH" ;;
     *) fail "the drill is 'dod' or 'fingerprint', not '$DRILL'" ;;
 esac
 
@@ -133,6 +147,11 @@ cat "$LOG"
 # A refusal is RECORDED rather than fatal here, so the Job and its ConfigMaps are still cleaned up below.
 FP_ERROR=""
 slug="$(sed -n 's/^-----BEGIN FINGERPRINT \(.*\)-----$/\1/p' "$LOG" | head -1)"
+# A run ASKED to save and producing no block is a silent no-save: nothing below would fire, and the
+# script would report success having written nothing.
+case "$PASSTHROUGH" in
+    *--save*) [ -n "$slug" ] || FP_ERROR="the run was asked to --save and printed no fingerprint block — nothing was written; its log is above" ;;
+esac
 if [ -n "$slug" ]; then
     dir="${IE_FINGERPRINTS_DIR:-$HERE/../../project/kantheon/features/midas/investment-estate/fingerprints}"
     repo="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HERE/..")"

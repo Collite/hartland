@@ -46,6 +46,7 @@ import json
 import re
 import sys
 import zipfile
+from collections import Counter
 from datetime import date, timedelta
 from decimal import Decimal
 from xml.etree import ElementTree
@@ -254,8 +255,26 @@ def compare(
 ) -> list[str]:
     """Every difference, named. Rows are matched on (period_end, currency) — never on order."""
     problems = []
-    keys_a = {(r["period_end"], r["currency"]) for r in a}
-    keys_b = {(r["period_end"], r["currency"]) for r in b}
+    # ⛔ A KEY APPEARS ONCE, AND THAT IS CHECKED FIRST. Matching through a dict makes a duplicate
+    # invisible: two copies of a quarter each compare against the one row on the other side and both
+    # agree, so a workbook of 6 rows passes against a book of 5 with the same keys. The shape is
+    # reachable — the reference reports a quarter end twice, once whole and once partial, which is why
+    # an `as_of` on a quarter end is refused (S3.1·D2) — and a renderer that emitted a period twice is
+    # exactly the assembly error this gate exists to catch. Past a duplicate the row matching means
+    # nothing, so this refuses before comparing rather than reporting on an arbitrary pairing.
+    counts_a = Counter((r["period_end"], r["currency"]) for r in a)
+    counts_b = Counter((r["period_end"], r["currency"]) for r in b)
+    for label, counts in ((label_a, counts_a), (label_b, counts_b)):
+        for (period_end, currency), n in sorted(counts.items()):
+            if n > 1:
+                problems.append(
+                    f"{period_end} {currency}: {label} reports this period {n} times — a period is ONE row per currency",
+                )
+    if problems:
+        return problems
+
+    keys_a = set(counts_a)
+    keys_b = set(counts_b)
     for key in sorted(keys_a - keys_b):
         problems.append(f"{key[0]} {key[1]}: in {label_a}, absent from {label_b}")
     for key in sorted(keys_b - keys_a):
