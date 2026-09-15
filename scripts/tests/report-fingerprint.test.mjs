@@ -259,6 +259,25 @@ test('⛔ a coverage word that disagrees FAILS — the prices behind a number ar
   });
 });
 
+// ⚑ Rows are matched on (period_end, currency) through a dict, which cannot see a SECOND copy of a
+// key: both copies compare against the one row on the other side and agree. So a duplicate is refused
+// before any comparison — on either side, because both sides can produce one (review-093 ⑶).
+test('⛔ a quarter the WORKBOOK reports twice FAILS — two copies that each "agree" are not a match', async () => {
+  await withHarness({ workbookRows: [...ROWS, ROWS[1]] }, async (h) => {
+    const { code, out } = await run(h);
+    assert.equal(code, 1, out);
+    assert.match(out, /2025-12-31 CZK: workbook reports this period 2 times/);
+  });
+});
+
+test('⛔ a quarter the BOOK reports twice FAILS — the quarter-end double row is the reachable case', async () => {
+  await withHarness({ referenceRows: [...ROWS, ROWS[2]] }, async (h) => {
+    const { code, out } = await run(h);
+    assert.equal(code, 1, out);
+    assert.match(out, /2026-03-31 CZK: book reports this period 2 times/);
+  });
+});
+
 test('⛔ an as_of ON a quarter end is refused before anything is sent (S3.1·D2)', async () => {
   await withHarness({}, async (h) => {
     const { code, out } = await run(h, { IE_FP_AS_OF: '2026-06-30' });

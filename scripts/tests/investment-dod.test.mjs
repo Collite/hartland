@@ -18,7 +18,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -43,6 +43,16 @@ test('the tools the drill needs are on PATH', () => {
   }
   const major = Number(execFileSync('bash', ['-c', 'echo ${BASH_VERSINFO[0]}'], { encoding: 'utf-8' }).trim());
   assert.ok(major >= 4, `the drill needs bash >= 4 (associative arrays); PATH's bash is ${major}`);
+});
+
+// ⛔ This drill is configured by IE_DOD_* and parses no options, so an argument means the caller
+// thinks they are running the other drill: `just drill-in-cluster dod --save` handed `--save` to a
+// script that ignored it, and the run reported success having saved nothing (review-093 ⑺).
+test('⛔ an argument is refused, naming the drill that does take one', () => {
+  const r = spawnSync('bash', [SCRIPT, '--save'], { encoding: 'utf-8' });
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.match(r.stderr, /takes no arguments/);
+  assert.match(r.stderr, /report-fingerprint\.sh/);
 });
 
 // ── the book ─────────────────────────────────────────────────────────────────────────────────────
